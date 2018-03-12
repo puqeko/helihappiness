@@ -19,12 +19,15 @@
 
 #include "buttons4.h"             // left, right, up, down buttons (debouncing)
 
+#include "utils/ustdlib.h"
+#include "OrbitOLED/OrbitOLEDInterface.h"
 
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interupt setups, etc
 
     initButtons();
+    OLEDInitialise();
 }
 
 enum heli_state {LANDED, FLYING, NUM_HELI_STATES};
