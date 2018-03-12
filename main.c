@@ -17,10 +17,14 @@
 #include "driverlib/gpio.h"       // defines for GPIO peripheral
 #include "driverlib/sysctl.h"     // system control functions
 
+#include "buttons4.h"             // left, right, up, down buttons (debouncing)
+
 
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interupt setups, etc
+
+    initButtons();
 }
 
 
@@ -39,5 +43,7 @@ int main(void) {
 	
 	while (true) {
 	    // .. things that need continuous updates
+
+	    updateButtons();
 	}
 }
