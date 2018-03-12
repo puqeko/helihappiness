@@ -4,10 +4,9 @@
 // Group: A03 Group 10
 // Last edited: 12-03-2018
 //
-// Purpose: This program may destory helicopters.
+// Purpose: This program may destroy helicopters.
 // ************************************************************
 
-// comment test 3
 
 #include <stdio.h>
 #include <stdint.h>
@@ -22,7 +21,7 @@
 
 void initalise(uint32_t clock_rate)
 {
-    // .. do any pin configs, timer setups, interupt setups, etc
+    // .. do any pin configs, timer setups, interrupt setups, etc
 }
 
 
