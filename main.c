@@ -9,7 +9,7 @@
 
 //Comment by Ryan Hall to test with git --pass
 
-//Second comment to test effect of linking
+//Second comment to test connection project directly to git
 
 #include <stdio.h>
 #include <stdint.h>
