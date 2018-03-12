@@ -7,9 +7,7 @@
 // Purpose: This program may destory helicopters.
 // ************************************************************
 
-//Comment by Ryan Hall to test with git --pass
-
-//Second comment to test connection project directly to git
+// comment test 3
 
 #include <stdio.h>
 #include <stdint.h>
