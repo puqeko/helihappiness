@@ -4,7 +4,7 @@
 // Group: A03 Group 10
 // Last edited: 12-03-2018
 //
-// Purpose: This program may destory helicopters.
+// Purpose: This program may destroy helicopters.
 // ************************************************************
 
 #include <stdio.h>
