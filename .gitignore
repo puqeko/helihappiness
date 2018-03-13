@@ -1,5 +1,12 @@
-.project
-.cproject
-.ccsproject
+#.project
+#.cproject
+#.ccsproject
 Debug/
-.settings/
+#.settings/
+targetConfigs/
+*.cmd
+*_startup_ccs.c
+#.metadata/
+#.launches/
+#.jxbrowser-data/
+.*
