@@ -7,6 +7,7 @@
 // Purpose: This program may destroy helicopters.
 // ************************************************************
 
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -26,7 +27,7 @@
 
 void initalise(uint32_t clock_rate)
 {
-    // .. do any pin configs, timer setups, interupt setups, etc
+    // .. do any pin configs, timer setups, interrupt setups, etc
 
     initButtons();
     OLEDInitialise();
