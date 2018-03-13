@@ -3,3 +3,6 @@
 .ccsproject
 Debug/
 .settings/
+targetConfigs/
+*.cmd
+*_startup_ccs.c

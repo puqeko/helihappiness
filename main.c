@@ -18,12 +18,24 @@
 #include "driverlib/gpio.h"       // defines for GPIO peripheral
 #include "driverlib/sysctl.h"     // system control functions
 
+#include "buttons4.h"             // left, right, up, down buttons (debouncing)
+
+#include "utils/ustdlib.h"
+#include "OrbitOLED/OrbitOLEDInterface.h"
 
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
+
+    initButtons();
+    OLEDInitialise();
 }
 
+enum heli_state {LANDED, FLYING, NUM_HELI_STATES};
+enum display_state {PERCENTAGE, MEAN_ADC, DISPLAY_OFF, NUM_DISPLAY_STATES};
+
+uint8_t current_heli_state = LANDED;
+uint8_t current_display_state = PERCENTAGE;
 
 int main(void) {
     uint32_t clock_rate;
@@ -40,5 +52,30 @@ int main(void) {
 	
 	while (true) {
 	    // .. things that need continuous updates
+
+	    updateButtons();
+
+	    switch (current_heli_state) {
+
+	    // M1.3 Measure the mean sample value for a bit and display on the screen
+        case LANDED:
+            break;  // measure 0% height value
+
+	    // M1.4 Display altitude
+	    case FLYING:
+
+	        // Run M1.3 again (M1.5)
+            if (checkButton(LEFT) == PUSHED) {
+                current_heli_state = LANDED;
+                current_display_state = PERCENTAGE;  // reset for init sequence
+            }
+
+            // Transition between display modes (M1.6)
+            if (checkButton(UP) == PUSHED) {
+                current_display_state += 1;
+                current_display_state %= NUM_DISPLAY_STATES;
+            }
+            break;
+	    }
 	}
 }
