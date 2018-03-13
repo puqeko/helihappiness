@@ -47,19 +47,14 @@ writeCircBuf (circBuf_t *buffer, uint32_t entry)
 // advance rindex, modulo (buffer size). The function deos not check
 // if reading has advanced ahead of writing.
 uint32_t
-readCircBuf (circBuf_t *buffer, uint32_t rindex)
+readCircBuf (circBuf_t *buffer)
 {
 	uint32_t entry;
-	if (rindex >= buffer->size) {   // if read index exceeds the size, handle it... somehow
-	    rindex = rindex % (buffer->size);   // if user requests read index out of range, loop back round
-	}
-	buffer->rindex = rindex;
-	entry = buffer->data[buffer->rindex];
 	
-	// Don't automatically increment read position
-	//buffer->rindex++;
-	//if (buffer->rindex >= buffer->size)
-	//   buffer->rindex = 0;
+	entry = buffer->data[buffer->rindex];
+	buffer->rindex++;
+	if (buffer->rindex >= buffer->size)
+	   buffer->rindex = 0;
     return entry;
 }
 
