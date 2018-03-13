@@ -41,7 +41,7 @@ writeCircBuf (circBuf_t *buffer, uint32_t entry);
 // advance rindex, modulo (buffer size). The function deos not check
 // if reading has advanced ahead of writing.
 uint32_t
-readCircBuf (circBuf_t *buffer, uint32_t rindex);
+readCircBufi (circBuf_t *buffer, uint32_t rindex);
 
 // *******************************************************
 // freeCircBuf: Releases the memory allocated to the buffer data,
