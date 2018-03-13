@@ -1,18 +1,30 @@
-/*
- * convolution.c
- *
- *  Created on: 12/03/2018
- *      Author: bebop
- */
-#include <stdint.h>
-#include "utils/ustdlib.h"
+// *******************************************************
+//
+// convolution.c
+//
+// Generates and uses averaging function to smooth data stream from ADCs
+// P.J. Bones UCECE, modified by Ryan hall
+// Last modified:  14.3.2017
+//
+// *******************************************************
 
-uint32_t *
-getConvolutionArray (char type, uint32_t size)
+#include "convolution.h"
+#include "circBufT.h"
+
+static circBuf_t buffer;
+
+uint32_t getAverage (uint32_t bufferSize)
 {
-    uint32_t *convolutionArray;
-    // do stuff
-    return convolutionArray;
+    // Background task: calculate the (approximate) mean of the values in the
+    // circular buffer and return it.
+    initCircBuf (&buffer, bufferSize);
+
+    uint32_t sum = 0;
+    for (i = 0; i < bufferSize; i++) {
+        sum = sum + readCircBuf (&buffer);
+    }
+    // Calculate and display the rounded mean of the buffer contents
+    return 2 * sum + bufferSize) / 2 / bufferSize;
 }
 
 
