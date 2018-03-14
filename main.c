@@ -74,7 +74,7 @@ void displayMode()
         uint32_t percentage = 100 * (baseVal - mean) / MEAN_RANGE;
         percentage = (percentage > 100) ? 100 : percentage;  // clamp to range 0 - 100
 
-        usnprintf (string, sizeof(string), "Height = %3d%", percetage);
+        usnprintf (string, sizeof(string), "Height = %3d%", percentage);
         OLEDStringDraw (string, 0, 1);
 
     case DISPLAY_OFF:
