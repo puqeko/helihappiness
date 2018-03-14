@@ -15,10 +15,12 @@
 
 #include <stdint.h>
 
+typedef void (*valueHandler_t)(uint32_t);
+
 void ADCIntHandler(void);
 
 void triggerADC(void);
 
-void initADC(void (*handler)(uint32_t));
+void initADC(valueHandler_t);
 
 #endif

@@ -27,7 +27,7 @@
 #include "circBufT.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
 
-static void (*ADCValueHandler)(uint32_t);
+static valueHandler_t ADCValueHandler;
 
 void ADCIntHandler(void)
 {
@@ -42,7 +42,7 @@ void triggerADC(void)
     ADCProcessorTrigger(ADC0_BASE, 3);
 }
 
-void initADC(void (*handler)(uint32_t))
+void initADC(valueHandler_t handler)
 {
     ADCValueHandler = handler;
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
