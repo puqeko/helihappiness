@@ -53,6 +53,8 @@ void initalise(uint32_t clock_rate)
     SysTickIntEnable();
     SysTickEnable();
 
+    IntMasterEnable();
+
     // Set up the specific port pin as medium strength current & pull-down config.
     // Refer to TivaWare peripheral lib user manual for set up for configuration options
     GPIOPadConfigSet(GPIO_PORTF_BASE, GREEN_LED, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
