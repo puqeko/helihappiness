@@ -17,13 +17,22 @@
 #include "inc/tm4c123gh6pm.h"     // defines interrupt vectors and register addresses
 #include "driverlib/gpio.h"       // defines for GPIO peripheral
 #include "driverlib/sysctl.h"     // system control functions
+#include "driverlib/systick.h"
+#include "driverlib/interrupt.h"
 
 // 3rd party libraries
 #include "buttons4.h"             // left, right, up, down buttons (debouncing)
+#include "convolution.h"
+#include "adcModule.h"
 #include "utils/ustdlib.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
 
 #define GREEN_LED GPIO_PIN_3
+
+void SysTickIntHandler(void)
+{
+    triggerADC();
+}
 
 void initalise(uint32_t clock_rate)
 {
@@ -31,9 +40,18 @@ void initalise(uint32_t clock_rate)
 
     initButtons();
     OLEDInitialise();
+    initADC(handleNewADCValue);
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+
+    SysTickPeriodSet(SysCtlClockGet() / 120);  // frequency of 120 Hz
+
+    SysTickIntRegister(SysTickIntHandler);
+
+    // Enable interrupt and device
+    SysTickIntEnable();
+    SysTickEnable();
 
     // Set up the specific port pin as medium strength current & pull-down config.
     // Refer to TivaWare peripheral lib user manual for set up for configuration options
@@ -54,37 +72,39 @@ uint8_t current_display_state = PERCENTAGE;
 
 
 #define MEAN_RANGE (4095 * 33 / 8)  // How many divisions in a 0.8 voltage range if the rail is 3.3 volts
+uint32_t baseVal = 4095;
 
-
-void displayMode()
+void displayMode(clock_rate)
 {
-    uint32_t mean = getAverage();
+    uint32_t mean = getAverage(20);
+    char string[17] = "                ";  // 16 characters across the display
+    uint32_t percentage;
 
-    switch (display_state)
+    switch (current_display_state)
     {
     case MEAN_ADC:
-        char string[17];  // 16 characters across the display
-
         usnprintf (string, sizeof(string), "Mean ADC = %4d", mean);
         OLEDStringDraw (string, 0, 1);
+        break;
 
     case PERCENTAGE:
-        char string[17];  // 16 characters across the display
         // scale from mean range to 100 percent where baseVal is 0%
-        uint32_t percentage = 100 * (baseVal - mean) / MEAN_RANGE;
+        percentage = 100 * (baseVal - mean) / MEAN_RANGE;
         percentage = (percentage > 100) ? 100 : percentage;  // clamp to range 0 - 100
 
-        usnprintf (string, sizeof(string), "Height = %3d%", percentage);
+        usnprintf (string, sizeof(string), "Height = %3d", mean);
         OLEDStringDraw (string, 0, 1);
+        break;
 
     case DISPLAY_OFF:
-        char string[17] = "                ";
         OLEDStringDraw (string, 0, 1);
+        break;
+
     }
 }
 
 
-void heliMode()
+void heliMode(clock_rate)
 {
     switch (current_heli_state) {
 
@@ -135,7 +155,7 @@ int main(void) {
 
 	    updateButtons();  // recommended 100 hz update
 
-	    heliMode();
-	    displayMode();
+	    heliMode(clock_rate);
+	    displayMode(clock_rate);
 	}
 }

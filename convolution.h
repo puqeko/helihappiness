@@ -13,17 +13,19 @@
 #include <stdint.h>
 #include "utils/ustdlib.h"
 
+
 // *******************************************************
 // getConvolutionArray: Generate values for convolution array for averaging.
-uint32_t * getConvolutionArray (char type, uint32_t size)
+//uint32_t * getConvolutionArray (char type, uint32_t size)
 
 // *******************************************************
 // getAverage: calculate the (approximate) mean of the values in the
 // circular buffer and return it.
-uint32_t getAverage (uint32_t bufferSize)
+uint32_t getAverage (uint32_t bufferSize);
 
 // *******************************************************
-
+void initConv();
+void handleNewADCValue(uint32_t);
 
 
 #endif /* CONVOLUTION_H_ */

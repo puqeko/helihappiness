@@ -36,7 +36,7 @@ void ADCIntHandler(void)
     ADCSequenceDataGet(ADC0_BASE, 3, &ADCValue);
 
     //register the ADC value with the specified ADCValueHandler function
-    (*ADCValueHandler)(ADCValue);
+    ADCValueHandler(ADCValue);
 
     //clear the interrupt
     ADCIntClear(ADC0_BASE, 3);
