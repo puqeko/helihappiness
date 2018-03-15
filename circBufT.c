@@ -21,12 +21,12 @@
 uint32_t *
 initCircBuf (circBuf_t *buffer, uint32_t size)
 {
-	buffer->windex = 0;
-	buffer->rindex = 0;
-	buffer->size = size;
-	buffer->data = 
+    buffer->windex = 0;
+    buffer->rindex = 0;
+    buffer->size = size;
+    buffer->data =
         (uint32_t *) calloc (size, sizeof(uint32_t));
-	return buffer->data;
+    return buffer->data;
 }
    // Note use of calloc() to clear contents.
 
@@ -36,37 +36,25 @@ initCircBuf (circBuf_t *buffer, uint32_t size)
 void
 writeCircBuf (circBuf_t *buffer, uint32_t entry)
 {
-	buffer->data[buffer->windex] = entry;
-	buffer->windex++;
-	if (buffer->windex >= buffer->size)
-	   buffer->windex = 0;
+    buffer->data[buffer->windex] = entry;
+    buffer->windex++;
+    if (buffer->windex >= buffer->size)
+       buffer->windex = 0;
 }
 
 // *******************************************************
 // readCircBuf: return entry at the current rindex location,
 // advance rindex, modulo (buffer size). The function deos not check
 // if reading has advanced ahead of writing.
-
-uint32_t
-readCircBufi (circBuf_t *buffer, uint32_t rindex)
-{
-	uint32_t entry;
-	if (rindex >= buffer->size) {   // if read index exceeds the size, handle it... somehow
-	    rindex = rindex % (buffer->size);   // if user requests read index out of range, loop back round
-	}
-	entry = buffer->data[rindex];
-    return entry;
-}
-
 uint32_t
 readCircBuf (circBuf_t *buffer)
 {
     uint32_t entry;
+
     entry = buffer->data[buffer->rindex];
     buffer->rindex++;
-    if (buffer->rindex >= buffer->size) {
+    if (buffer->rindex >= buffer->size)
        buffer->rindex = 0;
-    }
     return entry;
 }
 
@@ -77,10 +65,10 @@ readCircBuf (circBuf_t *buffer)
 void
 freeCircBuf (circBuf_t * buffer)
 {
-	buffer->windex = 0;
-	buffer->rindex = 0;
-	buffer->size = 0;
-	free (buffer->data);
-	buffer->data = NULL;
+    buffer->windex = 0;
+    buffer->rindex = 0;
+    buffer->size = 0;
+    free (buffer->data);
+    buffer->data = NULL;
 }
 

@@ -11,32 +11,29 @@
 #include "convolution.h"
 #include "circBufT.h"
 
-static circBuf_t buffer;
-#define CONV_SIZE 20
+static circBuf_t buf;
+#define CONV_SIZE 10
 
-void initConv()
+void initConv(void)
 {
-    initCircBuf (&buffer, CONV_SIZE);
+    initCircBuf(&buf, CONV_SIZE);
 }
 
 void handleNewADCValue(uint32_t val)
 {
-    writeCircBuf(&buffer, val);
+    writeCircBuf(&buf, val);
 }
 
-uint32_t getAverage (uint32_t bufferSize)
+uint32_t getAverage (void)
 {
-//    // Background task: calculate the (approximate) mean of the values in the
-//    // circular buffer and return it.
-//    initCircBuf (&buffer, bufferSize);
-//
-//    uint32_t sum = 0;
-//    int i;
-//    for (i = 0; i < bufferSize; i++) {
-//        sum = sum + readCircBuf (&buffer);
-//    }
-//    // Calculate and display the rounded mean of the buffer contents
-//    return (2 * sum + bufferSize) / 2 / bufferSize;
-    return readCircBuf (&buffer);
-}
+    // Background task: calculate the (approximate) mean of the values in the
+    // circular buffer and return it.
 
+    uint32_t sum = 0;
+    int i;
+    for (i = 0; i < CONV_SIZE; i++) {
+        sum = sum + readCircBuf (&buf);
+    }
+    // Calculate and display the rounded mean of the buffer contents
+    return (2 * sum + CONV_SIZE) / 2 / CONV_SIZE;
+}

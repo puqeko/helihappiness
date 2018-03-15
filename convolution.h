@@ -21,10 +21,10 @@
 // *******************************************************
 // getAverage: calculate the (approximate) mean of the values in the
 // circular buffer and return it.
-uint32_t getAverage (uint32_t bufferSize);
+uint32_t getAverage (void);
 
 // *******************************************************
-void initConv();
+void initConv(void);
 void handleNewADCValue(uint32_t);
 
 

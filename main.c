@@ -25,6 +25,7 @@
 #include "convolution.h"
 #include "adcModule.h"
 #include "utils/ustdlib.h"
+#include "circBufT.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
 
 #define GREEN_LED GPIO_PIN_3
@@ -34,10 +35,17 @@ void SysTickIntHandler(void)
     triggerADC();
 }
 
+int SIZE = 10;
+static circBuf_t buf;
+void handle(uint32_t val)
+{
+    writeCircBuf(&buf, val);
+}
+
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
-
+    initConv();
     initButtons();
     OLEDInitialise();
     initADC(handleNewADCValue);
@@ -78,7 +86,7 @@ uint32_t baseVal = 4095;
 
 void displayMode(clock_rate)
 {
-    uint32_t mean = getAverage(20);
+    uint32_t mean = getAverage();
     char string[17] = "                ";  // 16 characters across the display
     uint32_t percentage;
 
@@ -94,7 +102,7 @@ void displayMode(clock_rate)
         percentage = 100 * (baseVal - mean) / MEAN_RANGE;
         percentage = (percentage > 100) ? 100 : percentage;  // clamp to range 0 - 100
 
-        usnprintf (string, sizeof(string), "Height = %3d", mean);
+        usnprintf (string, sizeof(string), "Height = %3d", percentage);
         OLEDStringDraw (string, 0, 1);
         break;
 
@@ -136,7 +144,6 @@ void heliMode(clock_rate)
         break;
     }
 }
-
 
 int main(void) {
     uint32_t clock_rate;
