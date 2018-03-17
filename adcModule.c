@@ -28,7 +28,7 @@ static valueHandler_t ADCValueHandler;
 // Interrupt handler for completion of ADC conversion
 // Resets interrupt and registers ADC value with ADCValueHandler function
 //************************************************************************
-void ADCIntHandler(void)
+void adcIntHandler(void)
 {
     uint32_t ADCValue;
 
@@ -47,7 +47,7 @@ void ADCIntHandler(void)
 //************************************************************************
 // Initiate an ADC conversion
 //************************************************************************
-void triggerADC(void)
+void adcTrigger(void)
 {
     ADCProcessorTrigger(ADC0_BASE, 3);
 }
@@ -60,7 +60,7 @@ void triggerADC(void)
 // Parameters:
 // -valueHandler_t handler -> handler function called to store ADC value
 //************************************************************************
-void initADC(valueHandler_t handler)
+void adcInit(valueHandler_t handler)
 {
     ADCValueHandler = handler;
 
@@ -86,7 +86,7 @@ void initADC(valueHandler_t handler)
     ADCSequenceEnable(ADC0_BASE, 3);
 
     // Register the interrupt handler
-    ADCIntRegister (ADC0_BASE, 3, ADCIntHandler);
+    ADCIntRegister (ADC0_BASE, 3, adcIntHandler);
 
     // Enable interrupts for ADC0 sequence 3 (clears any outstanding interrupts)
     ADCIntEnable(ADC0_BASE, 3);

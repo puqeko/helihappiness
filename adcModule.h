@@ -23,13 +23,13 @@ typedef void (*valueHandler_t)(uint32_t);
 // Interrupt handler for completion of ADC conversion
 // Resets interrupt and registers ADC value with ADCValueHandler function
 //************************************************************************
-void ADCIntHandler(void);
+void adcIntHandler(void);
 
 
 //************************************************************************
 // Initiate an ADC conversion
 //************************************************************************
-void triggerADC(void);
+void adcTrigger(void);
 
 
 //************************************************************************
@@ -38,6 +38,6 @@ void triggerADC(void);
 // Parameters:
 // -valueHandler_t handler -> handler function called to store ADC value
 //************************************************************************
-void initADC(valueHandler_t);
+void adcInit(valueHandler_t);
 
 #endif

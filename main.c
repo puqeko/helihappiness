@@ -32,7 +32,7 @@
 
 void SysTickIntHandler(void)
 {
-    triggerADC();
+    adcTrigger();
 }
 
 int SIZE = 10;
@@ -48,7 +48,7 @@ void initalise(uint32_t clock_rate)
     initConv();
     initButtons();
     OLEDInitialise();
-    initADC(handleNewADCValue);
+    adcInit(handleNewADCValue);
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
