@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 // TivaWare library includes
 #include "inc/hw_memmap.h"        // defines GPIO_PORTF_BASE
@@ -42,6 +43,9 @@ void handle(uint32_t val)
     writeCircBuf(&buf, val);
 }
 
+#define ADC_SAMPLE_RATE 160  // Hz
+#define ADC_BUF_SIZE 20
+
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
@@ -53,7 +57,7 @@ void initalise(uint32_t clock_rate)
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
 
-    SysTickPeriodSet(SysCtlClockGet() / 120);  // frequency of 120 Hz
+    SysTickPeriodSet(SysCtlClockGet() / ADC_SAMPLE_RATE);  // frequency of 120 Hz
 
     SysTickIntRegister(SysTickIntHandler);
 
@@ -80,39 +84,55 @@ enum display_state {PERCENTAGE = 0, MEAN_ADC, DISPLAY_OFF, NUM_DISPLAY_STATES};
 uint8_t current_heli_state = LANDED;
 uint8_t current_display_state = PERCENTAGE;
 
+char meanFormatString[] = "Mean ADC = %4d";
+char percentFormatString[] = "Height = %3d%%";
+#define DISPLAY_CHAR_WIDTH 16
 
-#define MEAN_RANGE (4095 * 33 / 8)  // How many divisions in a 0.8 voltage range if the rail is 3.3 volts
-uint32_t baseVal = 4095;
+void displayValueWithFormat(char* format, uint32_t value)
+{
+    char str[17] = "                 ";  // 16 characters across the display
+    usnprintf (str, sizeof(str), format, value);
+    str[strlen(str)] = ' ';  // overwrite null terminator added by usnprintf
+    str[DISPLAY_CHAR_WIDTH] = '\0';  // ensure there is one at the end of the string
+    OLEDStringDraw (str, 0, 1);
+}
+
+void displayClear()
+{
+    OLEDStringDraw ("                 ", 0, 1);  // 16 characters across the display
+}
+
+#define ADC_MAX_RANGE 4095
+// How many divisions in a 0.8 voltage range if the rail is 3.3 volts
+// 0.8 volts is assumed as the range of motion
+#define MEAN_RANGE (ADC_MAX_RANGE * 8 / 33)
+uint32_t baseMean = 0;
 
 void displayMode(clock_rate)
 {
     uint32_t mean = getAverage();
-    char string[17] = "                ";  // 16 characters across the display
     uint32_t percentage;
 
     switch (current_display_state)
     {
     case MEAN_ADC:
-        usnprintf (string, sizeof(string), "Mean ADC = %4d", mean);
-        OLEDStringDraw (string, 0, 1);
+        displayValueWithFormat(meanFormatString, mean);
         break;
 
     case PERCENTAGE:
         // scale from mean range to 100 percent where baseVal is 0%
-        percentage = 100 * (baseVal - mean) / MEAN_RANGE;
+        percentage = 100 * (baseMean - mean) / MEAN_RANGE;
+        percentage = (mean > baseMean) ? 0 : percentage;
         percentage = (percentage > 100) ? 100 : percentage;  // clamp to range 0 - 100
-
-        usnprintf (string, sizeof(string), "Height = %3d", percentage);
-        OLEDStringDraw (string, 0, 1);
+        displayValueWithFormat(percentFormatString, percentage);
         break;
 
     case DISPLAY_OFF:
-        OLEDStringDraw (string, 0, 1);
+        displayClear();
         break;
 
     }
 }
-
 
 void heliMode(clock_rate)
 {
@@ -120,8 +140,12 @@ void heliMode(clock_rate)
 
     // M1.3 Measure the mean sample value for a bit and display on the screen
     case LANDED:
+        displayValueWithFormat(percentFormatString, 0);  // clear to zero
+
         GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, GREEN_LED);
-        SysCtlDelay(clock_rate / 3);
+        SysCtlDelay(clock_rate / 3 * ADC_BUF_SIZE / ADC_SAMPLE_RATE);
+        baseMean = getAverage();  // take new average to be the lowest value
+
         current_heli_state = FLYING;
         break;  // measure 0% height value
 
@@ -131,7 +155,7 @@ void heliMode(clock_rate)
         // Run M1.3 again (M1.5)
         if (checkButton(LEFT) == PUSHED) {
             current_heli_state = LANDED;
-            current_display_state = PERCENTAGE;  // reset for init sequence
+            current_display_state = PERCENTAGE;
         }
 
         // Transition between display modes (M1.6)

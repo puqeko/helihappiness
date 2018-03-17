@@ -12,7 +12,7 @@
 #include "circBufT.h"
 
 static circBuf_t buf;
-#define CONV_SIZE 10
+#define CONV_SIZE 20
 
 void initConv(void)
 {
