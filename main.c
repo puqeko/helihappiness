@@ -30,13 +30,15 @@
 #include "OrbitOLED/OrbitOLEDInterface.h"
 
 #define GREEN_LED GPIO_PIN_3
+#define UNIFORM 'u'
+#define CONV_SIZE 20
 
 void SysTickIntHandler(void)
 {
     adcTrigger();
 }
 
-int SIZE = 10;
+int SIZE = 20;
 static circBuf_t buf;
 void handle(uint32_t val)
 {
@@ -49,7 +51,7 @@ void handle(uint32_t val)
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
-    initConv();
+    initConv(CONV_SIZE);
     initButtons();
     OLEDInitialise();
     adcInit(handleNewADCValue);
@@ -108,9 +110,10 @@ void displayClear()
 #define MEAN_RANGE (ADC_MAX_RANGE * 8 / 33)
 uint32_t baseMean = 0;
 
-void displayMode(clock_rate)
+void displayMode(uint32_t clock_rate, float *convolutionArray)
 {
-    uint32_t mean = getAverage();
+    //uint32_t mean = getAverage(CONV_SIZE);
+    uint32_t mean = (uint32_t) convDoConvolution(convolutionArray, CONV_SIZE);
     uint32_t percentage;
 
     switch (current_display_state)
@@ -134,7 +137,7 @@ void displayMode(clock_rate)
     }
 }
 
-void heliMode(clock_rate)
+void heliMode(uint32_t clock_rate, float *convolutionArray)
 {
     switch (current_heli_state) {
 
@@ -144,7 +147,8 @@ void heliMode(clock_rate)
 
         GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, GREEN_LED);
         SysCtlDelay(clock_rate / 3 * ADC_BUF_SIZE / ADC_SAMPLE_RATE);
-        baseMean = getAverage();  // take new average to be the lowest value
+        //baseMean = getAverage(CONV_SIZE);  // take new average to be the lowest value
+        baseMean = (uint32_t)convDoConvolution(convolutionArray, CONV_SIZE);
 
         current_heli_state = FLYING;
         break;  // measure 0% height value
@@ -171,6 +175,7 @@ void heliMode(clock_rate)
 
 int main(void) {
     uint32_t clock_rate;
+    float convolutionArray[CONV_SIZE];
 	// Set system clock rate to 20 MHz.
 	SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_10);
 
@@ -180,6 +185,8 @@ int main(void) {
 	
 	initalise(clock_rate);
 	
+	convGetConvArray(CONV_SIZE, UNIFORM, convolutionArray);
+
 	// main loop
 	while (true) {
 
@@ -188,7 +195,7 @@ int main(void) {
 
 	    updateButtons();  // recommended 100 hz update
 
-	    heliMode(clock_rate);
-	    displayMode(clock_rate);
+	    heliMode(clock_rate, convolutionArray);
+	    displayMode(clock_rate, convolutionArray);
 	}
 }
