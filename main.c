@@ -125,8 +125,8 @@ void displayMode(uint32_t clock_rate, float *convolutionArray)
 
     case PERCENTAGE:
         // scale from mean range to 100 percent where baseVal is 0%
-        percentage = 100 * (baseMean - mean) / MEAN_RANGE;
-        //percentage = (100 * (mean - baseMean) / (baseMean - ADC_1V2));
+        // percentage = 100 * (baseMean - mean) / MEAN_RANGE;
+        percentage = 100 * (baseMean - mean) / (baseMean - ADC_1V2);
         percentage = (mean > baseMean) ? 0 : percentage;
         percentage = (percentage > 100) ? 100 : percentage;  // clamp to range 0 - 100
         displayValueWithFormat(percentFormatString, percentage);
