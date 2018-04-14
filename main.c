@@ -23,11 +23,14 @@
 
 // 3rd party libraries
 #include "buttons4.h"             // left, right, up, down buttons (debouncing)
-#include "convolution.h"
-#include "adcModule.h"
 #include "utils/ustdlib.h"
 #include "circBufT.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
+
+// Our libraries
+#include "convolution.h"
+#include "adcModule.h"
+#include "timerer.h"
 
 #define GREEN_LED GPIO_PIN_3
 
