@@ -11,7 +11,7 @@
 //************************************************************************
 
 #include <stdio.h>
-
+#include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -25,12 +25,31 @@
 
 #include "quadratureEncoder.h"
 
+#define CLOCKWISE_COUNT 1
+#define ANTICLOCKWISE_COUNT -1
+#define INIT_LASTCHANGED = 0xFFFFFFFF
+
 static volatile int32_t encoderCount = 0;
 static uint32_t portBase, channelAPin, channelBPin;
+static uint32_t lastChanged = INIT_LASTCHANGED;
+static int8_t direction = CLOCKWISE_COUNT;
 
 void quadEncoderIntHandler(void)
 {
-    //do some encoding
+    uint32_t intStatus = GPIOIntStatus(portBase, true);
+    GPIOIntClear(portBase, channelAPin | channelBPin);
+
+    //if(lastChanged == INIT_LASTCHANGED)
+    //{
+    //    //check what direction its going in
+    //}
+    /*else*/ if (lastChanged == intStatus)
+    {
+        direction *= -1; //toggle direction
+    }
+
+    encoderCount += direction;
+    lastChanged = intStatus;
 }
 
 void quadEncoderCountReset(void)
@@ -49,9 +68,13 @@ void quadEncoderInit(uint32_t GPIOPortPerif, uint32_t GPIOPortBase, uint32_t GPI
     channelAPin = GPIOChannelAPin;
     channelBPin = GPIOChannelBPin;
 
+    //configure input pins
     SysCtlPeripheralEnable(GPIOPortPerif);
     GPIOPadConfigSet(portBase, channelAPin | channelBPin, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
     GPIODirModeSet(portBase, channelAPin | channelBPin, GPIO_DIR_MODE_IN);
 
-
+    //Initialize interrupts
+    GPIOIntRegister(portBase, quadEncoderIntHandler);
+    GPIOIntTypeSet(portBase, channelAPin | channelBPin, GPIO_BOTH_EDGES);
+    GPIOIntEnable(portBase, channelAPin | channelBPin);
 }
