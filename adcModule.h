@@ -1,17 +1,18 @@
 #ifndef ADC_MODULE_H_
 #define ADC_MODULE_H_
 
-// ***********************************************************************
-// adcModule.h
+//************************************************************************
+// adcModule.c
 //
 // Helicopter project
 //
 // Group:       A03 Group 10
 // Created:     14/3/18
-// Last Edited: 15/3/18
+// Last Edited: 16/4/18
 //
-// Purpose: Initialise and handle analogue to digital conversion (ADC)
-// ************************************************************************
+// Purpose: Initialize and handle analog to digital
+//          conversion (ADC) peripheral
+//************************************************************************
 
 #include <stdint.h>
 
@@ -40,4 +41,4 @@ void adcTrigger(void);
 //************************************************************************
 void adcInit(valueHandler_t);
 
-#endif
+#endif /*ADC_MODULE_H_*/
