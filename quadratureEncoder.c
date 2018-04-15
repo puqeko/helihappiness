@@ -25,9 +25,11 @@
 
 #include "quadratureEncoder.h"
 
+
 #define CLOCKWISE_COUNT 1
 #define ANTICLOCKWISE_COUNT -1
 #define INIT_LASTCHANGED UINT32_MAX
+
 
 static volatile int32_t encoderCount = 0;
 static uint32_t portBase, channelAPin, channelBPin;
