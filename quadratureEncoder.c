@@ -27,7 +27,7 @@
 
 #define CLOCKWISE_COUNT 1
 #define ANTICLOCKWISE_COUNT -1
-#define INIT_LASTCHANGED = 0xFFFFFFFF
+#define INIT_LASTCHANGED UINT32_MAX
 
 static volatile int32_t encoderCount = 0;
 static uint32_t portBase, channelAPin, channelBPin;
@@ -52,12 +52,12 @@ void quadEncoderIntHandler(void)
     lastChanged = intStatus;
 }
 
-void quadEncoderCountReset(void)
+void quadEncoderResetCount(void)
 {
     encoderCount = 0;
 }
 
-int32_t quadEncoderCountReset(void)
+int32_t quadEncoderGetCount(void)
 {
     return encoderCount;
 }
