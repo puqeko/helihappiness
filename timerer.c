@@ -1,12 +1,12 @@
-// *******************************************************
+// ************************************************************
+// timerer.c
+// Helicopter project
+// Group: A03 Group 10
+// Last edited: 14-04-2018 by Thomas M
 //
-// timer.c
-//
-// More accurate timer for delays
-// T Morrison
-// Last modified:  14.04.18
-//
-// *******************************************************
+// Purpose: More accurate timer for delays and loop timing.
+// ************************************************************
+
 
 #include "timerer.h"
 #include "driverlib/timer.h"

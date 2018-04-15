@@ -1,15 +1,14 @@
-// *******************************************************
-//
-// timer.h
-//
-// More accurate timer for delays
-// T Morrison
-// Last modified:  14.04.18
-//
-// *******************************************************
-
 #ifndef TIMERER_H_
 #define TIMERER_H_
+
+// ************************************************************
+// timerer.h
+// Helicopter project
+// Group: A03 Group 10
+// Last edited: 14-04-2018 by Thomas M
+//
+// Purpose: More accurate timer for delays and loop timing.
+// ************************************************************
 
 #include <stdint.h>
 #include <stdbool.h>

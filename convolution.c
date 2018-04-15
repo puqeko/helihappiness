@@ -1,11 +1,11 @@
 // *******************************************************
-//
 // convolution.c
 //
 // Generates and uses averaging function to smooth data stream from ADCs
 // P.J. Bones UCECE, modified by Ryan hall
 // Last modified:  14.3.2017
-//
+// Helicopter project
+// Group: A03 Group 10
 // *******************************************************
 
 #include "convolution.h"

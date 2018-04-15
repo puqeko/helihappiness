@@ -2,7 +2,7 @@
 // main.c
 // Helicopter project
 // Group: A03 Group 10
-// Last edited: 12-03-2018
+// Last edited: 14-04-2018
 //
 // Purpose: This program may destroy helicopters.
 // ************************************************************
@@ -37,13 +37,6 @@
 void SysTickIntHandler(void)
 {
     adcTrigger();
-}
-
-int SIZE = 10;
-static circBuf_t buf;
-void handle(uint32_t val)
-{
-    writeCircBuf(&buf, val);
 }
 
 #define ADC_SAMPLE_RATE 160  // Hz
