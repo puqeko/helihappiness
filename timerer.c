@@ -11,13 +11,15 @@
 #include "timerer.h"
 #include "driverlib/timer.h"
 
+#define TIMERER_PERIPH SYSCTL_PERIPH_WTIMER0
+#define TIMERER_BASE WTIMER0_BASE
+#define TIMERER_INTERAL TIMER_A
+#define TIMERER_MODE TIMER_CFG_A_PERIODIC
+static const uint32_t TIMERER_MAX_TICKS = (0xffffffff - 1);  // 32 bits for Timer0 A
+
 static uint32_t clock_rate;
 static uint32_t overshoot_ticks;
 static uint32_t ticks_per_ms;
-
-#ifdef DEBUG_MODE
-static uint32_t max_ms;
-#endif
 
 // *******************************************************
 void TimererInit()
@@ -30,13 +32,9 @@ void TimererInit()
     // config to reset to max value
     SysCtlPeripheralEnable(TIMERER_PERIPH);
     TimerDisable(TIMERER_BASE, TIMERER_INTERAL);
-    TimerConfigure(TIMERER_BASE, TIMER_CFG_PERIODIC);
+    TimerConfigure(TIMERER_BASE, TIMERER_MODE);
     TimerLoadSet(TIMERER_BASE, TIMERER_INTERAL, TIMERER_MAX_TICKS);
     TimerEnable(TIMERER_BASE, TIMERER_INTERAL);
-
-#ifdef DEBUG_MODE
-    max_ms = (TIMERER_MAX_TICKS - overshoot_ticks - 1) / ticks_per_ms;
-#endif
 }
 
 uint32_t TimererGetTicks(void)
@@ -51,18 +49,13 @@ void TimererWait(uint32_t milliseconds)
 
 void TimererWaitFrom(uint32_t milliseconds, uint32_t reference)
 {
-#ifdef DEBUG_MODE
-    if (milliseconds > max_ms) {
-        exit(1);  // wait time too large for this timer
-    }
-#endif
-
-    uint32_t target = reference + milliseconds * ticks_per_ms;
+    uint32_t target = reference - milliseconds * ticks_per_ms;  // minus since counts down
 
     while (true) {
         uint32_t cur = TimererGetTicks(); //get time;
-        uint32_t diff = cur - target;  // +ve small number when past target
-        if (diff < overshoot_ticks)
+        uint32_t diff = target - cur;  // +ve small number when past target (timer counts down)
+        if (diff < overshoot_ticks) {
             return;  // we have passed the target time
+        }
     }
 }

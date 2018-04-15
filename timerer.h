@@ -17,11 +17,6 @@
 #include "inc/hw_memmap.h"  // for TIMER0_BASE etc
 #include "driverlib/sysctl.h"
 
-#define TIMERER_PERIPH SYSCTL_PERIPH_TIMER0
-#define TIMERER_BASE TIMER0_BASE
-#define TIMERER_INTERAL TIMER_A
-static const uint32_t TIMERER_MAX_TICKS = (0xffffffff - 1);  // 32 bits for Timer0 A
-
 void TimererInit(void);
 
 // returns the current value of the timer.
