@@ -28,6 +28,7 @@
 #include "utils/ustdlib.h"
 #include "circBufT.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
+#include "yaw.h"
 
 #define GREEN_LED GPIO_PIN_3
 #define UNIFORM 'u'
@@ -129,7 +130,7 @@ void displayMode(uint32_t clock_rate, float *convolutionArray)
         percentage = 100 * (baseMean - mean) / (baseMean - ADC_1V2);
         percentage = (mean > baseMean) ? 0 : percentage;
         percentage = (percentage > 100) ? 100 : percentage;  // clamp to range 0 - 100
-        displayValueWithFormat(percentFormatString, percentage);
+        displayValueWithFormat(percentFormatString, yawGetDegrees());
         break;
 
     case DISPLAY_OFF:
