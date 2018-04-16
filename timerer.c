@@ -54,6 +54,8 @@ void TimererWaitFrom(uint32_t milliseconds, uint32_t reference)
     while (true) {
         uint32_t cur = TimererGetTicks(); //get time;
         uint32_t diff = target - cur;  // +ve small number when past target (timer counts down)
+
+        // block until this condition is met
         if (diff < overshoot_ticks) {
             return;  // we have passed the target time
         }
