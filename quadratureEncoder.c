@@ -26,32 +26,42 @@
 #include "quadratureEncoder.h"
 
 
-#define CLOCKWISE_COUNT 1
-#define ANTICLOCKWISE_COUNT -1
-#define INIT_LASTCHANGED UINT32_MAX
-
-
 static volatile int32_t encoderCount = 0;
 static uint32_t portBase, channelAPin, channelBPin;
-static uint32_t lastChanged = INIT_LASTCHANGED;
-static int8_t direction = CLOCKWISE_COUNT;
+
 
 void quadEncoderIntHandler(void)
 {
     uint32_t intStatus = GPIOIntStatus(portBase, true);
+    uint32_t pinStatus = GPIOPinRead(portBase, channelAPin | channelBPin);
     GPIOIntClear(portBase, channelAPin | channelBPin);
 
-    //if(lastChanged == INIT_LASTCHANGED)
-    //{
-    //    //check what direction its going in
-    //}
-    /*else*/ if (lastChanged == intStatus)
+    //as one of intChannelA or intChannelB will be true and they will
+    //not both be true at the same time, only one of the two variables
+    //are needed. Both are included here for clarity & readability
+    bool intChannelA = intStatus & channelAPin;
+    bool intChannelB = intStatus & channelBPin;
+
+    bool channelA = pinStatus & channelAPin;
+    bool channelB = pinStatus & channelBPin;
+
+    if(intChannelA && channelA) //A rising edge
     {
-        direction *= -1; //toggle direction
+        !channelB ? encoderCount++ : encoderCount--;
+    }
+    else if(intChannelA && !channelA) //A falling edge
+    {
+        channelB ? encoderCount++ : encoderCount--;
+    }
+    else if(intChannelB && channelB)  //B rising edge
+    {
+        channelA ? encoderCount++ : encoderCount--;
+    }
+    else if(intChannelB && !channelB) //B falling edge
+    {
+        !channelA ? encoderCount++ : encoderCount--;
     }
 
-    encoderCount += direction;
-    lastChanged = intStatus;
 }
 
 void quadEncoderResetCount(void)
