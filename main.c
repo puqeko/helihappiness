@@ -84,23 +84,20 @@ void displayClear()
 
 void displayMode(uint32_t clock_rate)
 {
-    uint32_t mean = heightGetRaw();
-
     switch (current_display_state)
     {
     case MEAN_ADC:
-        displayValueWithFormat(meanFormatString, mean);
+        displayValueWithFormat(meanFormatString, heightGetRaw());
         break;
 
     case PERCENTAGE:
         // this is okay because the mean is capped to 4095
-        displayValueWithFormat(percentFormatString, heightAsPercentage(mean));
+        displayValueWithFormat(percentFormatString, heightAsPercentage());
         break;
 
     case DISPLAY_OFF:
         displayClear();
         break;
-
     }
 }
 

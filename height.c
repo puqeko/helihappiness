@@ -61,8 +61,9 @@ uint32_t heightGetRaw(void)
 }
 
 
-uint32_t heightAsPercentage(uint32_t mean)
+uint32_t heightAsPercentage()
 {
+    uint32_t mean = heightGetRaw();
     return 100 * ((int32_t)baseMean - (int32_t)mean) / MEAN_RANGE;
 }
 
