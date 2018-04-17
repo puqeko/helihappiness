@@ -25,9 +25,9 @@
 #include "adcModule.h"
 #include "utils/ustdlib.h"
 #include "circBufT.h"
-#include "OrbitOLED/OrbitOLEDInterface.h"
 #include "yaw.h"
 #include "height.h"
+#include "OrbitOLED_2/OrbitOLEDInterface.h"
 
 #define GREEN_LED GPIO_PIN_3
 #define UNIFORM 'u'
