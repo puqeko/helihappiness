@@ -2,7 +2,7 @@
 // main.c
 // Helicopter project
 // Group: A03 Group 10
-// Last edited: 12-03-2018
+// Last edited: 18-04-2018
 //
 // Purpose: This program may destroy helicopters.
 // ************************************************************
@@ -31,13 +31,24 @@
 #include "pwmModule.h"
 
 #define GREEN_LED GPIO_PIN_3
-#define UNIFORM 'u'
+#define DISPLAY_CHAR_WIDTH 16
+
+enum heli_state {LANDED = 0, FLYING, NUM_HELI_STATES};
+enum display_state {PERCENTAGE = 0, MEAN_ADC, DISPLAY_OFF, NUM_DISPLAY_STATES};
+static uint8_t current_heli_state = LANDED;
+static uint8_t current_display_state = PERCENTAGE;
+
+char meanFormatString[] = "Mean ADC = %4d";
+char yawFormatString[] = "     Yaw = %4d~";
+char percentFormatString[] = "  Height = %4d%%";
+char dutyCycleFormatString[] = " Duty = %4d";
 
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
     initButtons();
     OLEDInitialise();
+    heightInit(CONV_UNIFORM);
     yawInit();
     initClocks ();
     initialisePWM ();
@@ -59,18 +70,6 @@ void initalise(uint32_t clock_rate)
     GPIOPinWrite(GPIO_PORTF_BASE, GREEN_LED, 0x00);
 }
 
-
-enum heli_state {LANDED = 0, FLYING, NUM_HELI_STATES};
-enum display_state {PERCENTAGE = 0, MEAN_ADC, DISPLAY_OFF, NUM_DISPLAY_STATES};
-uint8_t current_heli_state = LANDED;
-uint8_t current_display_state = PERCENTAGE;
-
-char meanFormatString[] = "Mean ADC = %4d";
-char yawFormatString[] = "     Yaw = %4d~";
-char percentFormatString[] = "  Height = %4d%%";
-char dutyCycleFormatString[] = " Duty = %4d";
-#define DISPLAY_CHAR_WIDTH 16
-
 void displayValueWithFormat(char* format, uint32_t value, uint32_t line)
 {
     char str[17] = "                 ";  // 16 characters across the display
@@ -80,40 +79,32 @@ void displayValueWithFormat(char* format, uint32_t value, uint32_t line)
     OLEDStringDraw (str, 0, line);
 }
 
+
 void displayClear(uint32_t line)
 {
     OLEDStringDraw ("                 ", 0, line);  // 16 characters across the display
 }
 
-#define ADC_MAX_RANGE 4095
-// How many divisions in a 0.8 voltage range if the rail is 3.3 volts
-// 0.8 volts is assumed as the range of motion
-#define MEAN_RANGE (ADC_MAX_RANGE * 8 / 33)
-uint32_t baseMean = 0;
 
 void displayMode(uint32_t clock_rate)
 {
-    uint32_t mean = getHeight();
-    int32_t percentage;
-
     switch (current_display_state)
     {
     case MEAN_ADC:
-        displayValueWithFormat(meanFormatString, mean, 1);
+        displayValueWithFormat(meanFormatString, heightGetRaw(), 1);
         break;
 
     case PERCENTAGE:
         // this is okay because the mean is capped to 4095
-        percentage = 100 * ((int32_t)baseMean - (int32_t)mean) / MEAN_RANGE;
-        displayValueWithFormat(percentFormatString, percentage, 1);
+        displayValueWithFormat(percentFormatString, heightAsPercentage(), 1);
         break;
 
     case DISPLAY_OFF:
         displayClear(1);
         break;
-
     }
 }
+
 
 void heliMode(uint32_t clock_rate)
 {
@@ -125,8 +116,7 @@ void heliMode(uint32_t clock_rate)
 
         GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, GREEN_LED);
         SysCtlDelay(clock_rate / 3 * CONV_SIZE / ADC_SAMPLE_RATE);
-        //baseMean = getAverage(CONV_SIZE);  // take new average to be the lowest value
-        baseMean = getHeight();
+        heightCalibrate();
 
         current_heli_state = FLYING;
         break;  // measure 0% height value
@@ -151,19 +141,16 @@ void heliMode(uint32_t clock_rate)
     }
 }
 
+
 int main(void) {
     int32_t yaw;
     uint32_t clock_rate;
 	// Set system clock rate to 20 MHz.
 	SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_10);
-
 	SysCtlDelay(100);  // Allow time for the oscillator to settle down. Uses 3 instructions per loop.
-	
 	clock_rate = SysCtlClockGet();  // Get the clock rate in pulses/s.
 	
 	initalise(clock_rate);
-	
-	initConv(UNIFORM);
 
 	uint32_t ui32Freq = PWM_START_RATE_HZ;
 	uint32_t ui32Duty = PWM_START_DUTY_HZ;
