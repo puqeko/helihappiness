@@ -23,12 +23,12 @@
 /*				Include File Definitions						*/
 /* ------------------------------------------------------------ */
 
-#include "delay.h"
-#include "LaunchPad.h"
-#include "OrbitBoosterPackDefs.h"
-#include "OrbitOled.h"
-#include "OrbitOledChar.h"
-#include "OrbitOledGrph.h"
+#include <OrbitOLED_2/lib_OrbitOled/delay.h>
+#include <OrbitOLED_2/lib_OrbitOled/LaunchPad.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitBoosterPackDefs.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitOled.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitOledChar.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitOledGrph.h>
 
 /* ------------------------------------------------------------ */
 /*				Local Type Definitions							*/

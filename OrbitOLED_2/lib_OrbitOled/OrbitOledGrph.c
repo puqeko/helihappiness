@@ -23,10 +23,10 @@
 /*				Include File Definitions						*/
 /* ------------------------------------------------------------ */
 
-#include "FillPat.h"
-#include "LaunchPad.h"
-#include "OrbitBoosterPackDefs.h"
-#include "OrbitOled.h"
+#include <OrbitOLED_2/lib_OrbitOled/FillPat.h>
+#include <OrbitOLED_2/lib_OrbitOled/LaunchPad.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitBoosterPackDefs.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitOled.h>
 
 /* ------------------------------------------------------------ */
 /*				Local Type Definitions							*/

@@ -12,18 +12,18 @@
  */
 
 //TivaWare Standard Type Definitions:
+#include <OrbitOLED_2/lib_OrbitOled/delay.h>
+#include <OrbitOLED_2/lib_OrbitOled/FillPat.h>
+#include <OrbitOLED_2/lib_OrbitOled/LaunchPad.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitBoosterPackDefs.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitOled.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitOled.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitOledChar.h>
+#include <OrbitOLED_2/lib_OrbitOled/OrbitOledGrph.h>
 #include <stdbool.h>
 #include <stdint.h>
 
 //Defines and includes for Orbit OLED:
-#include "lib_OrbitOled/OrbitOled.h"
-#include "lib_OrbitOled/delay.h"
-#include "lib_OrbitOled/FillPat.h"
-#include "lib_OrbitOled/LaunchPad.h"
-#include "lib_OrbitOled/OrbitBoosterPackDefs.h"
-#include "lib_OrbitOled/OrbitOled.h"
-#include "lib_OrbitOled/OrbitOledChar.h"
-#include "lib_OrbitOled/OrbitOledGrph.h"
 
 //*****************************************************************************
 //
