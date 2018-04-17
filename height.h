@@ -19,27 +19,20 @@
 #include "driverlib/sysctl.h"     // system control functions
 #include "driverlib/systick.h"
 #include "driverlib/interrupt.h"
+
 // *******************************************************
-#define UNIFORM 'u'
-#define CONV_SIZE 20
-#define CONV_UNIFORM_MULTIPLIER 100
-#define CONV_BASE (CONV_SIZE * CONV_UNIFORM_MULTIPLIER)
 #define ADC_SAMPLE_RATE 160  // Hz
+#define CONV_SIZE 20
+enum conv_type {CONV_UNIFORM};
 
+void heightInit(enum conv_type);
 
-// *******************************************************
-// convGetConvArray: Generate values for convolution array for averaging.
-void getConvArray(char convType);
+uint32_t heightGetRaw(void);
 
-// *******************************************************
-// getAverage: calculate the (approximate) mean of the values in the
-// circular buffer and return it.
-uint32_t getAverage();
+uint32_t heightGetPercentage(void);
 
-// *******************************************************
-void initConv(char convType);
-void handleNewADCValue(uint32_t val);
-uint32_t getHeight();
+uint32_t heightAsPercentage(uint32_t mean);
 
+void heightCalibrate(void);
 
 #endif /* HEIGHT_H_ */
