@@ -61,21 +61,22 @@ uint8_t current_heli_state = LANDED;
 uint8_t current_display_state = PERCENTAGE;
 
 char meanFormatString[] = "Mean ADC = %4d";
-char percentFormatString[] = "Height = %3d%%";
+char yawFormatString[] = "     Yaw = %4d~";
+char percentFormatString[] = "  Height = %4d%%";
 #define DISPLAY_CHAR_WIDTH 16
 
-void displayValueWithFormat(char* format, uint32_t value)
+void displayValueWithFormat(char* format, uint32_t value, uint32_t line)
 {
     char str[17] = "                 ";  // 16 characters across the display
     usnprintf (str, sizeof(str), format, value);
     str[strlen(str)] = ' ';  // overwrite null terminator added by usnprintf
     str[DISPLAY_CHAR_WIDTH] = '\0';  // ensure there is one at the end of the string
-    OLEDStringDraw (str, 0, 1);
+    OLEDStringDraw (str, 0, line);
 }
 
-void displayClear()
+void displayClear(uint32_t line)
 {
-    OLEDStringDraw ("                 ", 0, 1);  // 16 characters across the display
+    OLEDStringDraw ("                 ", 0, line);  // 16 characters across the display
 }
 
 #define ADC_MAX_RANGE 4095
@@ -92,17 +93,17 @@ void displayMode(uint32_t clock_rate)
     switch (current_display_state)
     {
     case MEAN_ADC:
-        displayValueWithFormat(meanFormatString, mean);
+        displayValueWithFormat(meanFormatString, mean, 1);
         break;
 
     case PERCENTAGE:
         // this is okay because the mean is capped to 4095
         percentage = 100 * ((int32_t)baseMean - (int32_t)mean) / MEAN_RANGE;
-        displayValueWithFormat(percentFormatString, percentage);
+        displayValueWithFormat(percentFormatString, percentage, 1);
         break;
 
     case DISPLAY_OFF:
-        displayClear();
+        displayClear(1);
         break;
 
     }
@@ -114,7 +115,7 @@ void heliMode(uint32_t clock_rate)
 
     // M1.3 Measure the mean sample value for a bit and display on the screen
     case LANDED:
-        displayValueWithFormat(percentFormatString, 0);  // clear to zero
+        displayValueWithFormat(percentFormatString, 0, 1);  // clear to zero
 
         GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, GREEN_LED);
         SysCtlDelay(clock_rate / 3 * CONV_SIZE / ADC_SAMPLE_RATE);
@@ -145,6 +146,7 @@ void heliMode(uint32_t clock_rate)
 }
 
 int main(void) {
+    int32_t yaw;
     uint32_t clock_rate;
 	// Set system clock rate to 20 MHz.
 	SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_10);
@@ -165,5 +167,7 @@ int main(void) {
 	    updateButtons();  // recommended 100 hz update
 	    heliMode(clock_rate);
 	    displayMode(clock_rate);
+	    yaw = yawGetDegrees();
+	    displayValueWithFormat(yawFormatString, yaw, 2);
 	}
 }
