@@ -28,6 +28,7 @@
 #include "OrbitOLED/OrbitOLEDInterface.h"
 #include "yaw.h"
 #include "height.h"
+#include "timerer.h"
 
 #define GREEN_LED GPIO_PIN_3
 #define UNIFORM 'u'
@@ -38,6 +39,7 @@ void initalise(uint32_t clock_rate)
     initButtons();
     OLEDInitialise();
     yawInit();
+    timererInit();
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
@@ -160,11 +162,12 @@ int main(void) {
 
 	// main loop
 	while (true) {
+	    uint32_t referenceTime = timererGetTicks();
 
-	    // TODO: this function is not very accurate so choose a different delay method
-	    SysCtlDelay(clock_rate / 3 / 100);  // 100 hz
 	    updateButtons();  // recommended 100 hz update
 	    heliMode(clock_rate);
 	    displayMode(clock_rate);
+
+	    timererWaitFrom(10, referenceTime);  // 100 hz
 	}
 }

@@ -22,7 +22,7 @@ static uint32_t overshoot_ticks;
 static uint32_t ticks_per_ms;
 
 // *******************************************************
-void TimererInit()
+void timererInit(void)
 {
     clock_rate = SysCtlClockGet();
     ticks_per_ms = clock_rate / 1000;
@@ -37,22 +37,22 @@ void TimererInit()
     TimerEnable(TIMERER_BASE, TIMERER_INTERAL);
 }
 
-uint32_t TimererGetTicks(void)
+uint32_t timererGetTicks(void)
 {
     return TimerValueGet(TIMERER_BASE, TIMERER_INTERAL);
 }
 
-void TimererWait(uint32_t milliseconds)
+void timererWait(uint32_t milliseconds)
 {
-    TimererWaitFrom(milliseconds, TimererGetTicks());
+    timererWaitFrom(milliseconds, timererGetTicks());
 }
 
-void TimererWaitFrom(uint32_t milliseconds, uint32_t reference)
+void timererWaitFrom(uint32_t milliseconds, uint32_t reference)
 {
     uint32_t target = reference - milliseconds * ticks_per_ms;  // minus since counts down
 
     while (true) {
-        uint32_t cur = TimererGetTicks(); //get time;
+        uint32_t cur = timererGetTicks(); //get time;
         uint32_t diff = target - cur;  // +ve small number when past target (timer counts down)
 
         // block until this condition is met

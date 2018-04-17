@@ -65,7 +65,7 @@ void getConvArray (char convType)
         }
 }
 
-uint32_t getHeight ()
+uint32_t getHeight (void)
 {
     uint32_t sum = 0;
     int i;
