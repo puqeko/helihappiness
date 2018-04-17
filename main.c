@@ -123,7 +123,7 @@ void displayMode(uint32_t clock_rate)
     case PERCENTAGE:
         // this is okay because the mean is capped to 4095
         percentage = 100 * ((int32_t)baseMean - (int32_t)mean) / MEAN_RANGE;
-        displayValueWithFormat(percentFormatString, getYawDegrees());
+        displayValueWithFormat(percentFormatString, yawGetDegrees());
         break;
 
     case DISPLAY_OFF:
