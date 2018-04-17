@@ -32,6 +32,7 @@ static uint32_t portBase, channelAPin, channelBPin;
 
 void quadEncoderIntHandler(void)
 {
+    // TODO: disable interupts to make operations atomic
     uint32_t intStatus = GPIOIntStatus(portBase, true);
     uint32_t pinStatus = GPIOPinRead(portBase, channelAPin | channelBPin);
     GPIOIntClear(portBase, channelAPin | channelBPin);
@@ -47,19 +48,19 @@ void quadEncoderIntHandler(void)
 
     if(intChannelA && channelA) //A rising edge
     {
-        !channelB ? encoderCount++ : encoderCount--;
+        !channelB ? encoderCount-- : encoderCount++;
     }
     else if(intChannelA && !channelA) //A falling edge
     {
-        channelB ? encoderCount++ : encoderCount--;
+        channelB ? encoderCount-- : encoderCount++;
     }
     else if(intChannelB && channelB)  //B rising edge
     {
-        channelA ? encoderCount++ : encoderCount--;
+        channelA ? encoderCount-- : encoderCount++;
     }
     else if(intChannelB && !channelB) //B falling edge
     {
-        !channelA ? encoderCount++ : encoderCount--;
+        !channelA ? encoderCount-- : encoderCount++;
     }
 
 }
