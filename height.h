@@ -2,14 +2,15 @@
 #define HEIGHT_H_
 
 // *******************************************************
-//
-// convolution.h
+// height.h
 //
 // Generates and uses averaging function to smooth data stream from ADCs
 // P.J. Bones UCECE, modified by Ryan hall
-// Last modified:  14.3.2017
-//
+// Last modified:  17.04.2017
+// Helicopter project
+// Group: A03 Group 10
 // *******************************************************
+
 #include <stdint.h>
 #include <stdbool.h>
 

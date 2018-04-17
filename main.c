@@ -7,7 +7,6 @@
 // Purpose: This program may destroy helicopters.
 // ************************************************************
 
-#include <height.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -28,6 +27,7 @@
 #include "circBufT.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
 #include "yaw.h"
+#include "height.h"
 
 #define GREEN_LED GPIO_PIN_3
 #define UNIFORM 'u'
@@ -37,6 +37,7 @@ void initalise(uint32_t clock_rate)
     // .. do any pin configs, timer setups, interrupt setups, etc
     initButtons();
     OLEDInitialise();
+    yawInit();
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
