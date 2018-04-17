@@ -34,9 +34,5 @@ void initConv(char convType);
 void handleNewADCValue(uint32_t val);
 uint32_t getHeight();
 
-<<<<<<< HEAD:convolution.h
-#endif /* CONVOLUTION_H_ */
-=======
 
 #endif /* HEIGHT_H_ */
->>>>>>> master:height.h

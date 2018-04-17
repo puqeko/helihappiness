@@ -53,7 +53,7 @@ void initalise(uint32_t clock_rate)
     // .. do any pin configs, timer setups, interrupt setups, etc
     initButtons();
     OLEDInitialise();
-
+    yawInit();
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
@@ -123,7 +123,7 @@ void displayMode(uint32_t clock_rate)
     case PERCENTAGE:
         // this is okay because the mean is capped to 4095
         percentage = 100 * ((int32_t)baseMean - (int32_t)mean) / MEAN_RANGE;
-        displayValueWithFormat(percentFormatString, percentage);
+        displayValueWithFormat(percentFormatString, getYawDegrees());
         break;
 
     case DISPLAY_OFF:
