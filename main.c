@@ -28,6 +28,7 @@
 #include "yaw.h"
 #include "height.h"
 #include "OrbitOLED_2/OrbitOLEDInterface.h"
+#include "pwmModule.h"
 
 #define GREEN_LED GPIO_PIN_3
 #define UNIFORM 'u'
@@ -38,6 +39,9 @@ void initalise(uint32_t clock_rate)
     initButtons();
     OLEDInitialise();
     yawInit();
+    initClocks ();
+    initialisePWM ();
+    initSysTick ();
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
@@ -64,6 +68,7 @@ uint8_t current_display_state = PERCENTAGE;
 char meanFormatString[] = "Mean ADC = %4d";
 char yawFormatString[] = "     Yaw = %4d~";
 char percentFormatString[] = "  Height = %4d%%";
+char dutyCycleFormatString[] = " Duty = %4d";
 #define DISPLAY_CHAR_WIDTH 16
 
 void displayValueWithFormat(char* format, uint32_t value, uint32_t line)
@@ -160,6 +165,17 @@ int main(void) {
 	
 	initConv(UNIFORM);
 
+	uint32_t ui32Freq = PWM_START_RATE_HZ;
+	uint32_t ui32Duty = PWM_START_DUTY_HZ;
+
+    // Initialisation is complete, so turn on the output.
+	pwmOutputOn();
+
+
+    //
+    // Enable interrupts to the processor.
+    IntMasterEnable ();
+
 	// main loop
 	while (true) {
 
@@ -170,5 +186,18 @@ int main(void) {
 	    displayMode(clock_rate);
 	    yaw = yawGetDegrees();
 	    displayValueWithFormat(yawFormatString, yaw, 2);
+
+        if ((checkButton (DOWN) == PUSHED) && (ui32Duty > PWM_DUTY_MIN_HZ))
+        {
+            ui32Duty -= PWM_DUTY_STEP_HZ;
+            pwmSetDuty(ui32Duty);
+        }
+        if ((checkButton (RIGHT) == PUSHED) && (ui32Duty < PWM_DUTY_MAX_HZ))
+        {
+            ui32Duty += PWM_DUTY_STEP_HZ;
+            pwmSetDuty(ui32Duty);
+        }
+        displayValueWithFormat(dutyCycleFormatString, ui32Duty, 3);
 	}
 }
+
