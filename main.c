@@ -2,11 +2,10 @@
 // main.c
 // Helicopter project
 // Group: A03 Group 10
-// Last edited: 14-04-2018
+// Last edited: 12-03-2018
 //
 // Purpose: This program may destroy helicopters.
 // ************************************************************
-
 
 #include <stdio.h>
 #include <stdint.h>
@@ -23,20 +22,26 @@
 
 // 3rd party libraries
 #include "buttons4.h"             // left, right, up, down buttons (debouncing)
+#include "convolution.h"
+#include "adcModule.h"
 #include "utils/ustdlib.h"
 #include "circBufT.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
 
-// Our libraries
-#include "convolution.h"
-#include "adcModule.h"
-#include "timerer.h"
-
 #define GREEN_LED GPIO_PIN_3
+#define UNIFORM 'u'
+#define CONV_SIZE 20
 
 void SysTickIntHandler(void)
 {
     adcTrigger();
+}
+
+int SIZE = 20;
+static circBuf_t buf;
+void handle(uint32_t val)
+{
+    writeCircBuf(&buf, val);
 }
 
 #define ADC_SAMPLE_RATE 160  // Hz
@@ -45,7 +50,7 @@ void SysTickIntHandler(void)
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
-    initConv();
+    initConv(CONV_SIZE);
     initButtons();
     OLEDInitialise();
     adcInit(handleNewADCValue);
@@ -103,10 +108,12 @@ void displayClear()
 // 0.8 volts is assumed as the range of motion
 #define MEAN_RANGE (ADC_MAX_RANGE * 8 / 33)
 uint32_t baseMean = 0;
+#define ADC_1V2 (ADC_MAX_RANGE * 12 / 33)
 
-void displayMode(clock_rate)
+void displayMode(uint32_t clock_rate, float *convolutionArray)
 {
-    uint32_t mean = getAverage();
+    //uint32_t mean = getAverage(CONV_SIZE);
+    uint32_t mean = (uint32_t) convDoConvolution(convolutionArray, CONV_SIZE);
     uint32_t percentage;
 
     switch (current_display_state)
@@ -117,7 +124,8 @@ void displayMode(clock_rate)
 
     case PERCENTAGE:
         // scale from mean range to 100 percent where baseVal is 0%
-        percentage = 100 * (baseMean - mean) / MEAN_RANGE;
+        // percentage = 100 * (baseMean - mean) / MEAN_RANGE;
+        percentage = 100 * (baseMean - mean) / (baseMean - ADC_1V2);
         percentage = (mean > baseMean) ? 0 : percentage;
         percentage = (percentage > 100) ? 100 : percentage;  // clamp to range 0 - 100
         displayValueWithFormat(percentFormatString, percentage);
@@ -130,7 +138,7 @@ void displayMode(clock_rate)
     }
 }
 
-void heliMode(clock_rate)
+void heliMode(uint32_t clock_rate, float *convolutionArray)
 {
     switch (current_heli_state) {
 
@@ -140,7 +148,8 @@ void heliMode(clock_rate)
 
         GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, GREEN_LED);
         SysCtlDelay(clock_rate / 3 * ADC_BUF_SIZE / ADC_SAMPLE_RATE);
-        baseMean = getAverage();  // take new average to be the lowest value
+        //baseMean = getAverage(CONV_SIZE);  // take new average to be the lowest value
+        baseMean = (uint32_t)convDoConvolution(convolutionArray, CONV_SIZE);
 
         current_heli_state = FLYING;
         break;  // measure 0% height value
@@ -167,6 +176,7 @@ void heliMode(clock_rate)
 
 int main(void) {
     uint32_t clock_rate;
+    float convolutionArray[CONV_SIZE];
 	// Set system clock rate to 20 MHz.
 	SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_10);
 
@@ -176,6 +186,8 @@ int main(void) {
 	
 	initalise(clock_rate);
 	
+	convGetConvArray(CONV_SIZE, UNIFORM, convolutionArray);
+
 	// main loop
 	while (true) {
 
@@ -184,7 +196,7 @@ int main(void) {
 
 	    updateButtons();  // recommended 100 hz update
 
-	    heliMode(clock_rate);
-	    displayMode(clock_rate);
+	    heliMode(clock_rate, convolutionArray);
+	    displayMode(clock_rate, convolutionArray);
 	}
 }
