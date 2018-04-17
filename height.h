@@ -12,12 +12,19 @@
 // *******************************************************
 
 #include <stdint.h>
+#include <stdbool.h>
+
 #include "utils/ustdlib.h"
+#include "driverlib/gpio.h"       // defines for GPIO peripheral
+#include "driverlib/sysctl.h"     // system control functions
+#include "driverlib/systick.h"
+#include "driverlib/interrupt.h"
 // *******************************************************
 #define UNIFORM 'u'
 #define CONV_SIZE 20
 #define CONV_UNIFORM_MULTIPLIER 100
 #define CONV_BASE (CONV_SIZE * CONV_UNIFORM_MULTIPLIER)
+#define ADC_SAMPLE_RATE 160  // Hz
 
 
 // *******************************************************

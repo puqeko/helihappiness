@@ -32,22 +32,6 @@
 #define GREEN_LED GPIO_PIN_3
 #define UNIFORM 'u'
 
-
-void SysTickIntHandler(void)
-{
-    adcTrigger();
-}
-
-int SIZE = 20;
-static circBuf_t buf;
-void handle(uint32_t val)
-{
-    writeCircBuf(&buf, val);
-}
-
-#define ADC_SAMPLE_RATE 160  // Hz
-#define ADC_BUF_SIZE 20
-
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
@@ -57,14 +41,6 @@ void initalise(uint32_t clock_rate)
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-
-    SysTickPeriodSet(SysCtlClockGet() / ADC_SAMPLE_RATE);  // frequency of 120 Hz
-
-    SysTickIntRegister(SysTickIntHandler);
-
-    // Enable interrupt and device
-    SysTickIntEnable();
-    SysTickEnable();
 
     IntMasterEnable();
 
@@ -142,7 +118,7 @@ void heliMode(uint32_t clock_rate)
         displayValueWithFormat(percentFormatString, 0);  // clear to zero
 
         GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, GREEN_LED);
-        SysCtlDelay(clock_rate / 3 * ADC_BUF_SIZE / ADC_SAMPLE_RATE);
+        SysCtlDelay(clock_rate / 3 * CONV_SIZE / ADC_SAMPLE_RATE);
         //baseMean = getAverage(CONV_SIZE);  // take new average to be the lowest value
         baseMean = getHeight();
 

@@ -15,8 +15,18 @@
 static circBuf_t buf;
 int convolutionArray[CONV_SIZE];
 
+void SysTickIntHandler(void)
+{
+    adcTrigger();
+}
+
 void initConv(char convType)
 {
+    SysTickPeriodSet(SysCtlClockGet() / ADC_SAMPLE_RATE);  // frequency of 120 Hz
+    SysTickIntRegister(SysTickIntHandler);
+    // Enable interrupt and device
+    SysTickIntEnable();
+    SysTickEnable();
     initCircBuf(&buf, CONV_SIZE);
     adcInit(handleNewADCValue);
     getConvArray (convType);
