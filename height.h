@@ -1,5 +1,5 @@
-#ifndef CONVOLUTION_H_
-#define CONVOLUTION_H_
+#ifndef HEIGHT_H_
+#define HEIGHT_H_
 
 // *******************************************************
 //
@@ -14,20 +14,24 @@
 #include "utils/ustdlib.h"
 // *******************************************************
 #define UNIFORM 'u'
+#define CONV_SIZE 20
+#define CONV_UNIFORM_MULTIPLIER 100
+#define CONV_BASE (CONV_SIZE * CONV_UNIFORM_MULTIPLIER)
 
 
 // *******************************************************
 // convGetConvArray: Generate values for convolution array for averaging.
-void convGetConvArray (uint32_t convolutionSize, char type, float *convolutionArray);
+void getConvArray(char convType);
 
 // *******************************************************
 // getAverage: calculate the (approximate) mean of the values in the
 // circular buffer and return it.
-uint32_t getAverage (uint32_t convolutionSize);
+uint32_t getAverage();
 
 // *******************************************************
-void initConv(uint32_t convolutionSize);
-void handleNewADCValue(uint32_t);
-float convDoConvolution (float *convolutionArray, uint32_t convolutionSize);
+void initConv(char convType);
+void handleNewADCValue(uint32_t val);
+uint32_t getHeight();
 
-#endif /* CONVOLUTION_H_ */
+
+#endif /* HEIGHT_H_ */
