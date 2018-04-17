@@ -146,6 +146,7 @@ void heliMode(uint32_t clock_rate)
 }
 
 int main(void) {
+    yawInit();
     int32_t yaw;
     uint32_t clock_rate;
 	// Set system clock rate to 20 MHz.
