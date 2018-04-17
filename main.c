@@ -27,6 +27,7 @@
 #include "utils/ustdlib.h"
 #include "circBufT.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
+#include "yaw.h"
 
 #define GREEN_LED GPIO_PIN_3
 #define UNIFORM 'u'
@@ -95,6 +96,7 @@ void displayMode(uint32_t clock_rate)
         break;
 
     case PERCENTAGE:
+        // this is okay because the mean is capped to 4095
         percentage = 100 * ((int32_t)baseMean - (int32_t)mean) / MEAN_RANGE;
         displayValueWithFormat(percentFormatString, percentage);
         break;

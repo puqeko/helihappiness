@@ -5,7 +5,7 @@
 //
 // Group:       A03 Group 10
 // Created:     14/3/18
-// Last Edited: 15/3/18
+// Last Edited: 16/4/18
 //
 // Purpose: Initialize and handle analog to digital
 //          conversion (ADC) peripheral
