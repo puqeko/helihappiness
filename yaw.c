@@ -28,13 +28,21 @@
 #include "yaw.h"
 
 
-#define COUNTS_PER_ROTATION 112*4 //112 slots and x4 because quadrature encoding used
-#define DEGREES_PER_COUNT   360/COUNTS_PER_ROTATION
+#define COUNTS_PER_ROTATION (112*4) //112 slots and x4 because quadrature encoding used
+#define BASE_YAW 100000
+#define DEGREES_PER_COUNT ((BASE_YAW*360)/COUNTS_PER_ROTATION)
+
+
+
+void yawInit(void)
+{
+    quadEncoderInit(SYSCTL_PERIPH_GPIOB, GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_PIN_1);
+}
 
 int32_t yawGetDegrees(void)
 {
     int32_t rawCounts = quadEncoderGetCount();
-    return rawCounts * DEGREES_PER_COUNT;
+    return (rawCounts * DEGREES_PER_COUNT)/(BASE_YAW);
 }
 
 void yawCalibrate(void) //perhaps not part of yaw module???
