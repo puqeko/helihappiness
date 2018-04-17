@@ -13,7 +13,7 @@
 /*
  * Include LaunchPad.h for GPIO Defs
  */
-#include "LaunchPad.h"
+#include "../../OrbitOLED_2/lib_OrbitOled/LaunchPad.h"
 
 /*
  * General
