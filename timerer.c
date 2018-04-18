@@ -10,9 +10,10 @@
 
 #include "timerer.h"
 #include "driverlib/timer.h"
+#include "OrbitOLED_2/OrbitOLEDInterface.h"
 
-#define TIMERER_PERIPH SYSCTL_PERIPH_WTIMER0
-#define TIMERER_BASE WTIMER0_BASE
+#define TIMERER_PERIPH SYSCTL_PERIPH_WTIMER5
+#define TIMERER_BASE WTIMER5_BASE
 #define TIMERER_INTERAL TIMER_A
 #define TIMERER_MODE TIMER_CFG_A_PERIODIC
 static const uint32_t TIMERER_MAX_TICKS = (0xffffffff - 1);  // 32 bits for Timer0 A
@@ -21,12 +22,13 @@ static uint32_t clock_rate;
 static uint32_t overshoot_ticks;
 static uint32_t ticks_per_ms;
 
+
 // *******************************************************
-void TimererInit()
+void timererInit(void)
 {
     clock_rate = SysCtlClockGet();
     ticks_per_ms = clock_rate / 1000;
-    overshoot_ticks = ticks_per_ms;
+    overshoot_ticks = TIMERER_MAX_TICKS / 2;
 
     // timer counts down by default
     // config to reset to max value
@@ -37,22 +39,25 @@ void TimererInit()
     TimerEnable(TIMERER_BASE, TIMERER_INTERAL);
 }
 
-uint32_t TimererGetTicks(void)
+
+uint32_t timererGetTicks(void)
 {
     return TimerValueGet(TIMERER_BASE, TIMERER_INTERAL);
 }
 
-void TimererWait(uint32_t milliseconds)
+
+void timererWait(uint32_t milliseconds)
 {
-    TimererWaitFrom(milliseconds, TimererGetTicks());
+    timererWaitFrom(milliseconds, timererGetTicks());
 }
 
-void TimererWaitFrom(uint32_t milliseconds, uint32_t reference)
+
+void timererWaitFrom(uint32_t milliseconds, uint32_t reference)
 {
     uint32_t target = reference - milliseconds * ticks_per_ms;  // minus since counts down
 
     while (true) {
-        uint32_t cur = TimererGetTicks(); //get time;
+        uint32_t cur = timererGetTicks(); //get time;
         uint32_t diff = target - cur;  // +ve small number when past target (timer counts down)
 
         // block until this condition is met

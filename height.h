@@ -29,8 +29,6 @@ void heightInit(enum conv_type);
 
 uint32_t heightGetRaw(void);
 
-uint32_t heightGetPercentage(void);
-
 uint32_t heightAsPercentage(void);
 
 void heightCalibrate(void);
