@@ -42,14 +42,13 @@ char meanFormatString[] = "Mean ADC = %4d";
 char yawFormatString[] = "     Yaw = %4d~";
 char percentFormatString[] = "  Height = %4d%%";
 
-void initalise(uint32_t clock_rate)
+void initalise()
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
     initButtons();
     OLEDInitialise();
     heightInit(CONV_UNIFORM);
     yawInit();
-    timererInit();
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
@@ -84,7 +83,7 @@ void displayClear(uint32_t line)
 }
 
 
-void displayMode(uint32_t clock_rate)
+void displayMode(void)
 {
     switch (current_display_state)
     {
@@ -104,7 +103,7 @@ void displayMode(uint32_t clock_rate)
 }
 
 
-void heliMode(uint32_t clock_rate)
+void heliMode(void)
 {
     switch (current_heli_state) {
 
@@ -113,7 +112,7 @@ void heliMode(uint32_t clock_rate)
         displayValueWithFormat(percentFormatString, 0, 1);  // clear to zero
 
         GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, GREEN_LED);
-        SysCtlDelay(clock_rate / 3 * CONV_SIZE / ADC_SAMPLE_RATE);
+        timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);
         heightCalibrate();
 
         current_heli_state = FLYING;
@@ -141,26 +140,21 @@ void heliMode(uint32_t clock_rate)
 
 
 int main(void) {
-    int32_t yaw;
-    uint32_t clock_rate;
 	// Set system clock rate to 20 MHz.
 	SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_10);
-	SysCtlDelay(100);  // Allow time for the oscillator to settle down. Uses 3 instructions per loop.
-	clock_rate = SysCtlClockGet();  // Get the clock rate in pulses/s.
+	timererInit();
+	timererWait(1);  // Allow time for the oscillator to settle down.
 	
-	initalise(clock_rate);
+	initalise();
 
 	// main loop
 	while (true) {
 	    uint32_t referenceTime = timererGetTicks();
 
 	    updateButtons();  // recommended 100 hz update
-	    heliMode(clock_rate);
-	    displayMode(clock_rate);
+	    heliMode();
+	    displayMode();
 
-	    yaw = yawGetDegrees();
-	    displayValueWithFormat(yawFormatString, yaw, 2);
-
-	    timererWaitFrom(10, referenceTime);  // 100 hz
+	    timererWaitFrom(10, referenceTime);  // 100 hz, 10 ms
 	}
 }
