@@ -41,7 +41,7 @@ static uint8_t current_display_state = PERCENTAGE;
 char meanFormatString[] = "Mean ADC = %4d";
 char yawFormatString[] = "     Yaw = %4d~";
 char percentFormatString[] = "  Height = %4d%%";
-char dutyCycleFormatString[] = " Duty = %4d";
+char dutyCycleFormatString[] = " M = %2d, T = %2d";
 
 void initalise(uint32_t clock_rate)
 {
@@ -74,6 +74,14 @@ void displayValueWithFormat(char* format, uint32_t value, uint32_t line)
 {
     char str[17] = "                 ";  // 16 characters across the display
     usnprintf (str, sizeof(str), format, value);
+    str[strlen(str)] = ' ';  // overwrite null terminator added by usnprintf
+    str[DISPLAY_CHAR_WIDTH] = '\0';  // ensure there is one at the end of the string
+    OLEDStringDraw (str, 0, line);
+}
+void displayTwoValuesWithFormat(char* format, uint32_t value1, uint32_t value2, uint32_t line)
+{
+    char str[17] = "                 ";  // 16 characters across the display
+    usnprintf (str, sizeof(str), format, value1, value2);
     str[strlen(str)] = ' ';  // overwrite null terminator added by usnprintf
     str[DISPLAY_CHAR_WIDTH] = '\0';  // ensure there is one at the end of the string
     OLEDStringDraw (str, 0, line);
@@ -151,12 +159,12 @@ int main(void) {
 	clock_rate = SysCtlClockGet();  // Get the clock rate in pulses/s.
 	
 	initalise(clock_rate);
-
-	uint32_t ui32Freq = PWM_START_RATE_HZ;
-	uint32_t ui32Duty = PWM_START_DUTY_HZ;
+	uint32_t ui32DutyMain = PWM_START_DUTY_HZ;
+	uint32_t ui32DutyTail = PWM_START_DUTY_HZ;
 
     // Initialisation is complete, so turn on the output.
-	pwmOutputOn();
+	pwmSetOutput(true, MAIN_ROTOR);
+	pwmSetOutput(true, TAIL_ROTOR);
 
 
     //
@@ -174,17 +182,22 @@ int main(void) {
 	    yaw = yawGetDegrees();
 	    displayValueWithFormat(yawFormatString, yaw, 2);
 
-        if ((checkButton (DOWN) == PUSHED) && (ui32Duty > PWM_DUTY_MIN_HZ))
+        if ((checkButton (DOWN) == PUSHED) && (ui32DutyMain > PWM_DUTY_MIN_HZ))
         {
-            ui32Duty -= PWM_DUTY_STEP_HZ;
-            pwmSetDuty(ui32Duty);
+            ui32DutyMain -= PWM_DUTY_STEP_HZ;
+            pwmSetDuty(ui32DutyMain, MAIN_ROTOR);
         }
-        if ((checkButton (RIGHT) == PUSHED) && (ui32Duty < PWM_DUTY_MAX_HZ))
+        if ((checkButton (LEFT) == PUSHED) && (ui32DutyTail > PWM_DUTY_MIN_HZ))
         {
-            ui32Duty += PWM_DUTY_STEP_HZ;
-            pwmSetDuty(ui32Duty);
+            ui32DutyTail -= PWM_DUTY_STEP_HZ;
+            pwmSetDuty(ui32DutyTail, TAIL_ROTOR);
         }
-        displayValueWithFormat(dutyCycleFormatString, ui32Duty, 3);
+        if ((checkButton (RIGHT) == PUSHED) && (ui32DutyTail < PWM_DUTY_MAX_HZ))
+        {
+            ui32DutyTail += PWM_DUTY_STEP_HZ;
+            pwmSetDuty(ui32DutyTail, TAIL_ROTOR);
+        }
+        displayTwoValuesWithFormat(dutyCycleFormatString, ui32DutyMain, ui32DutyTail, 3);
 	}
 }
 

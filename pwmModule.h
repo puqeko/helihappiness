@@ -56,6 +56,8 @@
 #define PWM_TAIL_GPIO_CONFIG GPIO_PF1_M1PWM5
 #define PWM_TAIL_GPIO_PIN    GPIO_PIN_1
 
+enum rotor_type {MAIN_ROTOR, TAIL_ROTOR};
+
 void
 initClocks (void);
 
@@ -66,15 +68,15 @@ void
 initialisePWM (void);
 
 void
-setPWM (uint32_t ui32Freq, uint32_t ui32Duty);
+setPWM (uint32_t ui32Freq, uint32_t ui32Duty, enum rotor_type rotorType);
 
 void
-pwmSetDuty (uint32_t ui32Duty);
+pwmSetDuty (uint32_t ui32Duty,  enum rotor_type rotorType);
 
 void
 initClock (void);
 
 void
-pwmOutputOn (void);
+pwmSetOutput (bool state, enum rotor_type rotorType);
 
 #endif /*PWM_MODULE_H_*/

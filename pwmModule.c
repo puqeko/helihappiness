@@ -40,7 +40,7 @@
 /*******************************************
  *      Globals
  *******************************************/
-enum
+
 
 
 /***********************************************************
@@ -84,7 +84,7 @@ initSysTick (void)
     SysTickPeriodSet (SysCtlClockGet() / SYSTICK_RATE_HZ);
     //
     // Register the interrupt handler
-    SysTickIntRegister (SysTickIntHandler);
+    SysTickIntRegister (SysTickIntHandler_2);
     //
     // Enable interrupt and device
     SysTickIntEnable ();
@@ -113,39 +113,60 @@ initialisePWM (void)
     PWMGenConfigure(PWM_TAIL_BASE, PWM_TAIL_GEN,
                         PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
     // Set the initial PWM parameters ***
-    setPWM (PWM_START_RATE_HZ, PWM_FIXED_DUTY);
+    setPWM (PWM_START_RATE_HZ, PWM_FIXED_DUTY, MAIN_ROTOR);
+    setPWM (PWM_START_RATE_HZ, PWM_FIXED_DUTY, TAIL_ROTOR);
 
     PWMGenEnable(PWM_MAIN_BASE, PWM_MAIN_GEN);
+    PWMGenEnable(PWM_TAIL_BASE, PWM_TAIL_GEN);
 
     // Disable the output.  Repeat this call with 'true' to turn O/P on.
     PWMOutputState(PWM_MAIN_BASE, PWM_MAIN_OUTBIT, false);
+    PWMOutputState(PWM_TAIL_BASE, PWM_TAIL_OUTBIT, false);
 }
 
 /********************************************************
  * Function to set the freq, duty cycle of M0PWM7
  ********************************************************/
 void
-setPWM (uint32_t ui32Freq, uint32_t ui32Duty, enum rotorType)
+setPWM (uint32_t ui32Freq, uint32_t ui32Duty, enum rotor_type rotorType)
 {
-    // Calculate the PWM period corresponding to the freq.
-    uint32_t ui32Period =
-        SysCtlClockGet() / PWM_DIVIDER / ui32Freq;
-
-    PWMGenPeriodSet(PWM_MAIN_BASE, PWM_MAIN_GEN, ui32Period);
-    PWMPulseWidthSet(PWM_MAIN_BASE, PWM_MAIN_OUTNUM,
-        ui32Period * ui32Duty / 100);
+    uint32_t ui32Period;
+    switch(rotorType)
+    {
+    case MAIN_ROTOR:
+        // Calculate the PWM period corresponding to the freq.
+        ui32Period = SysCtlClockGet() / PWM_DIVIDER / ui32Freq;
+        PWMGenPeriodSet(PWM_MAIN_BASE, PWM_MAIN_GEN, ui32Period);
+        PWMPulseWidthSet(PWM_MAIN_BASE, PWM_MAIN_OUTNUM, ui32Period * ui32Duty / 100);
+        break;
+    case TAIL_ROTOR:
+        // Calculate the PWM period corresponding to the freq.
+        ui32Period = SysCtlClockGet() / PWM_DIVIDER / ui32Freq;
+        PWMGenPeriodSet(PWM_TAIL_BASE, PWM_TAIL_GEN, ui32Period);
+        PWMPulseWidthSet(PWM_TAIL_BASE, PWM_TAIL_OUTNUM, ui32Period * ui32Duty / 100);
+        break;
+    }
 }
 
 void
-pwmSetDuty (uint32_t ui32Duty)
+pwmSetDuty (uint32_t ui32Duty, enum rotor_type rotorType)
 {
-    // Calculate the PWM period corresponding to the freq.
-    uint32_t ui32Period =
-        SysCtlClockGet() / PWM_DIVIDER / PWM_START_RATE_HZ;
-
-    PWMGenPeriodSet(PWM_MAIN_BASE, PWM_MAIN_GEN, ui32Period);
-    PWMPulseWidthSet(PWM_MAIN_BASE, PWM_MAIN_OUTNUM,
-        ui32Period * ui32Duty / 100);
+    uint32_t ui32Period;
+    switch(rotorType)
+    {
+    case MAIN_ROTOR:
+        // Calculate the PWM period corresponding to the freq.
+        ui32Period = SysCtlClockGet() / PWM_DIVIDER / PWM_START_RATE_HZ;
+        PWMGenPeriodSet(PWM_MAIN_BASE, PWM_MAIN_GEN, ui32Period);
+        PWMPulseWidthSet(PWM_MAIN_BASE, PWM_MAIN_OUTNUM, ui32Period * ui32Duty / 100);
+        break;
+    case TAIL_ROTOR:
+        // Calculate the PWM period corresponding to the freq.
+        ui32Period = SysCtlClockGet() / PWM_DIVIDER / PWM_START_RATE_HZ;
+        PWMGenPeriodSet(PWM_TAIL_BASE, PWM_TAIL_GEN, ui32Period);
+        PWMPulseWidthSet(PWM_TAIL_BASE, PWM_TAIL_OUTNUM, ui32Period * ui32Duty / 100);
+        break;
+    }
 }
 
 //*****************************************************************************
@@ -160,9 +181,20 @@ initClock (void)
 }
 
 void
-pwmOutputOn (void)
+pwmSetOutput (bool state, enum rotor_type rotorType)
 {
-    PWMOutputState(PWM_MAIN_BASE, PWM_MAIN_OUTBIT, true);
+    switch(rotorType)
+    {
+    case MAIN_ROTOR:
+        // Calculate the PWM period corresponding to the freq.
+        PWMOutputState(PWM_MAIN_BASE, PWM_MAIN_OUTBIT, state);
+        break;
+    case TAIL_ROTOR:
+        // Calculate the PWM period corresponding to the freq.
+        PWMOutputState(PWM_TAIL_BASE, PWM_TAIL_OUTBIT, state);
+        break;
+    }
+
 }
 
 
