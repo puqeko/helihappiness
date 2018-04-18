@@ -43,6 +43,9 @@ char yawFormatString[] = "     Yaw = %4d~";
 char percentFormatString[] = "  Height = %4d%%";
 char dutyCycleFormatString[] = " M = %2d, T = %2d";
 
+uint32_t ui32DutyMain = 0;
+uint32_t ui32DutyTail = 0;
+
 void initalise(uint32_t clock_rate)
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
@@ -52,7 +55,6 @@ void initalise(uint32_t clock_rate)
     yawInit();
     initClocks ();
     initialisePWM ();
-    initSysTick ();
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
@@ -131,19 +133,40 @@ void heliMode(uint32_t clock_rate)
 
     // M1.4 Display altitude
     case FLYING:
+        if ((checkButton (UP) == PUSHED) && (ui32DutyMain < PWM_DUTY_MAX_HZ))
+        {
+            ui32DutyMain += PWM_DUTY_STEP_HZ;
+            pwmSetDuty(ui32DutyMain, MAIN_ROTOR);
+        }
+        if ((checkButton (DOWN) == PUSHED) && (ui32DutyMain > PWM_DUTY_MIN_HZ))
+        {
+            ui32DutyMain -= PWM_DUTY_STEP_HZ;
+            pwmSetDuty(ui32DutyMain, MAIN_ROTOR);
+        }
+        if ((checkButton (LEFT) == PUSHED) && (ui32DutyTail > PWM_DUTY_MIN_HZ))
+        {
+            ui32DutyTail -= PWM_DUTY_STEP_HZ;
+            pwmSetDuty(ui32DutyTail, TAIL_ROTOR);
+        }
+        if ((checkButton (RIGHT) == PUSHED) && (ui32DutyTail < PWM_DUTY_MAX_HZ))
+        {
+            ui32DutyTail += PWM_DUTY_STEP_HZ;
+            pwmSetDuty(ui32DutyTail, TAIL_ROTOR);
+        }
+        displayTwoValuesWithFormat(dutyCycleFormatString, ui32DutyMain, ui32DutyTail, 3);
 
         // Run M1.3 again (M1.5)
-        if (checkButton(LEFT) == PUSHED) {
-            current_heli_state = LANDED;
-            current_display_state = PERCENTAGE;
-        }
+//        if (checkButton(LEFT) == PUSHED) {
+//            current_heli_state = LANDED;
+//            current_display_state = PERCENTAGE;
+//        }
 
         // Transition between display modes (M1.6)
-        if (checkButton(UP) == PUSHED) {
-            current_display_state += 1;
-            current_display_state %= NUM_DISPLAY_STATES;
-        }
-
+//        if (checkButton(UP) == PUSHED) {
+//            current_display_state += 1;
+//            current_display_state %= NUM_DISPLAY_STATES;
+//        }
+//
         GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, 0x00);
         break;
     }
@@ -159,8 +182,7 @@ int main(void) {
 	clock_rate = SysCtlClockGet();  // Get the clock rate in pulses/s.
 	
 	initalise(clock_rate);
-	uint32_t ui32DutyMain = PWM_START_DUTY_HZ;
-	uint32_t ui32DutyTail = PWM_START_DUTY_HZ;
+
 
     // Initialisation is complete, so turn on the output.
 	pwmSetOutput(true, MAIN_ROTOR);
@@ -182,22 +204,7 @@ int main(void) {
 	    yaw = yawGetDegrees();
 	    displayValueWithFormat(yawFormatString, yaw, 2);
 
-        if ((checkButton (DOWN) == PUSHED) && (ui32DutyMain > PWM_DUTY_MIN_HZ))
-        {
-            ui32DutyMain -= PWM_DUTY_STEP_HZ;
-            pwmSetDuty(ui32DutyMain, MAIN_ROTOR);
-        }
-        if ((checkButton (LEFT) == PUSHED) && (ui32DutyTail > PWM_DUTY_MIN_HZ))
-        {
-            ui32DutyTail -= PWM_DUTY_STEP_HZ;
-            pwmSetDuty(ui32DutyTail, TAIL_ROTOR);
-        }
-        if ((checkButton (RIGHT) == PUSHED) && (ui32DutyTail < PWM_DUTY_MAX_HZ))
-        {
-            ui32DutyTail += PWM_DUTY_STEP_HZ;
-            pwmSetDuty(ui32DutyTail, TAIL_ROTOR);
-        }
-        displayTwoValuesWithFormat(dutyCycleFormatString, ui32DutyMain, ui32DutyTail, 3);
+
 	}
 }
 

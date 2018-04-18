@@ -62,9 +62,6 @@ void
 initClocks (void);
 
 void
-initSysTick (void);
-
-void
 initialisePWM (void);
 
 void

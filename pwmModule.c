@@ -4,7 +4,7 @@
  *    output on J4-05 (M0PWM7) with variable duty cycle and
  *    fixed frequency in
  *    the range 50 Hz to 400 Hz.
- * 2018: Modified by Ryan Hall for heliocopter application.
+ * 2018: Modified by Ryan Hall for helicopter application.
  *
  * P.J. Bones   UCECE
  * Last modified:  18.4.2018
@@ -43,18 +43,7 @@
 
 
 
-/***********************************************************
- * ISR for the SysTick interrupt (used for button debouncing).
- ***********************************************************/
-void
-SysTickIntHandler_2 (void)
-{
-	//
-	// Poll the buttons
-	updateButtons();
-	//
-	// It is not necessary to clear the SysTick interrupt.
-}
+
 
 /***********************************************************
  * Initialisation functions: clock, SysTick, PWM
@@ -64,10 +53,6 @@ SysTickIntHandler_2 (void)
 void
 initClocks (void)
 {
-    // Set the clock rate to 20 MHz
-    SysCtlClockSet (SYSCTL_SYSDIV_10 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
-                   SYSCTL_XTAL_16MHZ);
-
     // Set the PWM clock rate (using the prescaler)
     SysCtlPWMClockSet(PWM_DIVIDER_CODE);
 }
@@ -75,21 +60,7 @@ initClocks (void)
 /*************************************************************
  * SysTick interrupt
  ************************************************************/
-void
-initSysTick (void)
-{
-    //
-    // Set up the period for the SysTick timer.  The SysTick
-    // timer period is set as a function of the system clock.
-    SysTickPeriodSet (SysCtlClockGet() / SYSTICK_RATE_HZ);
-    //
-    // Register the interrupt handler
-    SysTickIntRegister (SysTickIntHandler_2);
-    //
-    // Enable interrupt and device
-    SysTickIntEnable ();
-    SysTickEnable ();
-}
+
 
 /*********************************************************
  * initialisePWM
