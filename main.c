@@ -30,11 +30,8 @@
 #include "pwmModule.h"
 #include "display.h"
 
-#define GREEN_LED GPIO_PIN_3
-#define DISPLAY_CHAR_WIDTH 16
-
 enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, NUM_HELI_STATES};
-static enum heli_state current_heli_state = LANDED;
+static uint8_t current_heli_state = LANDED;
 
 char meanFormatString[] = "Mean ADC = %4d";
 char yawFormatString[] = "     Yaw = %4d~";
@@ -48,11 +45,11 @@ void initalise()
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
     initButtons();
-    OLEDInitialise();
+    displayInit();
     heightInit(CONV_UNIFORM);
     yawInit();
-    initClocks ();
-    initialisePWM ();
+    initClocks();
+    initialisePWM();
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
@@ -68,7 +65,6 @@ void heliMode(void)
     case LANDED:
         displayValueWithFormat(percentFormatString, 0, 1);  // clear to zero
 
-        GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, GREEN_LED);
         timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // in ms, hence the 1000
         heightCalibrate();
 

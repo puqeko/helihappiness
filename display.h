@@ -11,22 +11,26 @@
 // ************************************************************
 
 #include <stdint.h>
+#include <string.h>
 
+#define DISPLAY_CHAR_WIDTH 16
+
+void displayInit(void);
 
 // ************************************************************
 // Display a single value on a line of the OLED display according to a format
 // string provided.
-void displayValueWithFormat(char* format, uint32_t value, uint32_t line)
+void displayValueWithFormat(char* format, uint32_t value, uint32_t line);
 
 
 // ************************************************************
 // Display a two values on a line of the OLED display according to a format
 // string provided.
-void displayTwoValuesWithFormat(char* format, uint32_t value1, uint32_t value2, uint32_t line)
+void displayTwoValuesWithFormat(char* format, uint32_t value1, uint32_t value2, uint32_t line);
 
 
 // ************************************************************
 // Place blank spaces on the display at the given line.
-void displayClear(uint32_t line)
+void displayClear(uint32_t line);
 
 #endif /* DISPLAY_H_ */

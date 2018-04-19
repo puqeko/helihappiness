@@ -80,6 +80,6 @@ checkButton (uint8_t butName);
 
 // ********************************************************
 // ignore a change in state which may have occured for this button.
-void ignoreButton(uint8_t butName)
+void ignoreButton(uint8_t butName);
 
 #endif /*BUTTONS_H_*/

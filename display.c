@@ -7,8 +7,17 @@
 // Purpose: Interface with OLED display
 // ************************************************************
 
+#include <stdlib.h>
+
+#include "display.h"
 #include "utils/ustdlib.h"
 #include "OrbitOLED_2/OrbitOLEDInterface.h"
+
+
+void displayInit(void)
+{
+    OLEDInitialise();
+}
 
 
 // ************************************************************
