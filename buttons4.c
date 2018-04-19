@@ -1,6 +1,11 @@
-// *******************************************************
-// 
+//************************************************************************
 // buttons4.c
+//
+// Helicopter project
+//
+// Group:       A03 Group 10
+// Last Edited: 20/4/18
+// Edited from code by P.J. Bones UCECE
 //
 // Support for a set of FOUR specific buttons on the Tiva/Orbit.
 // ENCE361 sample code.
@@ -9,11 +14,7 @@
 //
 // Note that pin PF0 (the pin for the RIGHT pushbutton - SW2 on
 //  the Tiva board) needs special treatment - See PhilsNotesOnTiva.rtf.
-//
-// P.J. Bones UCECE
-// Last modified:  7.2.2018
-// 
-// *******************************************************
+//************************************************************************
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -143,5 +144,12 @@ checkButton (uint8_t butName)
 			return PUSHED;
 	}
 	return NO_CHANGE;
+}
+
+// ********************************************************
+// ignore a change in state which may have occured for this button.
+void ignoreButton(uint8_t butName)
+{
+    but_flag[butName] = false;
 }
 
