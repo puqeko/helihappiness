@@ -53,8 +53,6 @@ void initalise()
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-
-    IntMasterEnable();
 }
 
 
