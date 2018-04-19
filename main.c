@@ -34,10 +34,8 @@
 #define GREEN_LED GPIO_PIN_3
 #define DISPLAY_CHAR_WIDTH 16
 
-enum heli_state {LANDED = 0, FLYING, NUM_HELI_STATES};
-enum display_state {PERCENTAGE = 0, MEAN_ADC, DISPLAY_OFF, NUM_DISPLAY_STATES};
-static uint8_t current_heli_state = LANDED;
-static uint8_t current_display_state = PERCENTAGE;
+enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, NUM_HELI_STATES};
+static enum heli_state current_heli_state = LANDED;
 
 char meanFormatString[] = "Mean ADC = %4d";
 char yawFormatString[] = "     Yaw = %4d~";
@@ -61,16 +59,6 @@ void initalise()
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
 
     IntMasterEnable();
-
-    // Set up the specific port pin as medium strength current & pull-down config.
-    // Refer to TivaWare peripheral lib user manual for set up for configuration options
-    GPIOPadConfigSet(GPIO_PORTF_BASE, GREEN_LED, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
-
-    // Set data direction register as output
-    GPIODirModeSet(GPIO_PORTF_BASE, GREEN_LED, GPIO_DIR_MODE_OUT);
-
-    // Write a zero to the output pin 3 on port F
-    GPIOPinWrite(GPIO_PORTF_BASE, GREEN_LED, 0x00);
 }
 
 void displayValueWithFormat(char* format, uint32_t value, uint32_t line)
@@ -97,26 +85,6 @@ void displayClear(uint32_t line)
 }
 
 
-void displayMode(void)
-{
-    switch (current_display_state)
-    {
-    case MEAN_ADC:
-        displayValueWithFormat(meanFormatString, heightGetRaw(), 1);
-        break;
-
-    case PERCENTAGE:
-        // this is okay because the mean is capped to 4095
-        displayValueWithFormat(percentFormatString, heightAsPercentage(), 1);
-        break;
-
-    case DISPLAY_OFF:
-        displayClear(1);
-        break;
-    }
-}
-
-
 void heliMode(void)
 {
     switch (current_heli_state) {
@@ -126,49 +94,47 @@ void heliMode(void)
         displayValueWithFormat(percentFormatString, 0, 1);  // clear to zero
 
         GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, GREEN_LED);
-        timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);
+        timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // in ms, hence the 1000
         heightCalibrate();
 
         current_heli_state = FLYING;
         break;  // measure 0% height value
 
+    case LANDING:
+        // done landing...
+        ignoreButton(SW1);
+        current_heli_state = LANDED;
+        break;
+
+    case ALIGNING:
+        // done aligning...
+        ignoreButton(SW1);
+        current_heli_state = FLYING;
+
     // M1.4 Display altitude
     case FLYING:
-        if (checkButton(UP) == PUSHED && ui32DutyMain < PWM_DUTY_MAX_HZ)
-        {
+        if (checkButton(UP) == PUSHED && ui32DutyMain < PWM_DUTY_MAX_HZ) {
             ui32DutyMain += PWM_DUTY_STEP_HZ;
             pwmSetDuty(ui32DutyMain, MAIN_ROTOR);
         }
-        if (checkButton(DOWN) == PUSHED && ui32DutyMain > PWM_DUTY_MIN_HZ)
-        {
+        if (checkButton(DOWN) == PUSHED && ui32DutyMain > PWM_DUTY_MIN_HZ) {
             ui32DutyMain -= PWM_DUTY_STEP_HZ;
             pwmSetDuty(ui32DutyMain, MAIN_ROTOR);
         }
-        if (checkButton(LEFT) == PUSHED && ui32DutyTail > PWM_DUTY_MIN_HZ)
-        {
+        if (checkButton(LEFT) == PUSHED && ui32DutyTail > PWM_DUTY_MIN_HZ) {
             ui32DutyTail -= PWM_DUTY_STEP_HZ;
             pwmSetDuty(ui32DutyTail, TAIL_ROTOR);
         }
-        if (checkButton(RIGHT) == PUSHED && ui32DutyTail < PWM_DUTY_MAX_HZ)
-        {
+        if (checkButton(RIGHT) == PUSHED && ui32DutyTail < PWM_DUTY_MAX_HZ) {
             ui32DutyTail += PWM_DUTY_STEP_HZ;
             pwmSetDuty(ui32DutyTail, TAIL_ROTOR);
         }
         displayTwoValuesWithFormat(dutyCycleFormatString, ui32DutyMain, ui32DutyTail, 3);
 
         // Run M1.3 again (M1.5)
-//        if (checkButton(LEFT) == PUSHED) {
-//            current_heli_state = LANDED;
-//            current_display_state = PERCENTAGE;
-//        }
-
-        // Transition between display modes (M1.6)
-//        if (checkButton(UP) == PUSHED) {
-//            current_display_state += 1;
-//            current_display_state %= NUM_DISPLAY_STATES;
-//        }
-//
-        GPIOPinWrite(GPIO_PORTF_BASE,  GREEN_LED, 0x00);
+        if (checkButton(SW1) == RELEASED) {  // switch down
+            current_heli_state = LANDING;
+        }
         break;
     }
 }
@@ -195,7 +161,12 @@ int main(void) {
 
 	    updateButtons();  // recommended 100 hz update
 	    heliMode();
-	    displayMode();
+
+	    // this is okay because the mean is capped to 4095
+	    displayValueWithFormat(percentFormatString, heightAsPercentage(), 1);
+	    // TODO: include duty cycle on OLED
+
+	    // TODO: This should be serial only
 	    displayValueWithFormat(yawFormatString, yawGetDegrees(), 2);  // line 2
 
 	    timererWaitFrom(10, referenceTime);  // 100 hz, 10 ms
