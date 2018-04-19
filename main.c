@@ -23,13 +23,12 @@
 // 3rd party libraries
 #include "buttons4.h"             // left, right, up, down buttons (debouncing)
 #include "adcModule.h"
-#include "utils/ustdlib.h"
 #include "circBufT.h"
 #include "yaw.h"
 #include "height.h"
 #include "timerer.h"
-#include "OrbitOLED_2/OrbitOLEDInterface.h"
 #include "pwmModule.h"
+#include "display.h"
 
 #define GREEN_LED GPIO_PIN_3
 #define DISPLAY_CHAR_WIDTH 16
@@ -61,35 +60,11 @@ void initalise()
     IntMasterEnable();
 }
 
-void displayValueWithFormat(char* format, uint32_t value, uint32_t line)
-{
-    char str[17] = "                 ";  // 16 characters across the display
-    usnprintf (str, sizeof(str), format, value);
-    str[strlen(str)] = ' ';  // overwrite null terminator added by usnprintf
-    str[DISPLAY_CHAR_WIDTH] = '\0';  // ensure there is one at the end of the string
-    OLEDStringDraw (str, 0, line);
-}
-void displayTwoValuesWithFormat(char* format, uint32_t value1, uint32_t value2, uint32_t line)
-{
-    char str[17] = "                 ";  // 16 characters across the display
-    usnprintf (str, sizeof(str), format, value1, value2);
-    str[strlen(str)] = ' ';  // overwrite null terminator added by usnprintf
-    str[DISPLAY_CHAR_WIDTH] = '\0';  // ensure there is one at the end of the string
-    OLEDStringDraw (str, 0, line);
-}
-
-
-void displayClear(uint32_t line)
-{
-    OLEDStringDraw ("                 ", 0, line);  // 16 characters across the display
-}
-
 
 void heliMode(void)
 {
     switch (current_heli_state) {
 
-    // M1.3 Measure the mean sample value for a bit and display on the screen
     case LANDED:
         displayValueWithFormat(percentFormatString, 0, 1);  // clear to zero
 
