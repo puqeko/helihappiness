@@ -30,6 +30,7 @@
 #include "timerer.h"
 #include "OrbitOLED_2/OrbitOLEDInterface.h"
 #include "pwmModule.h"
+#include "uartDisplay.h"
 
 #define GREEN_LED GPIO_PIN_3
 #define DISPLAY_CHAR_WIDTH 16
@@ -56,6 +57,7 @@ void initalise()
     yawInit();
     initClocks ();
     initialisePWM ();
+    initialiseUSB_UART();
 
     // Enable GPIO Port F
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
@@ -189,6 +191,12 @@ int main(void) {
     // Enable interrupts to the processor.
     IntMasterEnable ();
 
+
+    //Some fake variables to test UART
+    int32_t yawTarget = 100, yawActual = 100, heightTarget = 100, heightActual = 100;
+    uint32_t dutyMain = 50, dutyTail = 50;
+    char mode[] = "landed";
+    int uartCount = 0;
 	// main loop
 	while (true) {
 	    uint32_t referenceTime = timererGetTicks();
@@ -198,7 +206,14 @@ int main(void) {
 	    displayMode();
 	    displayValueWithFormat(yawFormatString, yawGetDegrees(), 2);  // line 2
 
-	    timererWaitFrom(10, referenceTime);  // 100 hz, 10 ms
+	    //Test Uart here
+	    if (uartCount == 25) {
+	        UARTPrint(yawTarget, yawActual, heightTarget, heightActual, dutyMain, dutyTail, mode);
+	        uartCount = 0;
+	    }
+	    uartCount++;
+
+	    //timererWaitFrom(10, referenceTime);  // 100 hz, 10 ms
 	}
 }
 
