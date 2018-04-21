@@ -94,8 +94,8 @@ void heliMode(void)
             current_heli_state = ALIGNING;
             pwmSetOutput(true, MAIN_ROTOR);
             pwmSetOutput(true, TAIL_ROTOR);
-            mainDuty = MIN_DUTY;
-            tailDuty = MIN_DUTY;
+            mainDuty = MIN_DUTY * MULT;
+            tailDuty = MIN_DUTY * MULT;
             targetHeight = 0;
         }
         break;
@@ -143,16 +143,16 @@ void heliMode(void)
         }
 
         // Apply proportional, integral, derivative control
-        mainDuty = PIDUpdateHeight(targetHeight, percentageHeight, DELTA_TIME);
-        tailDuty = PIDUpdateYaw(targetYaw, degreesYaw, DELTA_TIME);
+        mainDuty = PIDUpdateHeight(mainDuty, targetHeight, percentageHeight, DELTA_TIME);
+        tailDuty = PIDUpdateYaw(tailDuty, targetYaw, degreesYaw, DELTA_TIME);
 
-        mainDuty = MIN(mainDuty, MAX_DUTY);
-        mainDuty = MAX(mainDuty, MIN_DUTY);
+        mainDuty = MIN(mainDuty, MAX_DUTY * MULT);
+        mainDuty = MAX(mainDuty, MIN_DUTY * MULT);
         tailDuty = MIN(tailDuty, MAX_DUTY);
         tailDuty = MAX(tailDuty, MIN_DUTY);
 
         // Set motor speed
-        pwmSetDuty(mainDuty, MAIN_ROTOR);
+        pwmSetDuty(mainDuty / MULT, MAIN_ROTOR);
         pwmSetDuty(tailDuty, TAIL_ROTOR);
 
         break;
@@ -178,14 +178,14 @@ int main(void)
 
 	    // Update OLED display
 	    displayValueWithFormat("  Height = %4d%%", percentageHeight, 1);  // line 1
-	    displayTwoValuesWithFormat(" M = %2d, T = %2d", mainDuty, tailDuty, 2);  // line 2
+	    displayTwoValuesWithFormat(" M = %2d, T = %2d", mainDuty / MULT, tailDuty / MULT, 2);  // line 2
 
 	    // Update UART display
 	    if (uartCount == LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY) {
 	        UARTPrintLineWithFormat("%s", "\n\n----------------\n");
 	        UARTPrintLineWithFormat("ALT: %d [%d] %%\n", targetHeight, percentageHeight);
 	        UARTPrintLineWithFormat("YAW: %d [%d] deg\n", targetYaw, degreesYaw);
-	        UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty, tailDuty);
+	        UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty / MULT, tailDuty / MULT);
 	        UARTPrintLineWithFormat("MODE: %s\n", heli_state_map[current_heli_state]);
 	        uartCount = 0;
 	    }
