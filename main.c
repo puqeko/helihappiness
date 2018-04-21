@@ -208,7 +208,7 @@ int main(void) {
 
 	    //Test Uart here
 	    if (uartCount == 25) {
-	        UARTPrint(yawTarget, yawActual, heightTarget, heightActual, dutyMain, dutyTail, mode);
+
 	        uartCount = 0;
 	    }
 	    uartCount++;
