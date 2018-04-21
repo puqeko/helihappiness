@@ -5,8 +5,8 @@
 // uartDisplay.h
 //
 // Generates serial data to print for debugging
-// P.J. Bones UCECE, modified by Ryan hall
-// Last modified:  18.04.2017
+// P.J. Bones UCECE, modified by Ryan H and Thomas M
+// Last modified:  21.04.2017
 // Helicopter project
 // Group: A03 Group 10
 // *******************************************************
@@ -23,16 +23,10 @@
 #define UART_LINE_LENGTH 25
 
 // *******************************************************
-void
-initialiseUSB_UART (void);
+void initialiseUSB_UART (void);
 
-void
-UARTSend (char *pucBuffer);
+void UARTSend (char *pucBuffer);
 
-//void
-//UARTPrint (int32_t yawTarget, int32_t yawActual, int32_t heightTarget, int32_t heightActual, uint32_t dutyMain, uint32_t dutyTail,  char * mode);
-
-void UARTPrintfln(const char* format, ...);
-//void UARTPrintValuesWithFormat(char* format, int32_t n, int32_t m);
+void UARTPrintLineWithFormat(const char* format, ...);
 
 #endif /* UARTDISPLAY_H_ */

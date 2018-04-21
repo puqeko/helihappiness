@@ -4,8 +4,8 @@
 //
 // Link with modules:  buttons2, OrbitOLEDInterface
 //
-// Author:  P.J. Bones  UCECE
-// Last modified:   26.3.2017
+// Author:  P.J. Bones  UCECE edited by Ryan H and Thomas M
+// Last modified:   21.04.2018
 //
 
 #include <stdint.h>
@@ -83,7 +83,7 @@ void UARTSend (char *pucBuffer)
 // and truncates to UART_LINE_LENGTH. An ellipsis is added to the end if the
 // line is too long. A format string is always required.
 //**********************************************************************
-void UARTPrintfln(const char* format, ...)
+void UARTPrintLineWithFormat(const char* format, ...)
 {
     va_list args;
     int storedChars;
