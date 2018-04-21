@@ -71,3 +71,17 @@ UARTSend (char *pucBuffer)
         pucBuffer++;
     }
 }
+
+/*Regular updates are provided    of  the desired and actual  yaw
+(degrees),  the desired and actual  altitude    (%),    the duty    cycle   for each    of  the main    and tail    motors  (%, with    0
+meaning off)    and the current operating   mode.*/
+
+void
+UARTPrint (int32_t yawTarget, int32_t yawActual, int32_t heightTarget, int32_t heightActual, uint32_t dutyMain, uint32_t dutyTail,  char * mode)
+{
+    char formatString[] = "Target yaw %3d, Actual yaw %3d\n\rTarget height %3d, Actual height %3d\n\rDuty main %3d, Duty tail %3d\n\rMode %s\n\n\r";
+    char uartString[sizeof(formatString) + 1];
+    usnprintf (uartString, sizeof(formatString) + 1, formatString, yawTarget, yawActual, heightTarget, heightActual, dutyMain, dutyTail, mode);
+    UARTSend(uartString);
+}
+

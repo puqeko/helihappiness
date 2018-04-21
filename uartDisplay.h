@@ -20,19 +20,16 @@
 #include "driverlib/systick.h"
 #include "driverlib/interrupt.h"
 
+#define MAX_STRING_LENGTH 16
+
 // *******************************************************
-#define ADC_SAMPLE_RATE 160  // Hz
-#define CONV_SIZE 20
-enum conv_type {CONV_UNIFORM};
+void
+initialiseUSB_UART (void);
 
-void heightInit(enum conv_type);
+void
+UARTSend (char *pucBuffer);
 
-uint32_t heightGetRaw(void);
+void
+UARTPrint (int32_t yawTarget, int32_t yawActual, int32_t heightTarget, int32_t heightActual, uint32_t dutyMain, uint32_t dutyTail,  char * mode);
 
-uint32_t heightGetPercentage(void);
-
-uint32_t heightAsPercentage(void);
-
-void heightCalibrate(void);
-
-#endif /* HEIGHT_H_ */
+#endif /* UARTDISPLAY_H_ */
