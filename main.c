@@ -122,7 +122,7 @@ int main(void) {
     initalise();
 
     // Initialisation is complete, so turn on the output.
-    pwmSetOutput(false, MAIN_ROTOR);
+    pwmSetOutput(true, MAIN_ROTOR);
     pwmSetOutput(true, TAIL_ROTOR);
 
     // Enable interrupts to the processor.
