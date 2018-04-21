@@ -20,7 +20,7 @@
 #include "driverlib/systick.h"
 #include "driverlib/interrupt.h"
 
-#define MAX_STRING_LENGTH 16
+#define UART_LINE_LENGTH 25
 
 // *******************************************************
 void
@@ -29,7 +29,10 @@ initialiseUSB_UART (void);
 void
 UARTSend (char *pucBuffer);
 
-void
-UARTPrint (int32_t yawTarget, int32_t yawActual, int32_t heightTarget, int32_t heightActual, uint32_t dutyMain, uint32_t dutyTail,  char * mode);
+//void
+//UARTPrint (int32_t yawTarget, int32_t yawActual, int32_t heightTarget, int32_t heightActual, uint32_t dutyMain, uint32_t dutyTail,  char * mode);
+
+void UARTPrintfln(const char* format, ...);
+//void UARTPrintValuesWithFormat(char* format, int32_t n, int32_t m);
 
 #endif /* UARTDISPLAY_H_ */
