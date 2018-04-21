@@ -2,7 +2,7 @@
 #define PWM_MODULE_H_
 
 //************************************************************************
-// pwmModule.c
+// pwmModule.h
 //
 // Helicopter project
 //
@@ -32,7 +32,6 @@
 #define PWM_DUTY_MAX_HZ 95
 #define PWM_DUTY_MIN_HZ 5
 #define PWM_DUTY_STEP_HZ 5
-#define PWM_START_DUTY_HZ 10
 
 //  PWM Hardware Details M0PWM7 (gen 3)
 //  ---Main Rotor PWM: PC5, J4-05
