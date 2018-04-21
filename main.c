@@ -213,7 +213,7 @@ int main(void) {
 	    }
 	    uartCount++;
 
-	    //timererWaitFrom(10, referenceTime);  // 100 hz, 10 ms
+	    timererWaitFrom(10, referenceTime);  // 100 hz, 10 ms
 	}
 }
 
