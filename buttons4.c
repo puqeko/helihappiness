@@ -1,6 +1,11 @@
-// *******************************************************
-// 
+//************************************************************************
 // buttons4.c
+//
+// Helicopter project
+//
+// Group:       A03 Group 10
+// Last Edited: 20/4/18
+// Edited from code by P.J. Bones UCECE
 //
 // Support for a set of FOUR specific buttons on the Tiva/Orbit.
 // ENCE361 sample code.
@@ -9,11 +14,7 @@
 //
 // Note that pin PF0 (the pin for the RIGHT pushbutton - SW2 on
 //  the Tiva board) needs special treatment - See PhilsNotesOnTiva.rtf.
-//
-// P.J. Bones UCECE
-// Last modified:  7.2.2018
-// 
-// *******************************************************
+//************************************************************************
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -73,7 +74,12 @@ initButtons (void)
     GPIOPadConfigSet (RIGHT_BUT_PORT_BASE, RIGHT_BUT_PIN, GPIO_STRENGTH_2MA,
        GPIO_PIN_TYPE_STD_WPU);
     but_normal[RIGHT] = RIGHT_BUT_NORMAL;
-
+    //#SW1 slde switch (active HIGH)
+    SysCtlPeripheralEnable (SW1_PERIPH);
+    GPIOPinTypeGPIOInput (SW1_PORT_BASE, SW1_PIN);
+    GPIOPadConfigSet (SW1_PORT_BASE, SW1_PIN, GPIO_STRENGTH_2MA,
+       GPIO_PIN_TYPE_STD_WPD);
+    but_normal[SW1] = SW1_NORMAL;
 	for (i = 0; i < NUM_BUTS; i++)
 	{
 		but_state[i] = but_normal[i];
@@ -102,7 +108,9 @@ updateButtons (void)
 	but_value[DOWN] = (GPIOPinRead (DOWN_BUT_PORT_BASE, DOWN_BUT_PIN) == DOWN_BUT_PIN);
     but_value[LEFT] = (GPIOPinRead (LEFT_BUT_PORT_BASE, LEFT_BUT_PIN) == LEFT_BUT_PIN);
     but_value[RIGHT] = (GPIOPinRead (RIGHT_BUT_PORT_BASE, RIGHT_BUT_PIN) == RIGHT_BUT_PIN);
-	// Iterate through the buttons, updating button variables as required
+    //#
+    but_value[SW1] = (GPIOPinRead (SW1_PORT_BASE, SW1_PIN) == SW1_PIN);
+    // Iterate through the buttons, updating button variables as required
 	for (i = 0; i < NUM_BUTS; i++)
 	{
         if (but_value[i] != but_state[i])
@@ -136,5 +144,12 @@ checkButton (uint8_t butName)
 			return PUSHED;
 	}
 	return NO_CHANGE;
+}
+
+// ********************************************************
+// ignore a change in state which may have occured for this button.
+void ignoreButton(uint8_t butName)
+{
+    but_flag[butName] = false;
 }
 

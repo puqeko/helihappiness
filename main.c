@@ -28,7 +28,7 @@
 #include "height.h"
 #include "timerer.h"
 #include "pwmModule.h"
-//#include "display.h"
+#include "display.h"
 #include "uartDisplay.h"
 
 enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, NUM_HELI_STATES};
@@ -46,7 +46,7 @@ void initalise()
 {
     // .. do any pin configs, timer setups, interrupt setups, etc
     initButtons();
-    //displayInit();
+    displayInit();
     heightInit(CONV_UNIFORM);
     yawInit();
     initClocks();
@@ -73,14 +73,15 @@ void heliMode(void)
 
     case LANDING:
         // done landing...
-        //ignoreButton(SW1);
+        ignoreButton(SW1);
         current_heli_state = LANDED;
         break;
 
     case ALIGNING:
         // done aligning...
-        //ignoreButton(SW1);
+        ignoreButton(SW1);
         current_heli_state = FLYING;
+        break;
 
     // M1.4 Display altitude
     case FLYING:
@@ -103,10 +104,11 @@ void heliMode(void)
         //displayTwoValuesWithFormat(dutyCycleFormatString, ui32DutyMain, ui32DutyTail, 3);
 
         // Run M1.3 again (M1.5)
-//        if (checkButton(SW1) == RELEASED) {  // switch down
-//            current_heli_state = LANDING;
-//        }
-//        break;
+
+        if (checkButton(SW1) == RELEASED) {  // switch down
+            current_heli_state = LANDING;
+        }
+        break;
     }
 }
 
@@ -132,31 +134,31 @@ int main(void) {
 
     int uartCount = 0;
 
-    // main loop
-    while (true) {
-        uint32_t referenceTime = timererGetTicks();
+	// main loop
+	while (true) {
+	    uint32_t referenceTime = timererGetTicks();
 
-        updateButtons();  // recommended 100 hz update
-        heliMode();
+	    updateButtons();  // recommended 100 hz update
+	    heliMode();
 
-        // this is okay because the mean is capped to 4095
-        uint32_t percentageHeight = heightAsPercentage();
-        //displayValueWithFormat(percentFormatString, percentageHeight, 1);
-        // TODO: include duty cycle on OLED
+	    // this is okay because the mean is capped to 4095
+	    uint32_t percentageHeight = heightAsPercentage();
+	    displayValueWithFormat(percentFormatString, percentageHeight, 1);
+	    // TODO: include duty cycle on OLED
 
-//      Test Uart here
-        if (uartCount == 25) {
-            UARTPrintfln("%s", "\n\n----------------\n");
-            UARTPrintfln("ALT: %d [%d] %%\n", 0, percentageHeight);
-            UARTPrintfln("YAW: %d [%d] deg\n", 0, yawGetDegrees());
-            UARTPrintfln("MAIN: %d %%, TAIL: %d %%\n", ui32DutyMain, ui32DutyTail);
-            UARTPrintfln("MODE: %s\n", mode);
-            uartCount = 0;
-        }
-        uartCount++;
+//	    Test Uart here
+	    if (uartCount == 25) {
+	        UARTPrintfln("%s", "\n\n----------------\n");
+	        UARTPrintfln("ALT: %d [%d] %%\n", 0, percentageHeight);
+	        UARTPrintfln("YAW: %d [%d] deg\n", 0, yawGetDegrees());
+	        UARTPrintfln("MAIN: %d %%, TAIL: %d %%\n", ui32DutyMain, ui32DutyTail);
+	        UARTPrintfln("MODE: %s\n", mode);
+	        uartCount = 0;
+	    }
+	    uartCount++;
 
 
-        timererWaitFrom(10, referenceTime);  // 100 hz, 10 ms
-    }
+	    timererWaitFrom(10, referenceTime);  // 100 hz, 10 ms
+	}
 }
 

@@ -1,18 +1,20 @@
 #ifndef BUTTONS_H_
 #define BUTTONS_H_
 
-// *******************************************************
+//************************************************************************
 // buttons4.h
+//
+// Helicopter project
+//
+// Group:       A03 Group 10
+// Last Edited: 20/4/18
+// Edited from code by P.J. Bones UCECE
 //
 // Support for a set of FOUR specific buttons on the Tiva/Orbit.
 // ENCE361 sample code.
 // The buttons are:  UP and DOWN (on the Orbit daughterboard) plus
 // LEFT and RIGHT on the Tiva.
-//
-// P.J. Bones UCECE
-// Last modified:  7.2.2018
-// 
-// *******************************************************
+//************************************************************************
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -20,7 +22,7 @@
 //*****************************************************************************
 // Constants
 //*****************************************************************************
-enum butNames {UP = 0, DOWN, LEFT, RIGHT, NUM_BUTS};
+enum butNames {UP = 0, DOWN, LEFT, RIGHT, SW1, NUM_BUTS}; //# add SW1
 enum butStates {RELEASED = 0, PUSHED, NO_CHANGE};
 // UP button
 #define UP_BUT_PERIPH  SYSCTL_PERIPH_GPIOE
@@ -42,6 +44,11 @@ enum butStates {RELEASED = 0, PUSHED, NO_CHANGE};
 #define RIGHT_BUT_PORT_BASE  GPIO_PORTF_BASE
 #define RIGHT_BUT_PIN  GPIO_PIN_0
 #define RIGHT_BUT_NORMAL  true
+//# SW1 slider switch
+#define SW1_PERIPH  SYSCTL_PERIPH_GPIOA
+#define SW1_PORT_BASE  GPIO_PORTA_BASE
+#define SW1_PIN  GPIO_PIN_7
+#define SW1_NORMAL  false
 
 #define NUM_BUT_POLLS 3
 // Debounce algorithm: A state machine is associated with each button.
@@ -70,5 +77,9 @@ updateButtons (void);
 // enumeration butStates, excluding 'NUM_BUTS'. Safe under interrupt.
 uint8_t
 checkButton (uint8_t butName);
+
+// ********************************************************
+// ignore a change in state which may have occured for this button.
+void ignoreButton(uint8_t butName);
 
 #endif /*BUTTONS_H_*/

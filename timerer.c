@@ -10,7 +10,6 @@
 
 #include "timerer.h"
 #include "driverlib/timer.h"
-#include "OrbitOLED_2/OrbitOLEDInterface.h"
 
 #define TIMERER_PERIPH SYSCTL_PERIPH_WTIMER5
 #define TIMERER_BASE WTIMER5_BASE
