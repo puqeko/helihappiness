@@ -193,9 +193,8 @@ int main(void) {
 
 
     //Some fake variables to test UART
-    int32_t yawTarget = 100, yawActual = 100, heightTarget = 100, heightActual = 100;
-    uint32_t dutyMain = 50, dutyTail = 50;
     char mode[] = "landed";
+
     int uartCount = 0;
 	// main loop
 	while (true) {
@@ -208,7 +207,11 @@ int main(void) {
 
 	    //Test Uart here
 	    if (uartCount == 25) {
-
+	        UARTPrintfln("%s", "\n\n----------------\n");
+	        UARTPrintfln("ALT: %d [%d] %%\n", 0, heightAsPercentage());
+            UARTPrintfln("YAW: %d [%d] deg\n", 0, yawGetDegrees());
+            UARTPrintfln("MAIN: %d %%, TAIL: %d %%\n", ui32DutyMain, ui32DutyTail);
+            UARTPrintfln("MODE: %s\n", mode);
 	        uartCount = 0;
 	    }
 	    uartCount++;
