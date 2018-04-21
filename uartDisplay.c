@@ -10,6 +10,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
+#include <string.h>
+
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "inc/hw_ints.h"
@@ -24,7 +27,7 @@
 //********************************************************
 // Constants
 //********************************************************
-#define MAX_STR_LEN 16
+
 //---USB Serial comms: UART0, Rx:PA0 , Tx:PA1
 #define BAUD_RATE 9600
 #define UART_USB_BASE           UART0_BASE
@@ -39,8 +42,7 @@
 //********************************************************
 // initialiseUSB_UART - 8 bits, 1 stop bit, no parity
 //********************************************************
-void
-initialiseUSB_UART (void)
+void initialiseUSB_UART (void)
 {
     // Enable GPIO port A which is used for UART0 pins.
     //
@@ -55,13 +57,15 @@ initialiseUSB_UART (void)
                         UART_CONFIG_PAR_NONE);
     UARTFIFOEnable(UART_USB_BASE);
     UARTEnable(UART_USB_BASE);
+
+    UARTSend("\n");  // required to start printing to remote interface
 }
+
 
 //**********************************************************************
 // Transmit a string via UART0
 //**********************************************************************
-void
-UARTSend (char *pucBuffer)
+void UARTSend (char *pucBuffer)
 {
     // Loop while there are more characters to send.
     while(*pucBuffer)
@@ -72,16 +76,34 @@ UARTSend (char *pucBuffer)
     }
 }
 
-/*Regular updates are provided    of  the desired and actual  yaw
-(degrees),  the desired and actual  altitude    (%),    the duty    cycle   for each    of  the main    and tail    motors  (%, with    0
-meaning off)    and the current operating   mode.*/
 
-void
-UARTPrint (int32_t yawTarget, int32_t yawActual, int32_t heightTarget, int32_t heightActual, uint32_t dutyMain, uint32_t dutyTail,  char * mode)
+//**********************************************************************
+// Print a single formated line to the terminal and truncate if too long.
+// Takes format with arguments (like fprintf) but adds a newline to the end
+// and truncates to UART_LINE_LENGTH. An ellipsis is added to the end if the
+// line is too long. A format string is always required.
+//**********************************************************************
+void UARTPrintfln(const char* format, ...)
 {
-    char formatString[] = "Target yaw %3d, Actual yaw %3d\n\rTarget height %3d, Actual height %3d\n\rDuty main %3d, Duty tail %3d\n\rMode %s\n\n\r";
-    char uartString[sizeof(formatString) + 1];
-    usnprintf (uartString, sizeof(formatString) + 1, formatString, yawTarget, yawActual, heightTarget, heightActual, dutyMain, dutyTail, mode);
+    va_list args;
+    int storedChars;
+    char uartString[UART_LINE_LENGTH + 2];  // for \n and \0
+
+    va_start(args, format);
+    storedChars = uvsnprintf(uartString, UART_LINE_LENGTH, format, args);
+    va_end(arg);
+
+    // add ellipsis if string too long
+    if (storedChars >= UART_LINE_LENGTH) {
+        int i = UART_LINE_LENGTH;
+        while (i-- > UART_LINE_LENGTH - 3) {
+            uartString[i] = '.';
+        }
+        uartString[UART_LINE_LENGTH] = '\n';
+        uartString[UART_LINE_LENGTH + 1] = '\0';
+    } else {
+        uartString[storedChars] = '\n';
+        uartString[storedChars + 1] = '\0';
+    }
     UARTSend(uartString);
 }
-

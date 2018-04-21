@@ -120,7 +120,7 @@ int main(void) {
 	initalise();
 
     // Initialisation is complete, so turn on the output.
-	pwmSetOutput(true, MAIN_ROTOR);
+	pwmSetOutput(false, MAIN_ROTOR);
 	pwmSetOutput(true, TAIL_ROTOR);
 
     // Enable interrupts to the processor.
@@ -128,10 +128,10 @@ int main(void) {
 
 
     //Some fake variables to test UART
-    int32_t yawTarget = 100, yawActual = 100, heightTarget = 100, heightActual = 100;
-    uint32_t dutyMain = 50, dutyTail = 50;
     char mode[] = "landed";
+
     int uartCount = 0;
+
 	// main loop
 	while (true) {
 	    uint32_t referenceTime = timererGetTicks();
@@ -140,18 +140,21 @@ int main(void) {
 	    heliMode();
 
 	    // this is okay because the mean is capped to 4095
-	    displayValueWithFormat(percentFormatString, heightAsPercentage(), 1);
+	    uint32_t percentageHeight = heightAsPercentage();
+	    displayValueWithFormat(percentFormatString, percentageHeight, 1);
 	    // TODO: include duty cycle on OLED
 
-	    // TODO: This should be serial only
-	    displayValueWithFormat(yawFormatString, yawGetDegrees(), 2);  // line 2
-
-	    //Test Uart here
+//	    Test Uart here
 	    if (uartCount == 25) {
-	        UARTPrint(yawTarget, yawActual, heightTarget, heightActual, dutyMain, dutyTail, mode);
+	        UARTPrintfln("%s", "\n\n----------------\n");
+	        UARTPrintfln("ALT: %d [%d] %%\n", 0, percentageHeight);
+	        UARTPrintfln("YAW: %d [%d] deg\n", 0, yawGetDegrees());
+	        UARTPrintfln("MAIN: %d %%, TAIL: %d %%\n", ui32DutyMain, ui32DutyTail);
+	        UARTPrintfln("MODE: %s\n", mode);
 	        uartCount = 0;
 	    }
 	    uartCount++;
+
 
 	    timererWaitFrom(10, referenceTime);  // 100 hz, 10 ms
 	}
