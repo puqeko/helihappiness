@@ -20,7 +20,6 @@ static uint32_t offsetDuty = 30000;
 bool PIDsetMainOffset(uint32_t measured) {
     if (measured < CALIBRATION_TARGET) {
         offsetDuty = offsetDuty + CALIBRATION_INCREMENT;
-        timererWait(500);
         return false;
     }
     offsetDuty = offsetDuty - CALIBRATION_INCREMENT;
