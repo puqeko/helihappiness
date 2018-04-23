@@ -81,6 +81,19 @@ void initalise()
 }
 
 
+void updatePID(void)
+{
+    mainDuty = MIN(mainDuty, MAX_DUTY * MULT);
+    mainDuty = MAX(mainDuty, MIN_DUTY * MULT);
+    tailDuty = MIN(tailDuty, MAX_DUTY);
+    tailDuty = MAX(tailDuty, MIN_DUTY);
+
+    // Set motor speed
+    pwmSetDuty(mainDuty / MULT, MAIN_ROTOR);
+    pwmSetDuty(tailDuty, TAIL_ROTOR);
+}
+
+
 void heliMode(void)
 {
     switch (current_heli_state) {
@@ -100,6 +113,15 @@ void heliMode(void)
         }
         break;
 
+    case ALIGNING:
+        if () {
+            // done aligning...
+            ignoreButton(SW1);
+            current_heli_state = FLYING;
+            targetYaw = 0;
+        }
+        break;
+
     case LANDING:
         // TODO: Ramp input for landing
         // done landing...
@@ -112,13 +134,6 @@ void heliMode(void)
         mainDuty = 0;
         tailDuty = 0;
         targetHeight = 0;
-        targetYaw = 0;
-        break;
-
-    case ALIGNING:
-        // done aligning...
-        ignoreButton(SW1);
-        current_heli_state = FLYING;
         targetYaw = 0;
         break;
 
@@ -145,15 +160,6 @@ void heliMode(void)
         // Apply proportional, integral, derivative control
         mainDuty = PIDUpdateHeight(mainDuty, targetHeight, percentageHeight, DELTA_TIME);
         tailDuty = PIDUpdateYaw(tailDuty, targetYaw, degreesYaw, DELTA_TIME);
-
-        mainDuty = MIN(mainDuty, MAX_DUTY * MULT);
-        mainDuty = MAX(mainDuty, MIN_DUTY * MULT);
-        tailDuty = MIN(tailDuty, MAX_DUTY);
-        tailDuty = MAX(tailDuty, MIN_DUTY);
-
-        // Set motor speed
-        pwmSetDuty(mainDuty / MULT, MAIN_ROTOR);
-        pwmSetDuty(tailDuty, TAIL_ROTOR);
 
         break;
     }
@@ -194,6 +200,7 @@ int main(void)
 	    // Update user inputs and run state machine
         updateButtons();  // recommended 100 hz update
         heliMode();
+        updatePID();
 
 	    // Wait any time that remains for this cycle to take DELTA_TIME
 	    timererWaitFrom(DELTA_TIME, referenceTime);
