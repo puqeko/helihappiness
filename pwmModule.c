@@ -1,13 +1,10 @@
 /**********************************************************
  *
- * pwmGen.c - Example code which generates a single PWM
- *    output on J4-05 (M0PWM7) with variable duty cycle and
- *    fixed frequency in
- *    the range 50 Hz to 400 Hz.
- * 2018: Modified by Ryan Hall for helicopter application.
+ * pwmModule.c - Generates multiple PWM outputs, with variable
+ * duty cycle, to control the main and tail rotor.
  *
  * P.J. Bones   UCECE
- * Last modified:  18.4.2018
+ * Modified by Ryan H and Thomas M 23.4.2018.
  **********************************************************/
 
 #include <stdint.h>
@@ -28,46 +25,42 @@
 #include "driverlib/debug.h"
 #include "utils/ustdlib.h"
 #include "stdlib.h"
-#include "OrbitOLED_2/OrbitOLEDInterface.h"
 #include "pwmModule.h"
 
-/**********************************************************
- * Generates a single PWM signal on Tiva board pin J4-05 =
- * PC5 (M0PWM7).  This is the same PWM output as the
- * helicopter main rotor.
- **********************************************************/
+// Systick configuration
+#define SYSTICK_RATE_HZ    100
 
-/*******************************************
- *      Globals
- *******************************************/
+// PWM configuration
+#define PWM_START_RATE_HZ  250
+#define PWM_START_DUTY     10  // %
+#define PWM_DIVIDER_CODE   SYSCTL_PWMDIV_4
+#define PWM_DIVIDER        4
+
+//  PWM Hardware Details M0PWM7 (gen 3)
+//  ---Main Rotor PWM: PC5, J4-05
+#define PWM_MAIN_BASE        PWM0_BASE
+#define PWM_MAIN_GEN         PWM_GEN_3
+#define PWM_MAIN_OUTNUM      PWM_OUT_7
+#define PWM_MAIN_OUTBIT      PWM_OUT_7_BIT
+#define PWM_MAIN_PERIPH_PWM  SYSCTL_PERIPH_PWM0
+#define PWM_MAIN_PERIPH_GPIO SYSCTL_PERIPH_GPIOC
+#define PWM_MAIN_GPIO_BASE   GPIO_PORTC_BASE
+#define PWM_MAIN_GPIO_CONFIG GPIO_PC5_M0PWM7
+#define PWM_MAIN_GPIO_PIN    GPIO_PIN_5
+
+#define PWM_TAIL_BASE        PWM1_BASE
+#define PWM_TAIL_GEN         PWM_GEN_2
+#define PWM_TAIL_OUTNUM      PWM_OUT_5
+#define PWM_TAIL_OUTBIT      PWM_OUT_5_BIT
+#define PWM_TAIL_PERIPH_PWM  SYSCTL_PERIPH_PWM1
+#define PWM_TAIL_PERIPH_GPIO SYSCTL_PERIPH_GPIOF
+#define PWM_TAIL_GPIO_BASE   GPIO_PORTF_BASE
+#define PWM_TAIL_GPIO_CONFIG GPIO_PF1_M1PWM5
+#define PWM_TAIL_GPIO_PIN    GPIO_PIN_1
 
 
-
-
-
-/***********************************************************
- * Initialisation functions: clock, SysTick, PWM
- ***********************************************************
- * Clock
- ***********************************************************/
-void
-initClocks (void)
-{
-    // Set the PWM clock rate (using the prescaler)
-    SysCtlPWMClockSet(PWM_DIVIDER_CODE);
-}
-
-/*************************************************************
- * SysTick interrupt
- ************************************************************/
-
-
-/*********************************************************
- * initialisePWM
- * M0PWM7 (J4-05, PC5) is used for the main rotor motor
- *********************************************************/
-void
-initialisePWM (void)
+// M0PWM7 (J4-05, PC5) is used for the main rotor motor
+void pwmInit(void)
 {
     SysCtlPeripheralEnable(PWM_MAIN_PERIPH_PWM);
     SysCtlPeripheralEnable(PWM_TAIL_PERIPH_PWM);
@@ -84,8 +77,8 @@ initialisePWM (void)
     PWMGenConfigure(PWM_TAIL_BASE, PWM_TAIL_GEN,
                         PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
     // Set the initial PWM parameters ***
-    setPWM (PWM_START_RATE_HZ, PWM_FIXED_DUTY, MAIN_ROTOR);
-    setPWM (PWM_START_RATE_HZ, PWM_FIXED_DUTY, TAIL_ROTOR);
+    setPWM (PWM_START_RATE_HZ, PWM_START_DUTY, MAIN_ROTOR);
+    setPWM (PWM_START_RATE_HZ, PWM_START_DUTY, TAIL_ROTOR);
 
     PWMGenEnable(PWM_MAIN_BASE, PWM_MAIN_GEN);
     PWMGenEnable(PWM_TAIL_BASE, PWM_TAIL_GEN);
@@ -93,68 +86,37 @@ initialisePWM (void)
     // Disable the output.  Repeat this call with 'true' to turn O/P on.
     PWMOutputState(PWM_MAIN_BASE, PWM_MAIN_OUTBIT, false);
     PWMOutputState(PWM_TAIL_BASE, PWM_TAIL_OUTBIT, false);
+
+    // Set the PWM clock rate (using the prescaler)
+    SysCtlPWMClockSet(PWM_DIVIDER_CODE);
 }
 
-/********************************************************
- * Function to set the freq, duty cycle of M0PWM7
- ********************************************************/
-void
-setPWM (uint32_t ui32Freq, uint32_t ui32Duty, enum rotor_type rotorType)
+
+// take a duty cycle, as a percentage from 0 to 100, a precision multiplier (i.e. a multiplier of 100 means
+// the supplied duty cycle is a factor of 100 larger than needs and should be divided down), and an enum
+// with the name of the channel to change the pwm duty cycle of.
+void pwmSetDuty(uint32_t dutyPercent, uint32_t precision, pwm_channel channel)
 {
-    uint32_t ui32Period;
-    switch(rotorType)
+    // Calculate the PWM period corresponding to the freq.
+    uint32_t period = SysCtlClockGet() / PWM_DIVIDER / PWM_START_RATE_HZ;
+    switch(channel)
     {
     case MAIN_ROTOR:
-        // Calculate the PWM period corresponding to the freq.
-        ui32Period = SysCtlClockGet() / PWM_DIVIDER / ui32Freq;
-        PWMGenPeriodSet(PWM_MAIN_BASE, PWM_MAIN_GEN, ui32Period);
-        PWMPulseWidthSet(PWM_MAIN_BASE, PWM_MAIN_OUTNUM, ui32Period * ui32Duty / 100);
+        PWMGenPeriodSet(PWM_MAIN_BASE, PWM_MAIN_GEN, period);
+        PWMPulseWidthSet(PWM_MAIN_BASE, PWM_MAIN_OUTNUM, period * dutyPercent / 100  / precision);
         break;
     case TAIL_ROTOR:
-        // Calculate the PWM period corresponding to the freq.
-        ui32Period = SysCtlClockGet() / PWM_DIVIDER / ui32Freq;
-        PWMGenPeriodSet(PWM_TAIL_BASE, PWM_TAIL_GEN, ui32Period);
-        PWMPulseWidthSet(PWM_TAIL_BASE, PWM_TAIL_OUTNUM, ui32Period * ui32Duty / 100);
+        PWMGenPeriodSet(PWM_TAIL_BASE, PWM_TAIL_GEN, period);
+        PWMPulseWidthSet(PWM_TAIL_BASE, PWM_TAIL_OUTNUM, period * dutyPercent / 100 / precision);
         break;
     }
 }
 
-void
-pwmSetDuty (uint32_t ui32Duty, enum rotor_type rotorType)
-{
-    uint32_t ui32Period;
-    switch(rotorType)
-    {
-    case MAIN_ROTOR:
-        // Calculate the PWM period corresponding to the freq.
-        ui32Period = SysCtlClockGet() / PWM_DIVIDER / PWM_START_RATE_HZ;
-        PWMGenPeriodSet(PWM_MAIN_BASE, PWM_MAIN_GEN, ui32Period);
-        PWMPulseWidthSet(PWM_MAIN_BASE, PWM_MAIN_OUTNUM, ui32Period * ui32Duty / 100);
-        break;
-    case TAIL_ROTOR:
-        // Calculate the PWM period corresponding to the freq.
-        ui32Period = SysCtlClockGet() / PWM_DIVIDER / PWM_START_RATE_HZ;
-        PWMGenPeriodSet(PWM_TAIL_BASE, PWM_TAIL_GEN, ui32Period);
-        PWMPulseWidthSet(PWM_TAIL_BASE, PWM_TAIL_OUTNUM, ui32Period * ui32Duty / 100);
-        break;
-    }
-}
 
-//*****************************************************************************
-// Initialisation functions: clock, display
-//*****************************************************************************
-void
-initClock (void)
+// enable or disable output from a given channel.
+void pwmSetOutputState(bool state, pwm_channel channel)
 {
-    // Set the clock rate to 20 MHz
-    SysCtlClockSet (SYSCTL_SYSDIV_10 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
-                   SYSCTL_XTAL_16MHZ);
-}
-
-void
-pwmSetOutput (bool state, enum rotor_type rotorType)
-{
-    switch(rotorType)
+    switch(channel)
     {
     case MAIN_ROTOR:
         // Calculate the PWM period corresponding to the freq.
@@ -167,7 +129,4 @@ pwmSetOutput (bool state, enum rotor_type rotorType)
     }
 
 }
-
-
-// *******************************************************
 
