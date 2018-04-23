@@ -114,7 +114,8 @@ void heliMode(void)
         break;
 
     case ALIGNING:
-        if () {
+        tailDuty = 35;
+        if (PIDsetMainOffset(percentageHeight)) {
             // done aligning...
             ignoreButton(SW1);
             current_heli_state = FLYING;
@@ -158,8 +159,9 @@ void heliMode(void)
         }
 
         // Apply proportional, integral, derivative control
-        mainDuty = PIDUpdateHeight(mainDuty, targetHeight, percentageHeight, DELTA_TIME);
-        tailDuty = PIDUpdateYaw(tailDuty, targetYaw, degreesYaw, DELTA_TIME);
+        mainDuty = PIDUpdateHeight(targetHeight, percentageHeight, DELTA_TIME);
+        tailDuty = 35;
+        //tailDuty = PIDUpdateYaw(tailDuty, targetYaw, degreesYaw, DELTA_TIME);
 
         break;
     }

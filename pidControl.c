@@ -11,21 +11,31 @@
 
 #include <stdbool.h>
 #include "pidControl.h"
+#include "timerer.h"
 
-static const uint32_t Kpu = 2000;
-static const uint32_t Kpd = 300;
+static uint32_t Kpu = 2000;
+static uint32_t Kpd = 300;
+static uint32_t offsetDuty = 30000;
 
-
+bool PIDsetMainOffset(uint32_t measured) {
+    if (measured < CALIBRATION_TARGET) {
+        offsetDuty = offsetDuty + CALIBRATION_INCREMENT;
+        timererWait(500);
+        return false;
+    }
+    offsetDuty = offsetDuty - CALIBRATION_INCREMENT;
+    return true;
+}
 // Take the target height values, actual measured height values, and the time since
 // the last update, and return the next value (as a duty cycle between 5% and 95%)
 // to set the main rotor to.
-uint32_t PIDUpdateHeight(uint32_t cur, uint32_t target, uint32_t measured, uint32_t deltaTime)
+uint32_t PIDUpdateHeight(uint32_t target, uint32_t measured, uint32_t deltaTime)
 {
     if (measured > target) {
-        return cur - (measured - target) * Kpd * deltaTime / 1000;
+        return offsetDuty - (measured - target) * Kpd * deltaTime / 1000;
     }
 
-    return cur + (target - measured) * Kpu * deltaTime / 1000;
+    return offsetDuty + (target - measured) * Kpu * deltaTime / 1000;
 }
 
 
