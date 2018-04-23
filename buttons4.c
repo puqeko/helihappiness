@@ -80,6 +80,9 @@ initButtons (void)
     GPIOPadConfigSet (SW1_PORT_BASE, SW1_PIN, GPIO_STRENGTH_2MA,
        GPIO_PIN_TYPE_STD_WPD);
     but_normal[SW1] = SW1_NORMAL;
+
+    // init to whatever state the switch is in
+    but_state[SW1] = (GPIOPinRead (SW1_PORT_BASE, SW1_PIN) == SW1_PIN);
 	for (i = 0; i < NUM_BUTS; i++)
 	{
 		but_state[i] = but_normal[i];
