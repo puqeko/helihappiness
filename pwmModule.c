@@ -77,8 +77,8 @@ void pwmInit(void)
     PWMGenConfigure(PWM_TAIL_BASE, PWM_TAIL_GEN,
                         PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
     // Set the initial PWM parameters ***
-    setPWM (PWM_START_RATE_HZ, PWM_START_DUTY, MAIN_ROTOR);
-    setPWM (PWM_START_RATE_HZ, PWM_START_DUTY, TAIL_ROTOR);
+    pwmSetDuty(PWM_START_DUTY, 1, MAIN_ROTOR);
+    pwmSetDuty(PWM_START_DUTY, 1, TAIL_ROTOR);
 
     PWMGenEnable(PWM_MAIN_BASE, PWM_MAIN_GEN);
     PWMGenEnable(PWM_TAIL_BASE, PWM_TAIL_GEN);

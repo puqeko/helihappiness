@@ -46,18 +46,8 @@ void heightInit(height_conv convType)
     SysTickEnable();
     initCircBuf(&buf, CONV_SIZE);
     adcInit(handleNewADCValue);
-    getConvArray(convType);
-}
 
-
-void heightCalibrate(void)
-{
-    baseMean = heightGetRaw();
-}
-
-
-void getConvArray(height_conv convType)
-{
+    // initalise convolution array
     int i;
     switch (convType)
     {
@@ -67,6 +57,12 @@ void getConvArray(height_conv convType)
         }
         break;
     }
+}
+
+
+void heightCalibrate(void)
+{
+    baseMean = heightGetRaw();
 }
 
 
