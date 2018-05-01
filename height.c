@@ -20,8 +20,9 @@
 #define MEAN_RANGE (ADC_MAX_RANGE * 8 / 33)
 
 static circBuf_t buf;
-static int convolutionArray[CONV_SIZE];
-static uint32_t baseMean = 0;
+static int32_t convolutionArray[CONV_SIZE];
+static int32_t baseMean = 0;
+static int32_t meanHeight = 0;
 
 
 void SysTickIntHandler(void)
@@ -36,8 +37,17 @@ void handleNewADCValue(uint32_t val)
 }
 
 
-void getConvArray(enum conv_type convType)
+void heightInit(height_conv convType)
 {
+    SysTickPeriodSet(SysCtlClockGet() / ADC_SAMPLE_RATE);  // frequency of 120 Hz
+    SysTickIntRegister(SysTickIntHandler);
+    // Enable interrupt and device
+    SysTickIntEnable();
+    SysTickEnable();
+    initCircBuf(&buf, CONV_SIZE);
+    adcInit(handleNewADCValue);
+
+    // initalise convolution array
     int i;
     switch (convType)
     {
@@ -50,38 +60,31 @@ void getConvArray(enum conv_type convType)
 }
 
 
-uint32_t heightGetRaw(void)
-{
-    uint32_t sum = 0;
-    int i;
-    for (i = 0; i < CONV_SIZE; i++) {
-        sum = sum + (readCircBuf (&buf) * convolutionArray[i]);
-    }
-    return sum / CONV_BASE;
-}
-
-
-uint32_t heightAsPercentage(void)
-{
-    uint32_t mean = heightGetRaw();
-    return 100 * ((int32_t)baseMean - (int32_t)mean) / MEAN_RANGE;
-}
-
-
 void heightCalibrate(void)
 {
     baseMean = heightGetRaw();
 }
 
 
-void heightInit(enum conv_type convType)
+int32_t heightGetRaw(void)
 {
-    SysTickPeriodSet(SysCtlClockGet() / ADC_SAMPLE_RATE);  // frequency of 120 Hz
-    SysTickIntRegister(SysTickIntHandler);
-    // Enable interrupt and device
-    SysTickIntEnable();
-    SysTickEnable();
-    initCircBuf(&buf, CONV_SIZE);
-    adcInit(handleNewADCValue);
-    getConvArray (convType);
+    return meanHeight;
+}
+
+
+// Returns a percentage form 0 to 100 scaled by precision
+int32_t heightAsPercentage(int32_t precision)
+{
+    return 100 * precision * (baseMean - meanHeight) / MEAN_RANGE;
+}
+
+
+void heightUpdate(void)
+{
+    int32_t sum = 0;
+    int i;
+    for (i = 0; i < CONV_SIZE; i++) {
+        sum = sum + (readCircBuf (&buf) * convolutionArray[i]);
+    }
+    meanHeight = sum / CONV_BASE;
 }

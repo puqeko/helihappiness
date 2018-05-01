@@ -32,6 +32,7 @@
 #define BASE_YAW 100000
 #define DEGREES_PER_COUNT ((BASE_YAW*360)/COUNTS_PER_ROTATION)
 
+static int32_t rawCounts = 0;
 
 
 void yawInit(void)
@@ -39,13 +40,9 @@ void yawInit(void)
     quadEncoderInit(SYSCTL_PERIPH_GPIOB, GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_PIN_1);
 }
 
-int32_t yawGetDegrees(void)
-{
-    int32_t rawCounts = quadEncoderGetCount();
-    return (rawCounts * DEGREES_PER_COUNT)/(BASE_YAW);
-}
 
-void yawCalibrate(void) //perhaps not part of yaw module???
+int32_t yawGetDegrees(int32_t precision)
 {
-    //do calibration stuff
+    // no update required as quadEncoderGetCount does not do any heavy calculations.
+    return (quadEncoderGetCount() * DEGREES_PER_COUNT * precision)/(BASE_YAW);
 }

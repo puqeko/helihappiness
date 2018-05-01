@@ -7,6 +7,7 @@
 // Purpose: This program may destroy helicopters.
 // ************************************************************
 
+#include <control.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -27,10 +28,9 @@
 #include "yaw.h"
 #include "height.h"
 #include "timerer.h"
-#include "pwmModule.h"
 #include "display.h"
 #include "uartDisplay.h"
-#include "pidControl.h"
+#include "control.h"
 
 enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, NUM_HELI_STATES};
 // list the mode that should be displayed for each state.
@@ -39,23 +39,13 @@ static enum heli_state current_heli_state = LANDED;
 
 uint32_t targetHeight = 0;
 uint32_t targetYaw = 0;
-uint32_t mainDuty = 0;
-uint32_t tailDuty = 0;
-uint32_t percentageHeight = 0;
-uint32_t degreesYaw = 0;
 
 #define DELTA_TIME 10  // 100 hz, 10 ms
 #define UART_DISPLAY_FREQUENCY 4  // hz
 #define LOOP_FREQUENCY (1000 / DELTA_TIME)
 
-#define MIN_DUTY 10  // %
-#define MAX_DUTY 95  // %
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
 
 void initalise()
 {
@@ -70,27 +60,12 @@ void initalise()
     displayInit();
     yawInit();
     heightInit(CONV_UNIFORM);
-    initClocks();
-    initialisePWM();
     initialiseUSB_UART();
     IntMasterEnable ();  // Enable interrupts to the processor.
     timererWait(1);
 
     heightCalibrate();
-    ignoreButton(SW1);
-}
-
-
-void updatePID(void)
-{
-    mainDuty = MIN(mainDuty, MAX_DUTY * MULT);
-    mainDuty = MAX(mainDuty, MIN_DUTY * MULT);
-    tailDuty = MIN(tailDuty, MAX_DUTY);
-    tailDuty = MAX(tailDuty, MIN_DUTY);
-
-    // Set motor speed
-    pwmSetDuty(mainDuty / MULT, MAIN_ROTOR);
-    pwmSetDuty(tailDuty, TAIL_ROTOR);
+    controlInit();
 }
 
 
@@ -105,19 +80,19 @@ void heliMode(void)
 
         if (checkButton(SW1) == PUSHED) {
             current_heli_state = ALIGNING;
-            pwmSetOutput(true, MAIN_ROTOR);
-            pwmSetOutput(true, TAIL_ROTOR);
-            mainDuty = MIN_DUTY * MULT;
-            tailDuty = MIN_DUTY * MULT;
+            controlMotorSet(true);  // turn  on motors
+            controlEnable(CONTROL_CALIBRATE);  // start calibration
             targetHeight = 0;
         }
         break;
 
     case ALIGNING:
-        tailDuty = 35;
-        if (PIDsetMainOffset(percentageHeight)) {
+        // calibration is auto disabled when complete
+        if (!controlIsEnabled(CONTROL_CALIBRATE)) {
             // done aligning...
             ignoreButton(SW1);
+            controlEnable(CONTROL_HEIGHT);
+            controlEnable(CONTROL_YAW);
             current_heli_state = FLYING;
             targetYaw = 0;
         }
@@ -127,15 +102,11 @@ void heliMode(void)
         // TODO: Ramp input for landing
         // done landing...
         ignoreButton(SW1);
+        controlMotorSet(false);
         current_heli_state = LANDED;
 
-        // Set motor speed
-        pwmSetOutput(false, MAIN_ROTOR);
-        pwmSetOutput(false, TAIL_ROTOR);
-        mainDuty = 0;
-        tailDuty = 0;
-        targetHeight = 0;
-        targetYaw = 0;
+        controlDisable(CONTROL_HEIGHT);
+        controlDisable(CONTROL_YAW);
         break;
 
     case FLYING:
@@ -152,17 +123,13 @@ void heliMode(void)
             targetYaw += TAIL_STEP;
         }
         if (checkButton(SW1) == RELEASED) {  // switch down
+            // TODO: add landing control
+            controlSetTarget(0, CONTROL_HEIGHT);
+            controlSetTarget(0, CONTROL_YAW);
             current_heli_state = LANDING;
-
-            targetHeight = 0;
-            targetYaw = 0;
         }
-
-        // Apply proportional, integral, derivative control
-        mainDuty = PIDUpdateHeight(targetHeight, percentageHeight, DELTA_TIME);
-        tailDuty = 35;
-        //tailDuty = PIDUpdateYaw(tailDuty, targetYaw, degreesYaw, DELTA_TIME);
-
+        controlSetTarget(targetHeight, CONTROL_HEIGHT);
+        controlSetTarget(targetYaw, CONTROL_YAW);
         break;
     }
 }
@@ -180,20 +147,25 @@ int main(void)
 	    // so measure DELTA_TIME from this point
 	    uint32_t referenceTime = timererGetTicks();
 
+	    heightUpdate();  // do convolution step
+	    controlUpdate(DELTA_TIME);  // update control
+
 	    // Take measurements
-	    percentageHeight = heightAsPercentage();
-	    degreesYaw = yawGetDegrees();
+	    uint32_t percentageHeight = heightAsPercentage(1);  // precision = 1
+	    uint32_t degreesYaw = yawGetDegrees(1);  // precision = 1
+	    uint32_t mainDuty = controlGetPWMDuty(CONTROL_HEIGHT);
+        uint32_t tailDuty = controlGetPWMDuty(CONTROL_YAW);
 
 	    // Update OLED display
 	    displayValueWithFormat("  Height = %4d%%", percentageHeight, 1);  // line 1
-	    displayTwoValuesWithFormat(" M = %2d, T = %2d", mainDuty / MULT, tailDuty / MULT, 2);  // line 2
+	    displayTwoValuesWithFormat(" M = %2d, T = %2d", mainDuty, tailDuty, 2);  // line 2
 
 	    // Update UART display
 	    if (uartCount == LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY) {
 	        UARTPrintLineWithFormat("%s", "\n\n----------------\n");
 	        UARTPrintLineWithFormat("ALT: %d [%d] %%\n", targetHeight, percentageHeight);
 	        UARTPrintLineWithFormat("YAW: %d [%d] deg\n", targetYaw, degreesYaw);
-	        UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty / MULT, tailDuty / MULT);
+	        UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty, tailDuty);
 	        UARTPrintLineWithFormat("MODE: %s\n", heli_state_map[current_heli_state]);
 	        uartCount = 0;
 	    }
@@ -202,7 +174,6 @@ int main(void)
 	    // Update user inputs and run state machine
         updateButtons();  // recommended 100 hz update
         heliMode();
-        updatePID();
 
 	    // Wait any time that remains for this cycle to take DELTA_TIME
 	    timererWaitFrom(DELTA_TIME, referenceTime);
