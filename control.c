@@ -129,7 +129,7 @@ void controlUpdate(uint32_t deltaTime)
 //    previousHeight = height;
 
     yaw = yawGetDegrees(PRECISION);  // TODO
-    angularVelocity = (yaw - previousYaw) * deltaTime / 1000;
+    angularVelocity = 0;//(yaw - previousYaw) * deltaTime / 1000;
     previousYaw = yaw;
 
     // call all channel update functions

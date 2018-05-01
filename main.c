@@ -151,22 +151,22 @@ void displayInfo()
 
     // Update UART display
     // Use a collaborative technique to update the display across updates
-    int updateCount = LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY;
+#define UPDATE_COUNT (LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY)
     switch (uartCount) {
-    case updateCount:
+    case UPDATE_COUNT:
         uartCount = 0;
         UARTPrintLineWithFormat("%s", "\n\n----------------\n");
         break;
-    case updateCount + 1:
+    case UPDATE_COUNT + 1:
         UARTPrintLineWithFormat("ALT: %d [%d] %%\n", targetHeight, percentageHeight);
         break;
-    case updateCount + 2:
+    case UPDATE_COUNT + 2:
         UARTPrintLineWithFormat("YAW: %d [%d] deg\n", targetYaw, degreesYaw);
         break;
-    case updateCount + 3:
+    case UPDATE_COUNT + 3:
         UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty, tailDuty);
         break;
-    case updateCount + 4:
+    case UPDATE_COUNT + 4:
         UARTPrintLineWithFormat("MODE: %s\n", heli_state_map[current_heli_state]);
         break;
     }
