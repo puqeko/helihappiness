@@ -13,7 +13,6 @@
 #include "pwmModule.h"
 #include "height.h"
 #include "yaw.h"
-#include "display.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -173,5 +172,5 @@ void updateYawChannel(uint32_t deltaTime)
 void updateCalibrationChannel(uint32_t deltaTime)
 {
     outputs[CONTROL_CALIBRATE] = 30 * PRECISION;
-    enabled[CONTROL_CALIBRATE] = false;
+    controlDisable(CONTROL_CALIBRATE);
 }
