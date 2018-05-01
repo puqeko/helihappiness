@@ -23,11 +23,12 @@ typedef void (*control_channel_update_func_t)(uint32_t);
 // defined later on
 void updateHeightChannel(uint32_t deltaTime);
 void updateYawChannel(uint32_t deltaTime);
-void updateCalibrationChannel(uint32_t deltaTime);
+void updateCalibrationChannelMain(uint32_t deltaTime);
+void updateCalibrationChannelTail(uint32_t deltaTime);
 
 // functions which get called to update each channel
 static control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
-    updateHeightChannel, updateYawChannel, updateCalibrationChannel
+    updateHeightChannel, updateYawChannel, updateCalibrationChannelMain, updateCalibrationChannelTail
 };
 
 // final output parameters (so that we may display these in main)
@@ -89,7 +90,9 @@ void controlDisable(control_channel_t channel)
 
     // handle ending conditions
     switch(channel) {
-    case CONTROL_CALIBRATE:
+    case CONTROL_CALIBRATE_MAIN:
+        break;
+    case CONTROL_CALIBRATE_TAIL:
         break;
     default:
         outputs[channel] = 0;
@@ -141,13 +144,13 @@ void controlUpdate(uint32_t deltaTime)
     }
 
     // main rotor equation
-    mainDuty = outputs[CONTROL_CALIBRATE] + height * gavitationalOffsetHeightCorrectionFactor +
-            angularVelocity + outputs[CONTROL_HEIGHT];
+    mainDuty = outputs[CONTROL_CALIBRATE_MAIN] /*+ height * gavitationalOffsetHeightCorrectionFactor +
+            angularVelocity*/ + outputs[CONTROL_HEIGHT];
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
-    tailDuty = mainRotorTorqueConstant * mainDuty + outputs[CONTROL_YAW];
-    mainDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+    tailDuty = outputs[CONTROL_CALIBRATE_TAIL] + mainRotorTorqueConstant * mainDuty + outputs[CONTROL_YAW];
+    tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed
     pwmSetDuty((uint32_t)mainDuty, PRECISION, MAIN_ROTOR);
@@ -168,12 +171,18 @@ void updateHeightChannel(uint32_t deltaTime)
 
 void updateYawChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_YAW] = 35 * PRECISION;
+    outputs[CONTROL_YAW] = targets[CONTROL_YAW];
 }
 
 
-void updateCalibrationChannel(uint32_t deltaTime)
+void updateCalibrationChannelMain(uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE] = 35 * PRECISION;
-    controlDisable(CONTROL_CALIBRATE);
+    outputs[CONTROL_CALIBRATE_MAIN] = 35 * PRECISION;
+    controlDisable(CONTROL_CALIBRATE_MAIN);
+}
+
+void updateCalibrationChannelTail(uint32_t deltaTime)
+{
+    outputs[CONTROL_CALIBRATE_TAIL] = 35 * PRECISION;
+    controlDisable(CONTROL_CALIBRATE_TAIL);
 }

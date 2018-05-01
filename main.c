@@ -81,14 +81,15 @@ void heliMode(void)
         if (checkButton(SW1) == PUSHED) {
             current_heli_state = ALIGNING;
             controlMotorSet(true);  // turn  on motors
-            controlEnable(CONTROL_CALIBRATE);  // start calibration
+            controlEnable(CONTROL_CALIBRATE_MAIN);  // start calibration
+            controlEnable(CONTROL_CALIBRATE_TAIL);
             targetHeight = 0;
         }
         break;
 
     case ALIGNING:
         // calibration is auto disabled when complete
-        if (!controlIsEnabled(CONTROL_CALIBRATE)) {
+        if (!controlIsEnabled(CONTROL_CALIBRATE_MAIN) && !controlIsEnabled(CONTROL_CALIBRATE_TAIL)) {
             // done aligning...
             ignoreButton(SW1);
             controlEnable(CONTROL_HEIGHT);
