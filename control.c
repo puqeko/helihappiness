@@ -14,12 +14,6 @@
 #include "height.h"
 #include "yaw.h"
 
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
-// Make sure a is bounded by u (upper) and l (lower)
-#define CLAMP(a, l, u) (a = MIN(MAX(a, l), u))
-
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
 static bool enabled[CONTROL_NUM_CHANNELS] = {};
@@ -37,7 +31,7 @@ static control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
 };
 
 // final output parameters (so that we may display these in main)
-int32_t mainDuty = 0, tailDuty = 0;
+static int32_t mainDuty = 0, tailDuty = 0;
 
 // measured parameters (scaled by PRECISION)
 static int32_t height;  //, previousHeight = 0, verticalVelocity;
@@ -49,6 +43,16 @@ static int32_t mainRotorTorqueConstant = 0;
 
 //static uint32_t Kpu = 2000;
 //static uint32_t Kpd = 300;
+
+int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
+{
+    if (pwmLevel < minLevel) {
+        pwmLevel = minLevel;
+    } else if (pwmLevel > maxLevel) {
+        pwmLevel = maxLevel;
+    }
+    return pwmLevel;
+}
 
 void controlInit(void)
 {
@@ -139,16 +143,15 @@ void controlUpdate(uint32_t deltaTime)
     // main rotor equation
     mainDuty = outputs[CONTROL_CALIBRATE] + height * gavitationalOffsetHeightCorrectionFactor +
             angularVelocity + outputs[CONTROL_HEIGHT];
-    //CLAMP(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+    mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
     tailDuty = mainRotorTorqueConstant * mainDuty + outputs[CONTROL_YAW];
-    //CLAMP(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+    mainDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed
     pwmSetDuty((uint32_t)mainDuty, PRECISION, MAIN_ROTOR);
     pwmSetDuty((uint32_t)tailDuty, PRECISION, TAIL_ROTOR);
-    displayValueWithFormat("  CC = %4d%%", outputs[CONTROL_CALIBRATE], 3);  // line 3
 }
 
 
@@ -165,12 +168,12 @@ void updateHeightChannel(uint32_t deltaTime)
 
 void updateYawChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_YAW] = 30 * PRECISION;
+    outputs[CONTROL_YAW] = 35 * PRECISION;
 }
 
 
 void updateCalibrationChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE] = 30 * PRECISION;
+    outputs[CONTROL_CALIBRATE] = 35 * PRECISION;
     controlDisable(CONTROL_CALIBRATE);
 }
