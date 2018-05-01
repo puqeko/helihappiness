@@ -13,12 +13,13 @@
 #include "pwmModule.h"
 #include "height.h"
 #include "yaw.h"
+#include "display.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 // Make sure a is bounded by u (upper) and l (lower)
-#define CLAMP(a, u, l) (a = MIN(MAX(a, l), u))
+#define CLAMP(a, l, u) (a = MIN(MAX(a, l), u))
 
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
@@ -139,15 +140,16 @@ void controlUpdate(uint32_t deltaTime)
     // main rotor equation
     mainDuty = outputs[CONTROL_CALIBRATE] + height * gavitationalOffsetHeightCorrectionFactor +
             angularVelocity + outputs[CONTROL_HEIGHT];
-    CLAMP(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+    //CLAMP(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
     tailDuty = mainRotorTorqueConstant * mainDuty + outputs[CONTROL_YAW];
-    CLAMP(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+    //CLAMP(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed
     pwmSetDuty((uint32_t)mainDuty, PRECISION, MAIN_ROTOR);
     pwmSetDuty((uint32_t)tailDuty, PRECISION, TAIL_ROTOR);
+    displayValueWithFormat("  CC = %4d%%", outputs[CONTROL_CALIBRATE], 3);  // line 3
 }
 
 

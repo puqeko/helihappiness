@@ -165,7 +165,7 @@ int main(void)
 	    // Update UART display
 	    if (uartCount == LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY) {
 	        UARTPrintLineWithFormat("%s", "\n\n----------------\n");
-	        UARTPrintLineWithFormat("ALT: %d \n", timererGetTicks() - referenceTime);//targetHeight, percentageHeight);
+	        UARTPrintLineWithFormat("ALT: %d [%d] %%\n", targetHeight, percentageHeight);
 	        UARTPrintLineWithFormat("YAW: %d [%d] deg\n", targetYaw, degreesYaw);
 	        UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty, tailDuty);
 	        UARTPrintLineWithFormat("MODE: %s\n", heli_state_map[current_heli_state]);
