@@ -125,7 +125,7 @@ void controlUpdate(uint32_t deltaTime)
     // get height and velocity
     height = heightAsPercentage(PRECISION);
     // div by 1000 so that time is in seconds
-//    verticalVelocity = (height - previousHeight) * deltaTime / 1000;
+//    verticalVelocity = // must be radians;
 //    previousHeight = height;
 
     yaw = yawGetDegrees(PRECISION);  // TODO

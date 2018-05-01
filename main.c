@@ -134,12 +134,49 @@ void heliMode(void)
     }
 }
 
+
+void displayInfo()
+{
+    static int uartCount = 0;
+
+    // Take measurements
+    uint32_t percentageHeight = heightAsPercentage(1);  // precision = 1
+    uint32_t degreesYaw = yawGetDegrees(1);  // precision = 1
+    uint32_t mainDuty = controlGetPWMDuty(CONTROL_HEIGHT);
+    uint32_t tailDuty = controlGetPWMDuty(CONTROL_YAW);
+
+    // Update OLED display
+    displayPrintLineWithFormat("  Height = %4d%%", 1, percentageHeight);  // line 1
+    displayPrintLineWithFormat(" M = %2d, T = %2d", 2, mainDuty, tailDuty);  // line 2
+
+    // Update UART display
+    // Use a collaborative technique to update the display across updates
+    int updateCount = LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY;
+    switch (uartCount) {
+    case updateCount:
+        uartCount = 0;
+        UARTPrintLineWithFormat("%s", "\n\n----------------\n");
+        break;
+    case updateCount + 1:
+        UARTPrintLineWithFormat("ALT: %d [%d] %%\n", targetHeight, percentageHeight);
+        break;
+    case updateCount + 2:
+        UARTPrintLineWithFormat("YAW: %d [%d] deg\n", targetYaw, degreesYaw);
+        break;
+    case updateCount + 3:
+        UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty, tailDuty);
+        break;
+    case updateCount + 4:
+        UARTPrintLineWithFormat("MODE: %s\n", heli_state_map[current_heli_state]);
+        break;
+    }
+    uartCount++;
+}
+
+
 int main(void)
 {
     initalise();
-
-    //Some fake variables to test UART
-    int uartCount = 0;
 
 	// main loop
 	while (true) {
@@ -150,26 +187,7 @@ int main(void)
 	    heightUpdate();  // do convolution step
 	    controlUpdate(DELTA_TIME);  // update control
 
-	    // Take measurements
-	    uint32_t percentageHeight = heightAsPercentage(1);  // precision = 1
-	    uint32_t degreesYaw = yawGetDegrees(1);  // precision = 1
-	    uint32_t mainDuty = controlGetPWMDuty(CONTROL_HEIGHT);
-        uint32_t tailDuty = controlGetPWMDuty(CONTROL_YAW);
-
-	    // Update OLED display
-	    displayValueWithFormat("  Height = %4d%%", percentageHeight, 1);  // line 1
-	    displayTwoValuesWithFormat(" M = %2d, T = %2d", mainDuty, tailDuty, 2);  // line 2
-
-	    // Update UART display
-	    if (uartCount == LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY) {
-	        UARTPrintLineWithFormat("%s", "\n\n----------------\n");
-	        UARTPrintLineWithFormat("ALT: %d [%d] %%\n", targetHeight, percentageHeight);
-	        UARTPrintLineWithFormat("YAW: %d [%d] deg\n", targetYaw, degreesYaw);
-	        UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty, tailDuty);
-	        UARTPrintLineWithFormat("MODE: %s\n", heli_state_map[current_heli_state]);
-	        uartCount = 0;
-	    }
-	    uartCount++;
+	    displayInfo();
 
 	    // Update user inputs and run state machine
         updateButtons();  // recommended 100 hz update

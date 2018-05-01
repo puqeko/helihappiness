@@ -103,7 +103,7 @@ void pwmSetDuty(uint32_t dutyPercent, uint32_t precision, pwm_channel channel)
     {
     case MAIN_ROTOR:
         PWMGenPeriodSet(PWM_MAIN_BASE, PWM_MAIN_GEN, period);
-        PWMPulseWidthSet(PWM_MAIN_BASE, PWM_MAIN_OUTNUM, period * dutyPercent / 100  / precision);
+        PWMPulseWidthSet(PWM_MAIN_BASE, PWM_MAIN_OUTNUM, period * dutyPercent / 100 / precision);
         break;
     case TAIL_ROTOR:
         PWMGenPeriodSet(PWM_TAIL_BASE, PWM_TAIL_GEN, period);
