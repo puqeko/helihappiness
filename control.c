@@ -32,7 +32,7 @@ static control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
 };
 
 // final output parameters (so that we may display these in main)
-static int32_t mainDuty = 0, tailDuty = 0;
+static uint32_t mainDuty = 0, tailDuty = 0;
 
 // measured parameters (scaled by PRECISION)
 static int32_t height;  //, previousHeight = 0, verticalVelocity;
@@ -42,8 +42,7 @@ static int32_t yaw, previousYaw = 0, angularVelocity;
 static int32_t gavitationalOffsetHeightCorrectionFactor = 0;
 static int32_t mainRotorTorqueConstant = 0;
 
-//static uint32_t Kpu = 2000;
-//static uint32_t Kpd = 300;
+static uint32_t Kp = 1;
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -153,8 +152,8 @@ void controlUpdate(uint32_t deltaTime)
     tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed
-    pwmSetDuty((uint32_t)mainDuty, PRECISION, MAIN_ROTOR);
-    pwmSetDuty((uint32_t)tailDuty, PRECISION, TAIL_ROTOR);
+    pwmSetDuty(mainDuty, PRECISION, MAIN_ROTOR);
+    pwmSetDuty(tailDuty, PRECISION, TAIL_ROTOR);
 }
 
 
@@ -165,7 +164,8 @@ void controlUpdate(uint32_t deltaTime)
 
 void updateHeightChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_HEIGHT] = targets[CONTROL_HEIGHT];
+    outputs[CONTROL_HEIGHT] = Kp * targets[CONTROL_HEIGHT] - Kp * height;
+    //outputs[CONTROL_HEIGHT] = targets[CONTROL_HEIGHT];
 }
 
 
