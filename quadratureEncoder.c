@@ -26,43 +26,55 @@
 #include "quadratureEncoder.h"
 
 
-static volatile int32_t encoderCount = 0;
+static volatile int32_t encoderCount;
 static uint32_t portBase, channelAPin, channelBPin;
-
+static uint32_t initialPinState, lastIntStatus;
+static int32_t direction = 1;
+static bool directionInitialised = false;
 
 void quadEncoderIntHandler(void)
 {
-    // TODO: disable interupts to make operations atomic
     uint32_t intStatus = GPIOIntStatus(portBase, true);
-    uint32_t pinStatus = GPIOPinRead(portBase, channelAPin | channelBPin);
     GPIOIntClear(portBase, channelAPin | channelBPin);
 
-    //as one of intChannelA or intChannelB will be true and they will
-    //not both be true at the same time, only one of the two variables
-    //are needed. Both are included here for clarity & readability
-    bool intChannelA = intStatus & channelAPin;
-    bool intChannelB = intStatus & channelBPin;
+    if(directionInitialised)
+    {
+            //as one of intChannelA or intChannelB will be true and they will
+            //not both be true at the same time, only one of the two variables
+            //are needed. Both are included here for clarity & readability
+            bool intChannelA = intStatus & channelAPin;
+            bool intChannelB = intStatus & channelBPin;
 
-    bool channelA = pinStatus & channelAPin;
-    bool channelB = pinStatus & channelBPin;
+            bool channelA = initialPinState & channelAPin;
+            bool channelB = initialPinState & channelBPin;
 
-    if(intChannelA && channelA) //A rising edge
-    {
-        !channelB ? encoderCount-- : encoderCount++;
+            if(intChannelA && channelA) //A rising edge
+            {
+                if(channelB) direction *= -1;
+            }
+            else if(intChannelA && !channelA) //A falling edge
+            {
+                if(!channelB) direction *= -1;
+            }
+            else if(intChannelB && channelB)  //B rising edge
+            {
+                if(!channelA) direction *= -1;
+            }
+            else if(intChannelB && !channelB) //B falling edge
+            {
+                if(channelA) direction *= -1;
+            }
+            directionInitialised = true;
     }
-    else if(intChannelA && !channelA) //A falling edge
+    else
     {
-        channelB ? encoderCount-- : encoderCount++;
+        if(lastIntStatus == intStatus)
+        {
+            direction *= -1;
+        }
     }
-    else if(intChannelB && channelB)  //B rising edge
-    {
-        channelA ? encoderCount-- : encoderCount++;
-    }
-    else if(intChannelB && !channelB) //B falling edge
-    {
-        !channelA ? encoderCount-- : encoderCount++;
-    }
-
+    encoderCount += direction;
+    lastIntStatus = intStatus;
 }
 
 void quadEncoderResetCount(void)
@@ -80,14 +92,18 @@ void quadEncoderInit(uint32_t GPIOPortPerif, uint32_t GPIOPortBase, uint32_t GPI
     portBase = GPIOPortBase;
     channelAPin = GPIOChannelAPin;
     channelBPin = GPIOChannelBPin;
+    encoderCount = 0;
 
     //configure input pins
     SysCtlPeripheralEnable(GPIOPortPerif);
     GPIOPadConfigSet(portBase, channelAPin | channelBPin, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
     GPIODirModeSet(portBase, channelAPin | channelBPin, GPIO_DIR_MODE_IN);
 
-    //Initialize interrupts
+    //Initialize interrupt
     GPIOIntRegister(portBase, quadEncoderIntHandler);
     GPIOIntTypeSet(portBase, channelAPin | channelBPin, GPIO_BOTH_EDGES);
+    //Get initial state of channel A and channel B for initially determining direction
+    initialPinState = GPIOPinRead(portBase, channelAPin | channelBPin);
+    //Enable encoder interrupts
     GPIOIntEnable(portBase, channelAPin | channelBPin);
 }
