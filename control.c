@@ -13,12 +13,13 @@
 #include "pwmModule.h"
 #include "height.h"
 #include "yaw.h"
+#include "uartDisplay.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 // Make sure a is bounded by u (upper) and l (lower)
-#define CLAMP(a, u, l) (a = MIN(MAX(a, l), u))
+#define CLAMP(a, l, u) (a = MIN(MAX(a, l), u))
 
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
@@ -171,5 +172,5 @@ void updateYawChannel(uint32_t deltaTime)
 void updateCalibrationChannel(uint32_t deltaTime)
 {
     outputs[CONTROL_CALIBRATE] = 30 * PRECISION;
-    enabled[CONTROL_CALIBRATE] = false;
+    controlDisable(CONTROL_CALIBRATE);
 }
