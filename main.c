@@ -81,14 +81,15 @@ void heliMode(void)
         if (checkButton(SW1) == PUSHED) {
             current_heli_state = ALIGNING;
             controlMotorSet(true);  // turn  on motors
-            controlEnable(CONTROL_CALIBRATE);  // start calibration
+            controlEnable(CONTROL_CALIBRATE_MAIN);  // start calibration
+            controlEnable(CONTROL_CALIBRATE_TAIL);
             targetHeight = 0;
         }
         break;
 
     case ALIGNING:
         // calibration is auto disabled when complete
-        if (!controlIsEnabled(CONTROL_CALIBRATE)) {
+        if (!controlIsEnabled(CONTROL_CALIBRATE_MAIN) && !controlIsEnabled(CONTROL_CALIBRATE_TAIL)) {
             // done aligning...
             ignoreButton(SW1);
             controlEnable(CONTROL_HEIGHT);
@@ -116,10 +117,10 @@ void heliMode(void)
         if (checkButton(DOWN) == PUSHED && targetHeight > MIN_DUTY) {
             targetHeight -= MAIN_STEP;
         }
-        if (checkButton(LEFT) == PUSHED && targetYaw > MIN_DUTY) {
+        if (checkButton(LEFT) == PUSHED) {
             targetYaw -= TAIL_STEP;
         }
-        if (checkButton(RIGHT) == PUSHED && targetYaw < MAX_DUTY) {
+        if (checkButton(RIGHT) == PUSHED) {
             targetYaw += TAIL_STEP;
         }
         if (checkButton(SW1) == RELEASED) {  // switch down

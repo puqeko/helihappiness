@@ -29,8 +29,6 @@
 
 
 #define COUNTS_PER_ROTATION (112*4) //112 slots and x4 because quadrature encoding used
-#define BASE_YAW 100000
-#define DEGREES_PER_COUNT ((BASE_YAW*360)/COUNTS_PER_ROTATION)
 
 static int32_t rawCounts = 0;
 
@@ -44,5 +42,5 @@ void yawInit(void)
 int32_t yawGetDegrees(int32_t precision)
 {
     // no update required as quadEncoderGetCount does not do any heavy calculations.
-    return (quadEncoderGetCount() * DEGREES_PER_COUNT * precision)/(BASE_YAW);
+    return quadEncoderGetCount() * (precision*360)/COUNTS_PER_ROTATION;
 }
