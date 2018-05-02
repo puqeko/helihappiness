@@ -117,10 +117,10 @@ void heliMode(void)
         if (checkButton(DOWN) == PUSHED && targetHeight > MIN_DUTY) {
             targetHeight -= MAIN_STEP;
         }
-        if (checkButton(LEFT) == PUSHED && targetYaw > MIN_DUTY) {
+        if (checkButton(LEFT) == PUSHED) {
             targetYaw -= TAIL_STEP;
         }
-        if (checkButton(RIGHT) == PUSHED && targetYaw < MAX_DUTY) {
+        if (checkButton(RIGHT) == PUSHED) {
             targetYaw += TAIL_STEP;
         }
         if (checkButton(SW1) == RELEASED) {  // switch down

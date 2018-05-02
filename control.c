@@ -13,6 +13,7 @@
 #include "pwmModule.h"
 #include "height.h"
 #include "yaw.h"
+#include "display.h"
 
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
@@ -32,7 +33,7 @@ static control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
 };
 
 // final output parameters (so that we may display these in main)
-static uint32_t mainDuty = 0, tailDuty = 0;
+static int32_t mainDuty = 0, tailDuty = 0;
 
 // measured parameters (scaled by PRECISION)
 static int32_t height;  //, previousHeight = 0, verticalVelocity;
@@ -42,7 +43,8 @@ static int32_t yaw, previousYaw = 0, angularVelocity;
 static int32_t gavitationalOffsetHeightCorrectionFactor = 0;
 static int32_t mainRotorTorqueConstant = 0;
 
-static uint32_t Kp = 1;
+static int32_t mainGains[] = {1500, 0, 0};
+static int32_t tailGains[] = {1500, 0, 0};
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -115,7 +117,7 @@ int32_t controlGetPWMDuty(control_channel_t channel)
 {
     if (channel == CONTROL_HEIGHT) {
         return enabled[channel] ? (mainDuty / PRECISION) : 0;
-    } else if (channel == CONTROL_YAW){
+    } else if (channel == CONTROL_YAW) {
         return enabled[channel] ? (tailDuty / PRECISION) : 0;
     }
     return -1;  // error
@@ -148,12 +150,12 @@ void controlUpdate(uint32_t deltaTime)
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
-    tailDuty = outputs[CONTROL_CALIBRATE_TAIL] + mainRotorTorqueConstant * mainDuty + outputs[CONTROL_YAW];
+    tailDuty = outputs[CONTROL_CALIBRATE_TAIL] /* + mainRotorTorqueConstant * mainDuty*/ + outputs[CONTROL_YAW];
     tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed
-    pwmSetDuty(mainDuty, PRECISION, MAIN_ROTOR);
-    pwmSetDuty(tailDuty, PRECISION, TAIL_ROTOR);
+    pwmSetDuty((uint32_t)mainDuty, PRECISION, MAIN_ROTOR);
+    pwmSetDuty((uint32_t)tailDuty, PRECISION, TAIL_ROTOR);
 }
 
 
@@ -161,28 +163,32 @@ void controlUpdate(uint32_t deltaTime)
 /// Channel update functions
 ///
 
+#define KP 0
+#define KD 1
+#define KI 2
 
 void updateHeightChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_HEIGHT] = Kp * targets[CONTROL_HEIGHT] - Kp * height;
+    outputs[CONTROL_HEIGHT] = (mainGains[KP] * targets[CONTROL_HEIGHT] - mainGains[KP] * height) / PRECISION;
     //outputs[CONTROL_HEIGHT] = targets[CONTROL_HEIGHT];
 }
 
 
 void updateYawChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_YAW] = targets[CONTROL_YAW];
+    outputs[CONTROL_YAW] = (tailGains[KP] * targets[CONTROL_YAW] - tailGains[KP] * yaw) / PRECISION;
+    displayValueWithFormat("  CY = %6d", outputs[CONTROL_YAW] / PRECISION, 3);  // line 3
 }
 
 
 void updateCalibrationChannelMain(uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE_MAIN] = 35 * PRECISION;
+    outputs[CONTROL_CALIBRATE_MAIN] = 40 * PRECISION;
     controlDisable(CONTROL_CALIBRATE_MAIN);
 }
 
 void updateCalibrationChannelTail(uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE_TAIL] = 35 * PRECISION;
+    outputs[CONTROL_CALIBRATE_TAIL] = 40 * PRECISION;
     controlDisable(CONTROL_CALIBRATE_TAIL);
 }
