@@ -177,7 +177,6 @@ void updateHeightChannel(uint32_t deltaTime)
 void updateYawChannel(uint32_t deltaTime)
 {
     outputs[CONTROL_YAW] = (tailGains[KP] * targets[CONTROL_YAW] - tailGains[KP] * yaw) / PRECISION;
-    displayValueWithFormat("  CY = %6d", outputs[CONTROL_YAW] / PRECISION, 3);  // line 3
 }
 
 

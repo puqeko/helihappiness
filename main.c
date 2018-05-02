@@ -147,8 +147,8 @@ void displayInfo()
     uint32_t tailDuty = controlGetPWMDuty(CONTROL_YAW);
 
     // Update OLED display
-    displayPrintLineWithFormat("  Height = %4d%%", 1, percentageHeight);  // line 1
-    displayPrintLineWithFormat(" M = %2d, T = %2d", 2, mainDuty, tailDuty);  // line 2
+    displayPrintLineWithFormat("Height = %4d%%", 1, percentageHeight);  // line 1
+    displayPrintLineWithFormat("M = %2d, T = %2d", 2, mainDuty, tailDuty);  // line 2
 
     // Update UART display
     // Use a collaborative technique to update the display across updates
@@ -190,8 +190,6 @@ int main(void)
 
 	    heightUpdate();  // do convolution step
 	    controlUpdate(DELTA_TIME);  // update control
-
-	    UARTPrintLineWithFormat("%d\n", butStateGet());
 
 	    displayInfo();
 

@@ -52,7 +52,7 @@ void displayPrintLineWithFormat(const char* format, int lineNum, ...)
     int storedChars;
     char str[DISPLAY_CHAR_WIDTH + 1];  // for \0
 
-    va_start(args, format);
+    va_start(args, lineNum);
     storedChars = uvsnprintf(str, DISPLAY_CHAR_WIDTH, format, args);
     va_end(arg);
 
