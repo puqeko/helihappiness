@@ -151,7 +151,7 @@ void displayInfo()
 
     // Update UART display
     // Use a collaborative technique to update the display across updates
-#define UPDATE_COUNT (LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY)
+
     switch (uartCount) {
     case UPDATE_COUNT:
         uartCount = 0;
