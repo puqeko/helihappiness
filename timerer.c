@@ -51,16 +51,24 @@ void timererWait(uint32_t milliseconds)
 }
 
 
+bool timererBeen(uint32_t milliseconds, uint32_t reference)
+{
+    // minus since counts down
+    uint32_t target = reference - milliseconds * ticks_per_ms;
+    uint32_t cur = timererGetTicks(); //get time
+    uint32_t diff = target - cur;  // +ve small number when past target (timer counts down)
+
+    // false until this condition is met
+    return diff < overshoot_ticks;
+}
+
+
 void timererWaitFrom(uint32_t milliseconds, uint32_t reference)
 {
-    uint32_t target = reference - milliseconds * ticks_per_ms;  // minus since counts down
-
     while (true) {
-        uint32_t cur = timererGetTicks(); //get time
-        uint32_t diff = target - cur;  // +ve small number when past target (timer counts down)
 
         // block until this condition is met
-        if (diff < overshoot_ticks) {
+        if (timererBeen(milliseconds, reference)) {
             return;  // we have passed the target time
         }
     }

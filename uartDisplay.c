@@ -99,10 +99,10 @@ void UARTPrintLineWithFormat(const char* format, ...)
         while (i-- > UART_LINE_LENGTH - 3) {
             uartString[i] = '.';
         }
-        uartString[UART_LINE_LENGTH] = '\n';
+        uartString[UART_LINE_LENGTH] = '\r';
         uartString[UART_LINE_LENGTH + 1] = '\0';
     } else {
-        uartString[storedChars] = '\n';
+        uartString[storedChars] = '\r';
         uartString[storedChars + 1] = '\0';
     }
     UARTSend(uartString);

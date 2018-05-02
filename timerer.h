@@ -25,6 +25,9 @@ uint32_t timererGetTicks(void);
 // Waits for some given milliseconds.
 void timererWait(uint32_t milliseconds);
 
+// Returns true after milliseconds have passed from reference
+bool timererBeen(uint32_t milliseconds, uint32_t reference);
+
 // Waits until a given milliseconds passed some reference timer value.
 // Useful for keeping time in a loop with many operations.
 void timererWaitFrom(uint32_t milliseconds, uint32_t reference);

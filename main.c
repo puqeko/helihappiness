@@ -43,6 +43,7 @@ uint32_t targetYaw = 0;
 #define DELTA_TIME 10  // 100 hz, 10 ms
 #define UART_DISPLAY_FREQUENCY 4  // hz
 #define LOOP_FREQUENCY (1000 / DELTA_TIME)
+#define UPDATE_COUNT (LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY)
 
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
@@ -75,7 +76,6 @@ void heliMode(void)
 
     case LANDED:
 
-        timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // in ms, hence the 1000
         heightCalibrate();
 
         if (checkButton(SW1) == PUSHED) {
@@ -153,22 +153,23 @@ void displayInfo()
     // Use a collaborative technique to update the display across updates
 
     switch (uartCount) {
-    case UPDATE_COUNT:
-        uartCount = 0;
+    case UPDATE_COUNT - 5:
         UARTPrintLineWithFormat("%s", "\n\n----------------\n");
         break;
-    case UPDATE_COUNT + 1:
+    case UPDATE_COUNT - 4:
         UARTPrintLineWithFormat("ALT: %d [%d] %%\n", targetHeight, percentageHeight);
         break;
-    case UPDATE_COUNT + 2:
+    case UPDATE_COUNT - 3:
         UARTPrintLineWithFormat("YAW: %d [%d] deg\n", targetYaw, degreesYaw);
         break;
-    case UPDATE_COUNT + 3:
+    case UPDATE_COUNT - 2:
         UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty, tailDuty);
         break;
-    case UPDATE_COUNT + 4:
+    case UPDATE_COUNT - 1:
         UARTPrintLineWithFormat("MODE: %s\n", heli_state_map[current_heli_state]);
         break;
+    case UPDATE_COUNT:
+        uartCount = 0;
     }
     uartCount++;
 }
@@ -178,6 +179,8 @@ int main(void)
 {
     initalise();
 
+    timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // make sure ADC buffer has a chance to fill up
+
 	// main loop
 	while (true) {
 	    // don't include the time to execute the main loop in our time measurement
@@ -186,6 +189,8 @@ int main(void)
 
 	    heightUpdate();  // do convolution step
 	    controlUpdate(DELTA_TIME);  // update control
+
+	    UARTPrintLineWithFormat("%d\n", butStateGet());
 
 	    displayInfo();
 

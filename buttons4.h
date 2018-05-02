@@ -62,6 +62,8 @@ enum butStates {RELEASED = 0, PUSHED, NO_CHANGE};
 void
 initButtons (void);
 
+bool butStateGet(void);
+
 // *******************************************************
 // updateButtons: Function designed to be called regularly. It polls all
 // buttons once and updates variables associated with the buttons if

@@ -35,6 +35,10 @@ static uint8_t but_count[NUM_BUTS];
 static bool but_flag[NUM_BUTS];
 static bool but_normal[NUM_BUTS];   // Corresponds to the electrical state
 
+bool butStateGet(void) {
+    return but_state[SW1];
+}
+
 // *******************************************************
 // initButtons: Initialise the variables associated with the set of buttons
 // defined by the constants in the buttons2.h header file.
@@ -82,13 +86,13 @@ initButtons (void)
     but_normal[SW1] = SW1_NORMAL;
 
     // init to whatever state the switch is in
-    but_state[SW1] = (GPIOPinRead (SW1_PORT_BASE, SW1_PIN) == SW1_PIN);
 	for (i = 0; i < NUM_BUTS; i++)
 	{
 		but_state[i] = but_normal[i];
 		but_count[i] = 0;
 		but_flag[i] = false;
 	}
+	but_state[SW1] = (GPIOPinRead (SW1_PORT_BASE, SW1_PIN) == SW1_PIN);
 }
 
 // *******************************************************
