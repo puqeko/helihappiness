@@ -43,9 +43,6 @@ static int32_t yaw, previousYaw = 0, angularVelocity;
 static int32_t gavitationalOffsetHeightCorrectionFactor = 0;
 static int32_t mainRotorTorqueConstant = 0;
 
-static int32_t mainGains[] = {1500, 0, 0};
-static int32_t tailGains[] = {1500, 0, 0};
-
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
     if (pwmLevel < minLevel) {
@@ -163,9 +160,10 @@ void controlUpdate(uint32_t deltaTime)
 /// Channel update functions
 ///
 
-#define KP 0
-#define KD 1
-#define KI 2
+enum gains_e {KP=0, KD, KI};
+
+static int32_t mainGains[] = {1500, 0, 0};
+static int32_t tailGains[] = {1500, 0, 0};
 
 void updateHeightChannel(uint32_t deltaTime)
 {

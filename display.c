@@ -62,7 +62,7 @@ void displayPrintLineWithFormat(const char* format, int lineNum, ...)
         while (i-- > DISPLAY_CHAR_WIDTH - 3) {
             str[i] = '.';
         }
-        str[DISPLAY_CHAR_WIDTH + 1] = '\0';
+        str[DISPLAY_CHAR_WIDTH] = '\0';
     } else {
         str[storedChars + 1] = '\0';
     }

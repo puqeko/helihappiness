@@ -155,19 +155,19 @@ void displayInfo()
 
     switch (uartCount) {
     case UPDATE_COUNT - 5:
-        UARTPrintLineWithFormat("%s", "\n\n----------------\n");
+        UARTPrintLineWithFormat("ALT %d [%d] %%\n", targetHeight, percentageHeight);
         break;
     case UPDATE_COUNT - 4:
-        UARTPrintLineWithFormat("ALT: %d [%d] %%\n", targetHeight, percentageHeight);
+        UARTPrintLineWithFormat("YAW %d [%d] deg\n", targetYaw, degreesYaw);
         break;
     case UPDATE_COUNT - 3:
-        UARTPrintLineWithFormat("YAW: %d [%d] deg\n", targetYaw, degreesYaw);
+        UARTPrintLineWithFormat("MAIN %d %%, TAIL %d %%\n", mainDuty, tailDuty);
         break;
     case UPDATE_COUNT - 2:
-        UARTPrintLineWithFormat("MAIN: %d %%, TAIL: %d %%\n", mainDuty, tailDuty);
+        UARTPrintLineWithFormat("MODE %s\n", heli_state_map[current_heli_state]);
         break;
     case UPDATE_COUNT - 1:
-        UARTPrintLineWithFormat("MODE: %s\n", heli_state_map[current_heli_state]);
+        UARTPrintLineWithFormat("%s", "----------------\n");
         break;
     case UPDATE_COUNT:
         uartCount = 0;
