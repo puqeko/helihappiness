@@ -155,7 +155,7 @@ void displayInfo()
 
     switch (uartCount) {
     case UPDATE_COUNT - 5:
-        UARTPrintLineWithFormat("ALT %d [%d] %%\n", targetHeight, percentageHeight);
+        UARTPrintLineWithFormat("\nALT %d [%d] %%\n", targetHeight, percentageHeight);
         break;
     case UPDATE_COUNT - 4:
         UARTPrintLineWithFormat("YAW %d [%d] deg\n", targetYaw, degreesYaw);

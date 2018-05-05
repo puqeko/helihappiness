@@ -161,31 +161,42 @@ void controlUpdate(uint32_t deltaTime)
 ///
 
 enum gains_e {KP=0, KD, KI};
+enum heli_e {HELI_1=0, HELI_2};
+#define NUM_GAINS 3
+#define CURRENT_HELI HELI_2
 
-static int32_t mainGains[] = {1500, 0, 0};
-static int32_t tailGains[] = {1500, 0, 0};
+static int32_t mainGains[][NUM_GAINS] = {
+    {1500, 0, 0},
+    {1500, 0, 0}
+};
+static int32_t tailGains[][NUM_GAINS] = {
+    {1500, 0, 0},
+    {500, 0, 0}
+};
 
 void updateHeightChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_HEIGHT] = (mainGains[KP] * targets[CONTROL_HEIGHT] - mainGains[KP] * height) / PRECISION;
+    int32_t kp = mainGains[CURRENT_HELI][KP];
+    outputs[CONTROL_HEIGHT] = (kp * targets[CONTROL_HEIGHT] - kp * height) / PRECISION;
     //outputs[CONTROL_HEIGHT] = targets[CONTROL_HEIGHT];
 }
 
 
 void updateYawChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_YAW] = (tailGains[KP] * targets[CONTROL_YAW] - tailGains[KP] * yaw) / PRECISION;
+    int32_t kp = tailGains[CURRENT_HELI][KP];
+    outputs[CONTROL_YAW] = (kp * targets[CONTROL_YAW] - kp * yaw) / PRECISION;
 }
 
 
 void updateCalibrationChannelMain(uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE_MAIN] = 40 * PRECISION;
+    outputs[CONTROL_CALIBRATE_MAIN] = 35 * PRECISION;
     controlDisable(CONTROL_CALIBRATE_MAIN);
 }
 
 void updateCalibrationChannelTail(uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE_TAIL] = 40 * PRECISION;
+    outputs[CONTROL_CALIBRATE_TAIL] = 35 * PRECISION;
     controlDisable(CONTROL_CALIBRATE_TAIL);
 }
