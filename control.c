@@ -36,12 +36,18 @@ static control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
 static int32_t mainDuty = 0, tailDuty = 0;
 
 // measured parameters (scaled by PRECISION)
-static int32_t height;  //, previousHeight = 0, verticalVelocity;
-static int32_t yaw, previousYaw = 0, angularVelocity;
+static int32_t height, previousHeight = 0, verticalVelocity;
+static int32_t yaw, previousYaw = 0, angularVelocity = 0;
 
 // configurable constants (scaled by PRECISION)
-static int32_t gavitationalOffsetHeightCorrectionFactor = 0;
-static int32_t mainRotorTorqueConstant = 0;
+static int32_t gravOffsets[] = {250, 190};
+// ratio of main rotor speed to tail rotor speed
+static int32_t mainTorqueConsts[] = {1000, 800};
+
+enum gains_e {KP=0, KD, KI};
+enum heli_e {HELI_1=0, HELI_2};
+#define NUM_GAINS 3
+#define CURRENT_HELI HELI_2
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -126,11 +132,11 @@ void controlUpdate(uint32_t deltaTime)
     // get height and velocity
     height = heightAsPercentage(PRECISION);
     // div by 1000 so that time is in seconds
-//    verticalVelocity = // must be radians;
-//    previousHeight = height;
+    verticalVelocity = height - previousHeight;
+    previousHeight = height;
 
     yaw = yawGetDegrees(PRECISION);  // TODO
-    angularVelocity = 0;//(yaw - previousYaw) * deltaTime / 1000;
+    angularVelocity = 0;//(yaw - previousYaw) * deltaTime / 1000; // must be radians;
     previousYaw = yaw;
 
     // call all channel update functions
@@ -142,12 +148,12 @@ void controlUpdate(uint32_t deltaTime)
     }
 
     // main rotor equation
-    mainDuty = outputs[CONTROL_CALIBRATE_MAIN] /*+ height * gavitationalOffsetHeightCorrectionFactor +
-            angularVelocity*/ + outputs[CONTROL_HEIGHT];
+    mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffsets[CURRENT_HELI] / PRECISION +
+            angularVelocity + outputs[CONTROL_HEIGHT];
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
-    tailDuty = outputs[CONTROL_CALIBRATE_TAIL] /* + mainRotorTorqueConstant * mainDuty*/ + outputs[CONTROL_YAW];
+    tailDuty = mainTorqueConsts[CURRENT_HELI] * mainDuty / PRECISION + outputs[CONTROL_YAW];
     tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed
@@ -160,25 +166,26 @@ void controlUpdate(uint32_t deltaTime)
 /// Channel update functions
 ///
 
-enum gains_e {KP=0, KD, KI};
-enum heli_e {HELI_1=0, HELI_2};
-#define NUM_GAINS 3
-#define CURRENT_HELI HELI_2
-
+// Eventually change this to work on generic heli
 static int32_t mainGains[][NUM_GAINS] = {
-    {1500, 0, 0},
-    {1500, 0, 0}
+    {1500, 200, 0},
+    {1500, 800, 0}
 };
 static int32_t tailGains[][NUM_GAINS] = {
-    {1500, 0, 0},
+    {2000, 0, 0},
     {500, 0, 0}
 };
+static int32_t mainOffsets[] = {35, 40};  // temporary until calibration added
 
 void updateHeightChannel(uint32_t deltaTime)
 {
     int32_t kp = mainGains[CURRENT_HELI][KP];
-    outputs[CONTROL_HEIGHT] = (kp * targets[CONTROL_HEIGHT] - kp * height) / PRECISION;
-    //outputs[CONTROL_HEIGHT] = targets[CONTROL_HEIGHT];
+    int32_t kd = mainGains[CURRENT_HELI][KD];
+    int32_t proportonal =  (kp * targets[CONTROL_HEIGHT] - kp * height) / PRECISION;
+    // assume reference is not changing, hence 0
+    int32_t derivative = 0 - (kd * verticalVelocity) / PRECISION;
+    // larger fall gain?
+    outputs[CONTROL_HEIGHT] = proportonal + derivative;
 }
 
 
@@ -191,12 +198,12 @@ void updateYawChannel(uint32_t deltaTime)
 
 void updateCalibrationChannelMain(uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE_MAIN] = 35 * PRECISION;
+    outputs[CONTROL_CALIBRATE_MAIN] = mainOffsets[CURRENT_HELI] * PRECISION;
     controlDisable(CONTROL_CALIBRATE_MAIN);
 }
 
 void updateCalibrationChannelTail(uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE_TAIL] = 35 * PRECISION;
+    // calc mainTourqueConst here ...
     controlDisable(CONTROL_CALIBRATE_TAIL);
 }
