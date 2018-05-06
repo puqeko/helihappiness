@@ -40,11 +40,11 @@ static int32_t height;  //, previousHeight = 0, verticalVelocity;
 static int32_t yaw, previousYaw = 0, angularVelocity;
 
 // configurable constants (scaled by PRECISION)
-static int32_t gavitationalOffsetHeightCorrectionFactor = 0;
+static int32_t gavitationalOffsetHeightCorrectionFactor = 50;
 static int32_t mainRotorTorqueConstant = 0;
 
 static int32_t mainGains[] = {1500, 0, 0};
-static int32_t tailGains[] = {1500, 0, 0};
+static int32_t tailGains[] = {1000, 0, 0};
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -145,8 +145,8 @@ void controlUpdate(uint32_t deltaTime)
     }
 
     // main rotor equation
-    mainDuty = outputs[CONTROL_CALIBRATE_MAIN] /*+ height * gavitationalOffsetHeightCorrectionFactor +
-            angularVelocity*/ + outputs[CONTROL_HEIGHT];
+    mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + (height * gavitationalOffsetHeightCorrectionFactor) / PRECISION +
+            /*angularVelocity*/ + outputs[CONTROL_HEIGHT];
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
