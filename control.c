@@ -47,7 +47,7 @@ static int32_t mainTorqueConsts[] = {1000, 800};
 enum gains_e {KP=0, KD, KI};
 enum heli_e {HELI_1=0, HELI_2};
 #define NUM_GAINS 3
-#define CURRENT_HELI HELI_2
+#define CURRENT_HELI HELI_1
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -132,11 +132,11 @@ void controlUpdate(uint32_t deltaTime)
     // get height and velocity
     height = heightAsPercentage(PRECISION);
     // div by 1000 so that time is in seconds
-    verticalVelocity = height - previousHeight;
+    verticalVelocity = (height - previousHeight) * PRECISION / deltaTime;
     previousHeight = height;
 
     yaw = yawGetDegrees(PRECISION);  // TODO
-    angularVelocity = 0;//(yaw - previousYaw) * deltaTime / 1000; // must be radians;
+    angularVelocity = (yaw - previousYaw) * PRECISION / deltaTime; // must be radians;
     previousYaw = yaw;
 
     // call all channel update functions
@@ -149,7 +149,7 @@ void controlUpdate(uint32_t deltaTime)
 
     // main rotor equation
     mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffsets[CURRENT_HELI] / PRECISION +
-            angularVelocity + outputs[CONTROL_HEIGHT];
+            /*angularVelocity +*/ outputs[CONTROL_HEIGHT];
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
@@ -168,8 +168,8 @@ void controlUpdate(uint32_t deltaTime)
 
 // Eventually change this to work on generic heli
 static int32_t mainGains[][NUM_GAINS] = {
-    {1500, 200, 0},
-    {1500, 800, 0}
+    {2000, 800, 0},
+    {1500, 400, 0}
 };
 static int32_t tailGains[][NUM_GAINS] = {
     {2000, 0, 0},
@@ -192,6 +192,7 @@ void updateHeightChannel(uint32_t deltaTime)
 void updateYawChannel(uint32_t deltaTime)
 {
     int32_t kp = tailGains[CURRENT_HELI][KP];
+    int32_t kd = tailGains[CURRENT_HELI][KD];
     outputs[CONTROL_YAW] = (kp * targets[CONTROL_YAW] - kp * yaw) / PRECISION;
 }
 
