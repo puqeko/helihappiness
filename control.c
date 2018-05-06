@@ -43,8 +43,8 @@ static int32_t yaw, previousYaw = 0, angularVelocity;
 static int32_t gavitationalOffsetHeightCorrectionFactor = 50;
 static int32_t mainRotorTorqueConstant = 0;
 
-static int32_t mainGains[] = {1500, 0, 0};
-static int32_t tailGains[] = {1000, 0, 0};
+static int32_t mainGains[] = {1500, 0, 5};
+static int32_t tailGains[] = {1000, 0, 1};
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -167,17 +167,29 @@ void controlUpdate(uint32_t deltaTime)
 #define KD 1
 #define KI 2
 
+static int32_t proportionalInputMain, derivativeInputMain, integralInputMain = 0;
+static int32_t proportionalInputTail, derivativeInputTail, integralInputTail = 0;
+
 void updateHeightChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_HEIGHT] = (mainGains[KP] * targets[CONTROL_HEIGHT] - mainGains[KP] * height) / PRECISION;
+    // Proportional Control
+    proportionalInputMain = (mainGains[KP] * targets[CONTROL_HEIGHT] - mainGains[KP] * height) / PRECISION;
     //outputs[CONTROL_HEIGHT] = targets[CONTROL_HEIGHT];
-}
+
+    // Integral Control
+    integralInputMain = (integralInputMain * PRECISION + (mainGains[KI] * targets[CONTROL_HEIGHT] - mainGains[KI] * height)) / PRECISION;
+    displayTwoValuesWithFormat("CY = %4d, %4d", proportionalInputMain / PRECISION, integralInputMain / PRECISION, 3);  // line 3
+    outputs[CONTROL_HEIGHT] = proportionalInputMain + integralInputMain;
+    }
 
 
 void updateYawChannel(uint32_t deltaTime)
 {
-    outputs[CONTROL_YAW] = (tailGains[KP] * targets[CONTROL_YAW] - tailGains[KP] * yaw) / PRECISION;
-    displayValueWithFormat("  CY = %6d", outputs[CONTROL_YAW] / PRECISION, 3);  // line 3
+    proportionalInputTail = (tailGains[KP] * targets[CONTROL_YAW] - tailGains[KP] * yaw) / PRECISION;
+    integralInputTail = (integralInputTail * PRECISION + (tailGains[KI] * targets[CONTROL_YAW] - tailGains[KI] * yaw)) / PRECISION;
+
+    outputs[CONTROL_YAW] = proportionalInputTail + integralInputTail;
+
 }
 
 
