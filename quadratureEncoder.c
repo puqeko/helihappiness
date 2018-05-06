@@ -31,14 +31,14 @@
 
 static volatile int32_t direction, encoderCount = 0;
 static uint32_t portBase, channelAPin, channelBPin, initialPinState;
-static volatile lastIntStatus = INITIAL_INT_STATUS;
+static volatile uint32_t lastIntStatus = INITIAL_INT_STATUS;
 
 void quadEncoderIntHandler(void)
 {
     uint32_t intStatus = GPIOIntStatus(portBase, true);
     GPIOIntClear(portBase, channelAPin | channelBPin);
 
-    if(lastIntStatus = INITIAL_INT_STATUS)
+    if(lastIntStatus == INITIAL_INT_STATUS)
     {
         //as only one of intChannelA or intChannelB will be true and they will
         //not both be true at the same time, only one of the two variables
@@ -51,19 +51,19 @@ void quadEncoderIntHandler(void)
 
         if(intChannelA && channelA) //A rising edge
         {
-            !channelB ? direction = CW_DIRECTION : direction = CCW_DIRECTION;
+            !channelB ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
         }
         else if(intChannelA && !channelA) //A falling edge
         {
-            channelB ? direction = CW_DIRECTION : direction = CCW_DIRECTION;
+            channelB ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
         }
         else if(intChannelB && channelB) //B rising edge
         {
-            channelA ? direction = CW_DIRECTION : direction = CCW_DIRECTION;
+            channelA ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
         }
         else if(intChannelB && !channelB) //B falling edge
         {
-            !channelA ? direction = CW_DIRECTION : direction = CCW_DIRECTION;
+            !channelA ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
         }
     }
     else if (lastIntStatus == intStatus)
