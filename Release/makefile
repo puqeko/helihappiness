@@ -13,7 +13,6 @@ ORDERED_OBJS += \
 "./adcModule.obj" \
 "./buttons4.obj" \
 "./circBufT.obj" \
-"./control.obj" \
 "./display.obj" \
 "./height.obj" \
 "./main.obj" \
@@ -21,6 +20,7 @@ ORDERED_OBJS += \
 "./quadratureEncoder.obj" \
 "./testADC.obj" \
 "./timerer.obj" \
+"./tm4c1231h6pm_startup_ccs.obj" \
 "./uartDisplay.obj" \
 "./ustdlib.obj" \
 "./yaw.obj" \
@@ -31,6 +31,7 @@ ORDERED_OBJS += \
 "./OrbitOLED_2/lib_OrbitOled/OrbitOledChar.obj" \
 "./OrbitOLED_2/lib_OrbitOled/OrbitOledGrph.obj" \
 "./OrbitOLED_2/lib_OrbitOled/delay.obj" \
+"../tm4c1231h6pm.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
 
@@ -156,14 +157,14 @@ BIN_OUTPUTS__QUOTED += \
 
 
 # All Target
-all: $(OBJS) $(GEN_CMDS)
+all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@$(MAKE) --no-print-directory -Onone "Helihappiness.out"
 
 # Tool invocations
-Helihappiness.out: $(OBJS) $(GEN_CMDS)
+Helihappiness.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: ARM Linker'
-	"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 -me -O2 --define=ccs="ccs" --define=PART_TM4C123GH6PM --gcc --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"Helihappiness.map" --heap_size=0 --stack_size=512 -i"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/lib" -i"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="Helihappiness_linkInfo.xml" --rom_model -o "Helihappiness.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 -me -O2 --define=ccs="ccs" --define=PART_TM4C1231H6PM --gcc --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"Helihappiness.map" --heap_size=0 --stack_size=512 -i"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/lib" -i"C:/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.6.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="Helihappiness_linkInfo.xml" --rom_model -o "Helihappiness.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
@@ -177,8 +178,8 @@ Helihappiness.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "adcModule.obj" "buttons4.obj" "circBufT.obj" "control.obj" "display.obj" "height.obj" "main.obj" "pwmModule.obj" "quadratureEncoder.obj" "testADC.obj" "timerer.obj" "uartDisplay.obj" "ustdlib.obj" "yaw.obj" "OrbitOLED_2\OrbitOLEDInterface.obj" "OrbitOLED_2\lib_OrbitOled\ChrFont0.obj" "OrbitOLED_2\lib_OrbitOled\FillPat.obj" "OrbitOLED_2\lib_OrbitOled\OrbitOled.obj" "OrbitOLED_2\lib_OrbitOled\OrbitOledChar.obj" "OrbitOLED_2\lib_OrbitOled\OrbitOledGrph.obj" "OrbitOLED_2\lib_OrbitOled\delay.obj" 
-	-$(RM) "adcModule.d" "buttons4.d" "circBufT.d" "control.d" "display.d" "height.d" "main.d" "pwmModule.d" "quadratureEncoder.d" "testADC.d" "timerer.d" "uartDisplay.d" "ustdlib.d" "yaw.d" "OrbitOLED_2\OrbitOLEDInterface.d" "OrbitOLED_2\lib_OrbitOled\ChrFont0.d" "OrbitOLED_2\lib_OrbitOled\FillPat.d" "OrbitOLED_2\lib_OrbitOled\OrbitOled.d" "OrbitOLED_2\lib_OrbitOled\OrbitOledChar.d" "OrbitOLED_2\lib_OrbitOled\OrbitOledGrph.d" "OrbitOLED_2\lib_OrbitOled\delay.d" 
+	-$(RM) "adcModule.obj" "buttons4.obj" "circBufT.obj" "display.obj" "height.obj" "main.obj" "pwmModule.obj" "quadratureEncoder.obj" "testADC.obj" "timerer.obj" "tm4c1231h6pm_startup_ccs.obj" "uartDisplay.obj" "ustdlib.obj" "yaw.obj" "OrbitOLED_2\OrbitOLEDInterface.obj" "OrbitOLED_2\lib_OrbitOled\ChrFont0.obj" "OrbitOLED_2\lib_OrbitOled\FillPat.obj" "OrbitOLED_2\lib_OrbitOled\OrbitOled.obj" "OrbitOLED_2\lib_OrbitOled\OrbitOledChar.obj" "OrbitOLED_2\lib_OrbitOled\OrbitOledGrph.obj" "OrbitOLED_2\lib_OrbitOled\delay.obj" 
+	-$(RM) "adcModule.d" "buttons4.d" "circBufT.d" "display.d" "height.d" "main.d" "pwmModule.d" "quadratureEncoder.d" "testADC.d" "timerer.d" "tm4c1231h6pm_startup_ccs.d" "uartDisplay.d" "ustdlib.d" "yaw.d" "OrbitOLED_2\OrbitOLEDInterface.d" "OrbitOLED_2\lib_OrbitOled\ChrFont0.d" "OrbitOLED_2\lib_OrbitOled\FillPat.d" "OrbitOLED_2\lib_OrbitOled\OrbitOled.d" "OrbitOLED_2\lib_OrbitOled\OrbitOledChar.d" "OrbitOLED_2\lib_OrbitOled\OrbitOledGrph.d" "OrbitOLED_2\lib_OrbitOled\delay.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
