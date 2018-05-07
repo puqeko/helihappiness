@@ -17,6 +17,7 @@
 #define PRECISION 1000  // zeros represent how many dp of precision to get with integer math
 #define MIN_DUTY 5  // %
 #define MAX_DUTY 95  // %
+#define MS_TO_SEC 1000
 
 typedef enum control_channel {
     CONTROL_HEIGHT=0, CONTROL_YAW, CONTROL_CALIBRATE_MAIN, CONTROL_CALIBRATE_TAIL, CONTROL_NUM_CHANNELS
