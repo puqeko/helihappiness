@@ -168,8 +168,8 @@ void controlUpdate(uint32_t deltaTime)
 
 // Eventually change this to work on generic heli
 static int32_t mainGains[][NUM_GAINS] = {
-    {1500, 200, 0},
-    {1500, 800, 0}
+    {1500, 200, 500},
+    {1500, 800, 500}
 };
 static int32_t tailGains[][NUM_GAINS] = {
     {2000, 0, 0},
@@ -182,10 +182,14 @@ void updateHeightChannel(uint32_t deltaTime)
     int32_t kp = mainGains[CURRENT_HELI][KP];
     int32_t kd = mainGains[CURRENT_HELI][KD];
     int32_t proportonal =  (kp * targets[CONTROL_HEIGHT] - kp * height) / PRECISION;
+
     // assume reference is not changing, hence 0
     int32_t derivative = 0 - (kd * verticalVelocity) / PRECISION;
     // larger fall gain?
-    outputs[CONTROL_HEIGHT] = proportonal + derivative;
+
+    // integral input
+    int32_t integral = (integral * PRECISION + (mainGains[CURRENT_HELI][KI] * deltaTime * targets[CONTROL_HEIGHT] - mainGains[CURRENT_HELI][KI] * deltaTime * height) / MS_TO_SEC) / PRECISION;
+    outputs[CONTROL_HEIGHT] = proportonal + derivative + integral;
 }
 
 
