@@ -176,7 +176,7 @@ static int32_t tailGains[][NUM_GAINS] = {
     {500, 0, 500}
 };
 static int32_t mainOffsets[] = {35, 40};  // temporary until calibration added
-static int32_t integralMain = 0;
+static int32_t integralMain = 0; // do not need to be global - create a reset function that sets integral input to 0
 static int32_t integralTail = 0;
 void updateHeightChannel(uint32_t deltaTime)
 {
