@@ -38,6 +38,7 @@ static int32_t mainDuty = 0, tailDuty = 0;
 // measured parameters (scaled by PRECISION)
 static int32_t height, previousHeight = 0, verticalVelocity;
 static int32_t yaw, previousYaw = 0, angularVelocity = 0;
+static int32_t integralMain = 0, integralTail = 0;
 
 // configurable constants (scaled by PRECISION)
 static int32_t gravOffsets[] = {250, 190};
@@ -47,7 +48,7 @@ static int32_t mainTorqueConsts[] = {1000, 800};
 enum gains_e {KP=0, KD, KI};
 enum heli_e {HELI_1=0, HELI_2};
 #define NUM_GAINS 3
-#define CURRENT_HELI HELI_2
+#define CURRENT_HELI HELI_1
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -131,12 +132,11 @@ void controlUpdate(uint32_t deltaTime)
 {
     // get height and velocity
     height = heightAsPercentage(PRECISION);
-    // div by 1000 so that time is in seconds
-    verticalVelocity = height - previousHeight;
+    verticalVelocity = (height - previousHeight) * PRECISION / deltaTime;
     previousHeight = height;
 
-    yaw = yawGetDegrees(PRECISION);  // TODO
-    angularVelocity = 0;//(yaw - previousYaw) * deltaTime / 1000; // must be radians;
+    yaw = yawGetDegrees(PRECISION);
+    angularVelocity = (yaw - previousYaw) * PRECISION / deltaTime;
     previousYaw = yaw;
 
     // call all channel update functions
@@ -149,7 +149,7 @@ void controlUpdate(uint32_t deltaTime)
 
     // main rotor equation
     mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffsets[CURRENT_HELI] / PRECISION +
-            angularVelocity + outputs[CONTROL_HEIGHT];
+            /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
@@ -168,29 +168,30 @@ void controlUpdate(uint32_t deltaTime)
 
 // Eventually change this to work on generic heli
 static int32_t mainGains[][NUM_GAINS] = {
-    {1500, 200, 500},
-    {1500, 800, 500}
+    {2000, 800, 1000},
+    {1500, 400, 500}
+//    {1500, 200, 500},
+//    {1500, 800, 500}
 };
 static int32_t tailGains[][NUM_GAINS] = {
-    {2000, 0, 500},
-    {500, 0, 500}
+    {2000, 800, 500},
+    {1500, 400, 500}
+//    {2000, 0, 500},
+//    {500, 0, 500}
 };
 static int32_t mainOffsets[] = {35, 40};  // temporary until calibration added
 static int32_t integralMain = 0; // do not need to be global - create a reset function that sets integral input to 0
 static int32_t integralTail = 0;
+
 void updateHeightChannel(uint32_t deltaTime)
 {
     int32_t kp = mainGains[CURRENT_HELI][KP];
     int32_t kd = mainGains[CURRENT_HELI][KD];
     int32_t ki = mainGains[CURRENT_HELI][KI];
-    int32_t proportonalMain =  (kp * targets[CONTROL_HEIGHT] - kp * height) / PRECISION;
-
-    // assume reference is not changing, hence 0
-    int32_t derivativeMain = 0 - (kd * verticalVelocity) / PRECISION;
-    // larger fall gain?
-
-    // integral input
+    int32_t proportonalMain =  kp * (targets[CONTROL_HEIGHT] - height) / PRECISION;
+    int32_t derivativeMain = kd * (0 - verticalVelocity) / PRECISION;
     integralMain = (integralMain * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
+
     outputs[CONTROL_HEIGHT] = proportonalMain + derivativeMain + integralMain;
 }
 
@@ -200,11 +201,11 @@ void updateYawChannel(uint32_t deltaTime)
     int32_t kp = tailGains[CURRENT_HELI][KP];
     int32_t kd = tailGains[CURRENT_HELI][KD];
     int32_t ki = tailGains[CURRENT_HELI][KI];
-
-    int32_t proportionalTail = (kp * targets[CONTROL_YAW] - kp * yaw) / PRECISION;
-    // int32_t derivativeTail
+    int32_t proportionalTail = kp * (targets[CONTROL_YAW] - yaw) / PRECISION;
+    int32_t derivativeTail = kd * (0 - angularVelocity) / PRECISION;
     integralTail = (integralTail * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)deltaTime / MS_TO_SEC * yaw)) / PRECISION;
-    outputs[CONTROL_YAW] = proportionalTail + /*derivativeTail*/ + integralTail;
+
+    outputs[CONTROL_YAW] = proportionalTail + derivativeTail + integralTail;
 }
 
 
