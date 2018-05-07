@@ -172,31 +172,39 @@ static int32_t mainGains[][NUM_GAINS] = {
     {1500, 800, 500}
 };
 static int32_t tailGains[][NUM_GAINS] = {
-    {2000, 0, 0},
-    {500, 0, 0}
+    {2000, 0, 500},
+    {500, 0, 500}
 };
 static int32_t mainOffsets[] = {35, 40};  // temporary until calibration added
-
+static int32_t integralMain = 0;
+static int32_t integralTail = 0;
 void updateHeightChannel(uint32_t deltaTime)
 {
     int32_t kp = mainGains[CURRENT_HELI][KP];
     int32_t kd = mainGains[CURRENT_HELI][KD];
-    int32_t proportonal =  (kp * targets[CONTROL_HEIGHT] - kp * height) / PRECISION;
+    int32_t ki = mainGains[CURRENT_HELI][KI];
+    int32_t proportonalMain =  (kp * targets[CONTROL_HEIGHT] - kp * height) / PRECISION;
 
     // assume reference is not changing, hence 0
-    int32_t derivative = 0 - (kd * verticalVelocity) / PRECISION;
+    int32_t derivativeMain = 0 - (kd * verticalVelocity) / PRECISION;
     // larger fall gain?
 
     // integral input
-    int32_t integral = (integral * PRECISION + (mainGains[CURRENT_HELI][KI] * deltaTime * targets[CONTROL_HEIGHT] - mainGains[CURRENT_HELI][KI] * deltaTime * height) / MS_TO_SEC) / PRECISION;
-    outputs[CONTROL_HEIGHT] = proportonal + derivative + integral;
+    integralMain = (integralMain * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
+    outputs[CONTROL_HEIGHT] = proportonalMain + derivativeMain + integralMain;
 }
 
 
 void updateYawChannel(uint32_t deltaTime)
 {
     int32_t kp = tailGains[CURRENT_HELI][KP];
-    outputs[CONTROL_YAW] = (kp * targets[CONTROL_YAW] - kp * yaw) / PRECISION;
+    int32_t kd = tailGains[CURRENT_HELI][KD];
+    int32_t ki = tailGains[CURRENT_HELI][KI];
+
+    int32_t proportionalTail = (kp * targets[CONTROL_YAW] - kp * yaw) / PRECISION;
+    // int32_t derivativeTail
+    integralTail = (integralTail * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)deltaTime / MS_TO_SEC * yaw)) / PRECISION;
+    outputs[CONTROL_YAW] = proportionalTail + /*derivativeTail*/ + integralTail;
 }
 
 
