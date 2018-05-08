@@ -30,13 +30,16 @@
 #define INITIAL_INT_STATUS  0xFFFFFFFF
 
 static volatile int32_t direction, encoderCount = 0;
-static uint32_t portBase, channelAPin, channelBPin, initialPinState;
+static uint32_t channelPortBase, channelAPin, channelBPin, refPortBase, refPin, initialPinState;
 static volatile uint32_t lastIntStatus = INITIAL_INT_STATUS;
+static volatile bool isCalibrated;
+
+
 
 void quadEncoderIntHandler(void)
 {
-    uint32_t intStatus = GPIOIntStatus(portBase, true);
-    GPIOIntClear(portBase, channelAPin | channelBPin);
+    uint32_t intStatus = GPIOIntStatus(channelPortBase, true);
+    GPIOIntClear(channelPortBase, channelAPin | channelBPin);
 
     if(lastIntStatus == INITIAL_INT_STATUS)
     {
@@ -75,32 +78,76 @@ void quadEncoderIntHandler(void)
     lastIntStatus = intStatus;
 }
 
+
+
+void quadEncoderRefIntHandler(void)
+{
+    isCalibrated = true;
+    GPIOIntDisable(refPortBase, refPin);
+    GPIOIntClear(refPortBase, refPin);
+}
+
+
+
+void quadEncoderCalibrate(void)
+{
+    isCalibrated = false;
+    GPIOIntEnable(refPortBase, refPin);
+}
+
+
+
+bool quadEncoderIsCalibrated(void)
+{
+    return isCalibrated;
+}
+
+
+
+//TODO is this still needed? i assume not
 void quadEncoderResetCount(void)
 {
     encoderCount = 0;
 }
+
+
+
 
 int32_t quadEncoderGetCount(void)
 {
     return encoderCount;
 }
 
-void quadEncoderInit(uint32_t GPIOPortPerif, uint32_t GPIOPortBase, uint32_t GPIOChannelAPin, uint32_t GPIOChannelBPin)
+
+
+void quadEncoderInit(uint32_t GPIOPortPerif, uint32_t GPIOChannelPortBase, uint32_t GPIOChannelAPin, uint32_t GPIOChannelBPin, uint32_t GPIORefPortBase, uint32_t GPIORefPin)
 {
-    portBase = GPIOPortBase;
-    channelAPin = GPIOChannelAPin;
-    channelBPin = GPIOChannelBPin;
+    channelPortBase = GPIOChannelPortBase;
+    channelAPin     = GPIOChannelAPin;
+    channelBPin     = GPIOChannelBPin;
 
-    //configure input pins
+    refPortBase     = GPIORefPortBase;
+    refPin          = GPIORefPin;
+
     SysCtlPeripheralEnable(GPIOPortPerif);
-    GPIOPadConfigSet(portBase, channelAPin | channelBPin, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
-    GPIODirModeSet(portBase, channelAPin | channelBPin, GPIO_DIR_MODE_IN);
 
-    //Initialize interrupts
-    GPIOIntRegister(portBase, quadEncoderIntHandler);
-    GPIOIntTypeSet(portBase, channelAPin | channelBPin, GPIO_BOTH_EDGES);
+    //configure channel input pins
+    GPIOPadConfigSet(channelPortBase, channelAPin | channelBPin, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
+    GPIODirModeSet(channelPortBase, channelAPin | channelBPin, GPIO_DIR_MODE_IN);
+
+    //configure reference input pin
+    GPIOPadConfigSet(refPortBase, refPin, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+    GPIODirModeSet(refPortBase, refPin, GPIO_DIR_MODE_IN);
+
+    //Initialize channel interrupts
+    GPIOIntRegister(channelPortBase, quadEncoderIntHandler);
+    GPIOIntTypeSet(channelPortBase, channelAPin | channelBPin, GPIO_BOTH_EDGES);
     //Get initial state of channel A and channel B for initially determining direction
-    initialPinState = GPIOPinRead(portBase, channelAPin | channelBPin);
+    initialPinState = GPIOPinRead(channelPortBase, channelAPin | channelBPin);
     //Enable encoder interrupts
-    GPIOIntEnable(portBase, channelAPin | channelBPin);
+    GPIOIntEnable(channelPortBase, channelAPin | channelBPin);
+
+    //initialize reference interrupt but do not enable
+    GPIOIntRegister(refPortBase, quadEncoderRefIntHandler);
+    GPIOIntTypeSet(refPortBase, refPin, GPIO_FALLING_EDGE);
 }

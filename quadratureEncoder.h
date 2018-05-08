@@ -38,6 +38,6 @@ int32_t quadEncoderGetCount(void);
 //************************************************************************
 //
 //************************************************************************
-void quadEncoderInit(uint32_t, uint32_t, uint32_t, uint32_t);
+void quadEncoderInit(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
 #endif /*QUADRATURE_ENCODER_H_*/
