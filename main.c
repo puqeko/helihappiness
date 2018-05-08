@@ -105,6 +105,7 @@ void heliMode(void)
     case LANDING:
         // TODO: Ramp input for landing
         // done landing...
+        ignoreButton(SW1);
         targetYaw = 0;
         if (landingCount == HEIGHT_LANDING_COUNT) {
             if (targetHeight != 0) {
@@ -118,8 +119,6 @@ void heliMode(void)
         controlSetTarget(targetYaw, CONTROL_YAW);
 
         if (heightAsPercentage(1) == 0 && yawGetDegrees(1) == 0) {
-
-            ignoreButton(SW1);
             controlMotorSet(false);
             current_heli_state = LANDED;
 
