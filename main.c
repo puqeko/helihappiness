@@ -38,12 +38,14 @@ static const char* heli_state_map [] = {"Landed", "Landing", "Aligning", "Flying
 static enum heli_state current_heli_state = LANDED;
 
 uint32_t targetHeight = 0;
-uint32_t targetYaw = 0;
+uint32_t targetYaw = 0; // should this be an int?
 
 #define DELTA_TIME 10  // 100 hz, 10 ms
 #define UART_DISPLAY_FREQUENCY 4  // hz
+#define LANDING_UPDATE_FREQUENCY 7
 #define LOOP_FREQUENCY (1000 / DELTA_TIME)
 #define UPDATE_COUNT (LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY)
+#define HEIGHT_LANDING_COUNT (LOOP_FREQUENCY / LANDING_UPDATE_FREQUENCY)
 
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
@@ -72,6 +74,7 @@ void initalise()
 
 void heliMode(void)
 {
+    static int landingCount = 0;
     switch (current_heli_state) {
 
     case LANDED:
@@ -102,12 +105,26 @@ void heliMode(void)
     case LANDING:
         // TODO: Ramp input for landing
         // done landing...
-        ignoreButton(SW1);
-        controlMotorSet(false);
-        current_heli_state = LANDED;
+        targetYaw = 0;
+        if (landingCount == HEIGHT_LANDING_COUNT) {
+            if (targetHeight != 0) {
+                targetHeight = targetHeight - 1;
+            }
+            landingCount = 0;
+        }
+        landingCount++;
 
-        controlDisable(CONTROL_HEIGHT);
-        controlDisable(CONTROL_YAW);
+        controlSetTarget(targetHeight, CONTROL_HEIGHT);
+        controlSetTarget(targetYaw, CONTROL_YAW);
+
+        if (heightAsPercentage(1) == 0 && yawGetDegrees(1) == 0) {
+            controlMotorSet(false);
+            current_heli_state = LANDED;
+            ignoreButton(SW1);
+
+            controlDisable(CONTROL_HEIGHT);
+            controlDisable(CONTROL_YAW);
+        }
         break;
 
     case FLYING:
@@ -125,8 +142,6 @@ void heliMode(void)
         }
         if (checkButton(SW1) == RELEASED) {  // switch down
             // TODO: add landing control
-            controlSetTarget(0, CONTROL_HEIGHT);
-            controlSetTarget(0, CONTROL_YAW);
             current_heli_state = LANDING;
         }
         controlSetTarget(targetHeight, CONTROL_HEIGHT);
