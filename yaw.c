@@ -30,8 +30,6 @@
 
 #define COUNTS_PER_ROTATION (112*4) //112 slots and x4 because quadrature encoding used
 
-static int32_t rawCounts = 0;
-
 
 void yawInit(void)
 {
