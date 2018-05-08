@@ -168,7 +168,7 @@ void controlUpdate(uint32_t deltaTime)
 
 // Eventually change this to work on generic heli
 static int32_t mainGains[][NUM_GAINS] = {
-    {2000, 800, 1000},
+    {2000, 800, 800},
     {1500, 400, 500}
 //    {1500, 200, 500},
 //    {1500, 800, 500}
@@ -180,8 +180,6 @@ static int32_t tailGains[][NUM_GAINS] = {
 //    {500, 0, 500}
 };
 static int32_t mainOffsets[] = {35, 40};  // temporary until calibration added
-static int32_t integralMain = 0; // do not need to be global - create a reset function that sets integral input to 0
-static int32_t integralTail = 0;
 
 void updateHeightChannel(uint32_t deltaTime)
 {
@@ -190,6 +188,12 @@ void updateHeightChannel(uint32_t deltaTime)
     int32_t ki = mainGains[CURRENT_HELI][KI];
     int32_t proportonalMain =  kp * (targets[CONTROL_HEIGHT] - height) / PRECISION;
     int32_t derivativeMain = kd * (0 - verticalVelocity) / PRECISION;
+    int32_t integralError = (ki * targets[CONTROL_HEIGHT] - ki * height) * (int32_t)deltaTime / MS_TO_SEC;
+    //integralMain = (integralMain * PRECISION + integralError) / PRECISION;
+
+    displayPrintLineWithFormat("i = %6d", 3, integralMain / PRECISION);
+
+
     integralMain = (integralMain * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
 
     outputs[CONTROL_HEIGHT] = proportonalMain + derivativeMain + integralMain;
