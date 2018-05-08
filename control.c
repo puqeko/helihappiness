@@ -38,7 +38,6 @@ static int32_t mainDuty = 0, tailDuty = 0;
 // measured parameters (scaled by PRECISION)
 static int32_t height, previousHeight = 0, verticalVelocity;
 static int32_t yaw, previousYaw = 0, angularVelocity = 0;
-static int32_t integralMain = 0, integralTail = 0;
 
 // configurable constants (scaled by PRECISION)
 static int32_t gravOffsets[] = {250, 190};
@@ -168,48 +167,63 @@ void controlUpdate(uint32_t deltaTime)
 
 // Eventually change this to work on generic heli
 static int32_t mainGains[][NUM_GAINS] = {
-    {2000, 800, 800},
+    {2500, 500, 800},
     {1500, 400, 500}
 //    {1500, 200, 500},
 //    {1500, 800, 500}
 };
 static int32_t tailGains[][NUM_GAINS] = {
-    {2000, 800, 200},
+    {2000, 500, 200},
     {1500, 400, 500}
 //    {2000, 0, 500},
 //    {500, 0, 500}
 };
-static int32_t mainOffsets[] = {35, 40};  // temporary until calibration added
+static int32_t mainOffsets[] = {40, 40};  // temporary until calibration added
 
 void updateHeightChannel(uint32_t deltaTime)
 {
     int32_t kp = mainGains[CURRENT_HELI][KP];
     int32_t kd = mainGains[CURRENT_HELI][KD];
     int32_t ki = mainGains[CURRENT_HELI][KI];
-    int32_t proportonalMain =  kp * (targets[CONTROL_HEIGHT] - height) / PRECISION;
-    int32_t derivativeMain = kd * (0 - verticalVelocity) / PRECISION;
-    int32_t integralError = (ki * targets[CONTROL_HEIGHT] - ki * height) * (int32_t)deltaTime / MS_TO_SEC;
-    //integralMain = (integralMain * PRECISION + integralError) / PRECISION;
+    int32_t error = targets[CONTROL_HEIGHT] - height;
+    int32_t deri, prop = kp * error / PRECISION;
+    // (kp * targets[CONTROL_HEIGHT] - kp * height)
+    static int32_t inte = 0;
 
-    displayPrintLineWithFormat("i = %6d", 3, integralMain / PRECISION);
+//    if (abs(error) > 25000) {
+//        deri = 0;
+//    } else {
+        deri = kd * (0 - verticalVelocity) / PRECISION;
+//    }
 
+//    if (abs(error) < 1000) {
+//        inte = (inte * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
+//    }
 
-    integralMain = (integralMain * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
-
-    outputs[CONTROL_HEIGHT] = proportonalMain + derivativeMain + integralMain;
+    outputs[CONTROL_HEIGHT] = prop + deri;
 }
 
 
-void updateYawChannel(uint32_t deltaTime)
+void updateYawChannel(uint32_t dt)
 {
     int32_t kp = tailGains[CURRENT_HELI][KP];
     int32_t kd = tailGains[CURRENT_HELI][KD];
     int32_t ki = tailGains[CURRENT_HELI][KI];
-    int32_t proportionalTail = kp * (targets[CONTROL_YAW] - yaw) / PRECISION;
-    int32_t derivativeTail = kd * (0 - angularVelocity) / PRECISION;
-    integralTail = (integralTail * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)deltaTime / MS_TO_SEC * yaw)) / PRECISION;
+    int32_t error = targets[CONTROL_YAW] - yaw;
+    int32_t deri, prop = kp * error / PRECISION;
+    static int32_t inte = 0;
 
-    outputs[CONTROL_YAW] = proportionalTail + derivativeTail + integralTail;
+//    if (abs(error) < 3000 || abs(error) > 45000) {
+//        deri = 0;
+//    } else {
+        deri = kd * (0 - angularVelocity) / PRECISION;
+//    }
+
+//    if (abs(error) < 1000) {
+//        inte = (inte * PRECISION + (ki * (int32_t)dt / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)dt / MS_TO_SEC * yaw)) / PRECISION;
+//    }
+
+    outputs[CONTROL_YAW] = prop + deri;
 }
 
 
