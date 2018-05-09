@@ -93,6 +93,7 @@ void quadEncoderIntHandler(void)
 void quadEncoderRefIntHandler(void)
 {
     isCalibrated = true;
+    encoderCount = 0;
     GPIOIntDisable(REF_PORT_BASE, REF_PIN);
     GPIOIntClear(REF_PORT_BASE, REF_PIN);
 }
