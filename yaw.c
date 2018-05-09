@@ -5,7 +5,7 @@
 //
 // Group:       A03 Group 10
 // Created:     16/4/18
-// Last Edited: 16/4/18
+// Last Edited: 10/5/18
 //
 // Purpose: Handles the yaw of the helicopter
 //************************************************************************
@@ -33,7 +33,7 @@
 
 void yawInit(void)
 {
-    quadEncoderInit(SYSCTL_PERIPH_GPIOB, GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_PIN_1);
+    quadEncoderInit();
 }
 
 
