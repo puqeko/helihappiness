@@ -80,6 +80,12 @@ initButtons (void)
     GPIOPadConfigSet (SW1_PORT_BASE, SW1_PIN, GPIO_STRENGTH_2MA,
        GPIO_PIN_TYPE_STD_WPD);
     but_normal[SW1] = SW1_NORMAL;
+    //#SW2 slde switch (active LOW)
+    SysCtlPeripheralEnable (SW2_PERIPH);
+    GPIOPinTypeGPIOInput (SW2_PORT_BASE, SW2_PIN);
+    GPIOPadConfigSet (SW2_PORT_BASE, SW2_PIN, GPIO_STRENGTH_2MA,
+       GPIO_PIN_TYPE_STD_WPD);
+    but_normal[SW2] = SW2_NORMAL;
 
     // init to whatever state the switch is in
 	for (i = 0; i < NUM_BUTS; i++)
@@ -89,6 +95,7 @@ initButtons (void)
 		but_flag[i] = false;
 	}
 	but_state[SW1] = (GPIOPinRead (SW1_PORT_BASE, SW1_PIN) == SW1_PIN);
+	but_state[SW2] = (GPIOPinRead (SW2_PORT_BASE, SW2_PIN) == SW2_PIN);
 }
 
 // *******************************************************
@@ -113,6 +120,7 @@ updateButtons (void)
     but_value[RIGHT] = (GPIOPinRead (RIGHT_BUT_PORT_BASE, RIGHT_BUT_PIN) == RIGHT_BUT_PIN);
     //#
     but_value[SW1] = (GPIOPinRead (SW1_PORT_BASE, SW1_PIN) == SW1_PIN);
+    but_value[SW2] = (GPIOPinRead (SW2_PORT_BASE, SW2_PIN) == SW2_PIN);
     // Iterate through the buttons, updating button variables as required
 	for (i = 0; i < NUM_BUTS; i++)
 	{
