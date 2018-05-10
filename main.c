@@ -42,15 +42,16 @@ enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, NUM_HELI_STATES};
 static const char* heli_state_map [] = {"Landed", "Landing", "Aligning", "Flying"};
 static enum heli_state current_heli_state = LANDED;
 
-uint32_t targetHeight = 0;
-uint32_t targetYaw = 0; // should this be an int?
+int32_t targetHeight = 0;
+int32_t targetYaw = 0; // should this be an int?
 
 #define DELTA_TIME 10  // 100 hz, 10 ms
 #define UART_DISPLAY_FREQUENCY 4  // hz
-#define LANDING_UPDATE_FREQUENCY 7
+#define LANDING_UPDATE_FREQUENCY 10 // hz
 #define LOOP_FREQUENCY (1000 / DELTA_TIME)
 #define UPDATE_COUNT (LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY)
 #define HEIGHT_LANDING_COUNT (LOOP_FREQUENCY / LANDING_UPDATE_FREQUENCY)
+#define STABILITY_TIME 500 // 500 ms
 
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
@@ -79,7 +80,7 @@ void initalise()
 
 void heliMode(void)
 {
-    static int landingCount = 0;
+    static int stabilityCounter;
     switch (current_heli_state) {
 
     case LANDED:
@@ -88,7 +89,8 @@ void heliMode(void)
 
         if (checkButton(SW1) == PUSHED) {
             current_heli_state = ALIGNING;
-            controlMotorSet(true);  // turn  on motors
+            controlMotorSet(true, MAIN_ROTOR);  // turn  on motors
+            controlMotorSet(true, TAIL_ROTOR);
             controlEnable(CONTROL_CALIBRATE_MAIN);  // start calibration
             controlEnable(CONTROL_CALIBRATE_TAIL);
             targetHeight = 0;
@@ -108,27 +110,19 @@ void heliMode(void)
         break;
 
     case LANDING:
-        // TODO: Ramp input for landing
-        // done landing...
-        targetYaw = 0;
-//        if (landingCount == HEIGHT_LANDING_COUNT) {
-//            if (targetHeight != 0) {
-//                targetHeight = targetHeight - 1;
-//            }
-//            landingCount = 0;
+//        if (yawGetDegrees(1) == 0 && heightAsPercentage(1) <= 1) {
+//            stabilityCounter++;
+//        } else {
+//            stabilityCounter = 0;
 //        }
-//        landingCount++;
-//
-//        controlSetTarget(targetHeight, CONTROL_HEIGHT);
-//        controlSetTarget(targetYaw, CONTROL_YAW);
-//
-//        if (heightAsPercentage(1) == 0 && yawGetDegrees(1) == 0) {
-            controlMotorSet(false);
+//        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME / MS_TO_SEC) {
+            controlMotorSet(false, TAIL_ROTOR);
+            controlMotorSet(false, MAIN_ROTOR);
             current_heli_state = LANDED;
             ignoreButton(SW1);
-
-            controlDisable(CONTROL_HEIGHT);
             controlDisable(CONTROL_YAW);
+            controlSetLandingSequence(false);
+            targetHeight = 0;
 //        }
         break;
 
@@ -147,6 +141,8 @@ void heliMode(void)
         }
         if (checkButton(SW1) == RELEASED) {  // switch down
             // TODO: add landing control
+//            controlSetLandingSequence(true);
+            targetYaw = 0;
             current_heli_state = LANDING;
         }
         controlSetTarget(targetHeight, CONTROL_HEIGHT);

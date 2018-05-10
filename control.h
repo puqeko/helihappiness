@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "pwmModule.h"
 
 #define PRECISION 1000  // zeros represent how many dp of precision to get with integer math
 #define MIN_DUTY 5  // %
@@ -25,7 +26,7 @@ typedef enum control_channel {
 
 void controlInit(void);
 
-void controlMotorSet(bool state);
+void controlMotorSet(bool state, pwm_channel_t channel);
 
 void controlEnable(control_channel_t channel);
 
@@ -38,6 +39,8 @@ void controlSetTarget(int32_t target, control_channel_t channel);
 int32_t controlGetPWMDuty(control_channel_t channel);
 
 void controlUpdate(uint32_t deltaTime);
+
+void controlSetLandingSequence(bool state);
 
 
 #endif /* CONTROL_H_ */

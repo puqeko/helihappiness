@@ -10,7 +10,6 @@
 // *******************************************************
 
 #include "control.h"
-#include "pwmModule.h"
 #include "height.h"
 #include "yaw.h"
 #include "display.h"
@@ -18,6 +17,8 @@
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
 static bool enabled[CONTROL_NUM_CHANNELS] = {};
+
+static bool landingFlag = 0;
 
 typedef void (*control_channel_update_func_t)(uint32_t);
 
@@ -47,7 +48,7 @@ static int32_t mainTorqueConsts[] = {1000, 800};
 enum gains_e {KP=0, KD, KI};
 enum heli_e {HELI_1=0, HELI_2};
 #define NUM_GAINS 3
-#define CURRENT_HELI HELI_1
+#define CURRENT_HELI HELI_2
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -65,10 +66,9 @@ void controlInit(void)
 }
 
 
-void controlMotorSet(bool state)
+void controlMotorSet(bool state, pwm_channel_t channel)
 {
-    pwmSetOutputState(state, MAIN_ROTOR);
-    pwmSetOutputState(state, TAIL_ROTOR);
+    pwmSetOutputState(state, channel);
 }
 
 
@@ -146,9 +146,13 @@ void controlUpdate(uint32_t deltaTime)
         }
     }
 
+    if (!landingFlag) {
     // main rotor equation
-    mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffsets[CURRENT_HELI] / PRECISION +
+        mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffsets[CURRENT_HELI] / PRECISION +
             /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
+    } else {
+        mainDuty = mainDuty - 100;
+    }
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
@@ -237,4 +241,8 @@ void updateCalibrationChannelTail(uint32_t deltaTime)
 {
     // calc mainTourqueConst here ...
     controlDisable(CONTROL_CALIBRATE_TAIL);
+}
+
+void controlSetLandingSequence(bool state) {
+    landingFlag = state;
 }
