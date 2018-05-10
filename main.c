@@ -200,12 +200,12 @@ int main(void)
 {
     initalise();
 
-    //TODO*********************************TEST CODE START****************************************************
-    quadEncoderCalibrate();
-    pwmSetOutputState(true, TAIL_ROTOR);
-    pwmSetDuty(150, 10, TAIL_ROTOR);
-    while(!quadEncoderIsCalibrated());
-    //TODO**********************************TEST CODE END*****************************************************
+    //*********************************TEST CODE START****************************************************
+//    quadEncoderCalibrate();
+//    pwmSetOutputState(true, TAIL_ROTOR);
+//    pwmSetDuty(150, 10, TAIL_ROTOR);
+//    while(!quadEncoderIsCalibrated());
+    //**********************************TEST CODE END*****************************************************
 
     timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // make sure ADC buffer has a chance to fill up
 
