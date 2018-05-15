@@ -32,6 +32,11 @@
 #include "uartDisplay.h"
 #include "control.h"
 
+//TODO************TEST CODE START********************
+#include "pwmModule.h"
+#include "quadratureEncoder.h"
+//TODO*************TEST CODE END*********************
+
 enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, NUM_HELI_STATES};
 // list the mode that should be displayed for each state.
 static const char* heli_state_map [] = {"Landed", "Landing", "Aligning", "Flying"};
@@ -107,6 +112,7 @@ void heliMode(void)
     case LANDING:
         // TODO: Ramp input for landing
         // done landing...
+
         if (yawGetDegrees(1) == 0 && heightAsPercentage(1) <= 1) {
             stabilityCounter++;
         } else {
@@ -121,6 +127,7 @@ void heliMode(void)
             controlSetLandingSequence(false);
             targetHeight = 0;
         }
+
         break;
 
     case FLYING:
@@ -192,6 +199,13 @@ void displayInfo()
 int main(void)
 {
     initalise();
+
+    //TODO*********************************TEST CODE START****************************************************
+    quadEncoderCalibrate();
+    pwmSetOutputState(true, TAIL_ROTOR);
+    pwmSetDuty(150, 10, TAIL_ROTOR);
+    while(!quadEncoderIsCalibrated());
+    //TODO**********************************TEST CODE END*****************************************************
 
     timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // make sure ADC buffer has a chance to fill up
 

@@ -5,7 +5,7 @@
 //
 // Group:       A03 Group 10
 // Created:     16/4/18
-// Last Edited: 16/4/18
+// Last Edited: 10/5/18
 //
 // Purpose: Handles the yaw of the helicopter
 //************************************************************************
@@ -30,12 +30,10 @@
 
 #define COUNTS_PER_ROTATION (112*4) //112 slots and x4 because quadrature encoding used
 
-static int32_t rawCounts = 0;
-
 
 void yawInit(void)
 {
-    quadEncoderInit(SYSCTL_PERIPH_GPIOB, GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_PIN_1);
+    quadEncoderInit();
 }
 
 

@@ -1,11 +1,11 @@
-//************************************************************************
+ //************************************************************************
 // quadratureEncoder.c
 //
 // Helicopter project
 //
 // Group:       A03 Group 10
 // Created:     16/4/18
-// Last Edited: 16/4/18
+// Last Edited: 10/5/18
 //
 // Purpose: Handles input from the quadrature encoder
 //************************************************************************
@@ -25,69 +25,135 @@
 
 #include "quadratureEncoder.h"
 
+#define GPIO_CHANNEL_PERIPH     SYSCTL_PERIPH_GPIOB
+#define CHANNEL_PORT_BASE       GPIO_PORTB_BASE
+#define CHANNEL_A_PIN           GPIO_PIN_0
+#define CHANNEL_B_PIN           GPIO_PIN_1
 
-static volatile int32_t encoderCount = 0;
-static uint32_t portBase, channelAPin, channelBPin;
+#define GPIO_REF_PERIPH         SYSCTL_PERIPH_GPIOC
+#define REF_PORT_BASE           GPIO_PORTC_BASE
+#define REF_PIN                 GPIO_PIN_4
+
+#define CW_DIRECTION    1
+#define CCW_DIRECTION  -1
+#define INITIAL_INT_STATUS  0xFFFFFFFF
+
+
+static uint32_t initialPinState;
+static volatile int32_t direction, encoderCount = 0;
+static volatile uint32_t lastIntStatus = INITIAL_INT_STATUS;
+static volatile bool isCalibrated;
+
 
 
 void quadEncoderIntHandler(void)
 {
-    // TODO: disable interupts to make operations atomic
-    uint32_t intStatus = GPIOIntStatus(portBase, true);
-    uint32_t pinStatus = GPIOPinRead(portBase, channelAPin | channelBPin);
-    GPIOIntClear(portBase, channelAPin | channelBPin);
+    uint32_t intStatus = GPIOIntStatus(CHANNEL_PORT_BASE, true);
+    GPIOIntClear(CHANNEL_PORT_BASE, CHANNEL_A_PIN | CHANNEL_B_PIN);
 
-    //as one of intChannelA or intChannelB will be true and they will
-    //not both be true at the same time, only one of the two variables
-    //are needed. Both are included here for clarity & readability
-    bool intChannelA = intStatus & channelAPin;
-    bool intChannelB = intStatus & channelBPin;
+    if(lastIntStatus == INITIAL_INT_STATUS)
+    {
+        //as only one of intChannelA or intChannelB will be true and they will
+        //not both be true at the same time, only one of the two variables
+        //are needed. Both are included here for clarity & readability
+        bool intChannelA = intStatus & CHANNEL_A_PIN;
+        bool intChannelB = intStatus & CHANNEL_B_PIN;
 
-    bool channelA = pinStatus & channelAPin;
-    bool channelB = pinStatus & channelBPin;
+        bool channelA = initialPinState & CHANNEL_A_PIN;
+        bool channelB = initialPinState & CHANNEL_B_PIN;
 
-    if(intChannelA && channelA) //A rising edge
-    {
-        !channelB ? encoderCount-- : encoderCount++;
+        if(intChannelA && channelA) //A rising edge
+        {
+            !channelB ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
+        }
+        else if(intChannelA && !channelA) //A falling edge
+        {
+            channelB ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
+        }
+        else if(intChannelB && channelB) //B rising edge
+        {
+            channelA ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
+        }
+        else if(intChannelB && !channelB) //B falling edge
+        {
+            !channelA ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
+        }
     }
-    else if(intChannelA && !channelA) //A falling edge
+    else if (lastIntStatus == intStatus)
     {
-        channelB ? encoderCount-- : encoderCount++;
-    }
-    else if(intChannelB && channelB)  //B rising edge
-    {
-        channelA ? encoderCount-- : encoderCount++;
-    }
-    else if(intChannelB && !channelB) //B falling edge
-    {
-        !channelA ? encoderCount-- : encoderCount++;
+        direction *= -1;
     }
 
+    encoderCount += direction;
+    lastIntStatus = intStatus;
 }
 
+
+
+void quadEncoderRefIntHandler(void)
+{
+    isCalibrated = true;
+    encoderCount = 0;
+    GPIOIntDisable(REF_PORT_BASE, REF_PIN);
+    GPIOIntClear(REF_PORT_BASE, REF_PIN);
+}
+
+
+
+void quadEncoderCalibrate(void)
+{
+    isCalibrated = false;
+    GPIOIntEnable(REF_PORT_BASE, REF_PIN);
+}
+
+
+
+bool quadEncoderIsCalibrated(void)
+{
+    return isCalibrated;
+}
+
+
+
+//TODO is this still needed? i assume not
 void quadEncoderResetCount(void)
 {
     encoderCount = 0;
 }
+
+
+
 
 int32_t quadEncoderGetCount(void)
 {
     return encoderCount;
 }
 
-void quadEncoderInit(uint32_t GPIOPortPerif, uint32_t GPIOPortBase, uint32_t GPIOChannelAPin, uint32_t GPIOChannelBPin)
+
+
+void quadEncoderInit(void)
 {
-    portBase = GPIOPortBase;
-    channelAPin = GPIOChannelAPin;
-    channelBPin = GPIOChannelBPin;
+    //Enable GPIO peripheral on used ports
+    SysCtlPeripheralEnable(GPIO_CHANNEL_PERIPH);
+    SysCtlPeripheralEnable(GPIO_REF_PERIPH);
 
-    //configure input pins
-    SysCtlPeripheralEnable(GPIOPortPerif);
-    GPIOPadConfigSet(portBase, channelAPin | channelBPin, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
-    GPIODirModeSet(portBase, channelAPin | channelBPin, GPIO_DIR_MODE_IN);
+    //configure channel input pins
+    GPIOPadConfigSet(CHANNEL_PORT_BASE, CHANNEL_A_PIN | CHANNEL_B_PIN, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
+    GPIODirModeSet(CHANNEL_PORT_BASE, CHANNEL_A_PIN | CHANNEL_B_PIN, GPIO_DIR_MODE_IN);
 
-    //Initialize interrupts
-    GPIOIntRegister(portBase, quadEncoderIntHandler);
-    GPIOIntTypeSet(portBase, channelAPin | channelBPin, GPIO_BOTH_EDGES);
-    GPIOIntEnable(portBase, channelAPin | channelBPin);
+    //configure reference input pin
+    GPIOPadConfigSet(REF_PORT_BASE, REF_PIN, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+    GPIODirModeSet(REF_PORT_BASE, REF_PIN, GPIO_DIR_MODE_IN);
+
+    //Initialize channel interrupts
+    GPIOIntRegister(CHANNEL_PORT_BASE, quadEncoderIntHandler);
+    GPIOIntTypeSet(CHANNEL_PORT_BASE, CHANNEL_A_PIN | CHANNEL_B_PIN, GPIO_BOTH_EDGES);
+    //Get initial state of channel A and channel B for initially determining direction
+    initialPinState = GPIOPinRead(CHANNEL_PORT_BASE, CHANNEL_A_PIN | CHANNEL_B_PIN);
+    //Enable encoder interrupts
+    GPIOIntEnable(CHANNEL_PORT_BASE, CHANNEL_A_PIN | CHANNEL_B_PIN);
+
+    //initialize reference interrupt but do not enable
+    GPIOIntRegister(REF_PORT_BASE, quadEncoderRefIntHandler);
+    GPIOIntTypeSet(REF_PORT_BASE, REF_PIN, GPIO_FALLING_EDGE);
 }
