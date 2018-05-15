@@ -37,9 +37,9 @@
 #include "quadratureEncoder.h"
 //TODO*************TEST CODE END*********************
 
-enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, NUM_HELI_STATES};
+enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, CALIBRATE_YAW, NUM_HELI_STATES};
 // list the mode that should be displayed for each state.
-static const char* heli_state_map [] = {"Landed", "Landing", "Aligning", "Flying"};
+static const char* heli_state_map [] = {"Landed", "Landing", "Aligning", "Flying", "Calibrate Yaw"};
 static enum heli_state current_heli_state = LANDED;
 
 int32_t targetHeight = 0;
@@ -75,25 +75,34 @@ void initalise()
 
     heightCalibrate();
     controlInit();
+
 }
 
 
 void heliMode(void)
 {
     static int stabilityCounter;
+    static bool shouldCalibrate = true;
     switch (current_heli_state) {
 
     case LANDED:
-
         heightCalibrate();
-
         if (checkButton(SW1) == PUSHED) {
-            current_heli_state = ALIGNING;
+            if (shouldCalibrate) {
+                current_heli_state = CALIBRATE_YAW;
+                quadEncoderCalibrate();
+            } else {
+                current_heli_state = ALIGNING;
+            }
             controlMotorSet(true, MAIN_ROTOR);  // turn  on motors
             controlMotorSet(true, TAIL_ROTOR);
-            controlEnable(CONTROL_CALIBRATE_MAIN);  // start calibration
+              // start calibration
+            controlEnable(CONTROL_CALIBRATE_MAIN);
             controlEnable(CONTROL_CALIBRATE_TAIL);
+            controlEnable(CONTROL_HEIGHT);
+            controlEnable(CONTROL_YAW);
             targetHeight = 0;
+            resetController();
         }
         break;
 
@@ -106,16 +115,32 @@ void heliMode(void)
             controlEnable(CONTROL_YAW);
             current_heli_state = FLYING;
             targetYaw = 0;
+
+        }
+        break;
+
+    case CALIBRATE_YAW:
+        //Find the zero point for the yaw
+        targetYaw += 1;
+        controlSetTarget(targetYaw, CONTROL_YAW);
+        controlSetTarget(targetHeight, CONTROL_HEIGHT);
+        if (quadEncoderIsCalibrated()) {
+            shouldCalibrate = false;
+            current_heli_state = ALIGNING;
+            targetYaw = 0;
         }
         break;
 
     case LANDING:
-//        if (yawGetDegrees(1) == 0 && heightAsPercentage(1) <= 1) {
-//            stabilityCounter++;
-//        } else {
-//            stabilityCounter = 0;
-//        }
-//        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME / MS_TO_SEC) {
+        // TODO: Ramp input for landing
+        // done landing...
+
+        if (yawGetDegrees(1) == 0 && heightAsPercentage(1) <= 1) {
+            stabilityCounter++;
+        } else {
+            stabilityCounter = 0;
+        }
+        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME / MS_TO_SEC) {
             controlMotorSet(false, TAIL_ROTOR);
             controlMotorSet(false, MAIN_ROTOR);
             current_heli_state = LANDED;
@@ -123,7 +148,7 @@ void heliMode(void)
             controlDisable(CONTROL_YAW);
             controlSetLandingSequence(false);
             targetHeight = 0;
-//        }
+        }
         break;
 
     case FLYING:
