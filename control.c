@@ -182,7 +182,7 @@ static int32_t tailGains[][NUM_GAINS] = {
 //    {2000, 0, 500},
 //    {500, 0, 500}
 };
-static int32_t mainOffsets[] = {40, 40};  // temporary until calibration added
+static int32_t mainOffsets[] = {37, 40};  // temporary until calibration added
 
 void updateHeightChannel(uint32_t deltaTime)
 {
@@ -201,10 +201,10 @@ void updateHeightChannel(uint32_t deltaTime)
 //    }
 
 //    if (abs(error) < 1000) {
-//        inte = (inte * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
+        inte = (inte * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
 //    }
 
-    outputs[CONTROL_HEIGHT] = prop + deri;
+    outputs[CONTROL_HEIGHT] = prop + deri + inte;
 }
 
 
@@ -224,10 +224,10 @@ void updateYawChannel(uint32_t dt)
 //    }
 
 //    if (abs(error) < 1000) {
-//        inte = (inte * PRECISION + (ki * (int32_t)dt / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)dt / MS_TO_SEC * yaw)) / PRECISION;
+        inte = (inte * PRECISION + (ki * (int32_t)dt / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)dt / MS_TO_SEC * yaw)) / PRECISION;
 //    }
 
-    outputs[CONTROL_YAW] = prop + deri;
+    outputs[CONTROL_YAW] = prop + deri + inte;
 }
 
 
