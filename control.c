@@ -151,7 +151,9 @@ void controlUpdate(uint32_t deltaTime)
         mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffsets[CURRENT_HELI] / PRECISION +
             /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
     } else {
-        mainDuty = mainDuty - 100;
+        if (mainDuty > LANDING_DUTY) {
+            mainDuty = mainDuty - 100;
+        }
     }
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
@@ -184,50 +186,51 @@ static int32_t tailGains[][NUM_GAINS] = {
 };
 static int32_t mainOffsets[] = {37, 40};  // temporary until calibration added
 
+static int32_t inte_h = 0;
+int32_t deri_h = 0, prop_h = 0;
 void updateHeightChannel(uint32_t deltaTime)
 {
     int32_t kp = mainGains[CURRENT_HELI][KP];
     int32_t kd = mainGains[CURRENT_HELI][KD];
     int32_t ki = mainGains[CURRENT_HELI][KI];
     int32_t error = targets[CONTROL_HEIGHT] - height;
-    int32_t deri, prop = kp * error / PRECISION;
+    prop_h = kp * error / PRECISION;
     // (kp * targets[CONTROL_HEIGHT] - kp * height)
-    static int32_t inte = 0;
 
 //    if (abs(error) > 25000) {
 //        deri = 0;
 //    } else {
-        deri = kd * (0 - verticalVelocity) / PRECISION;
+        deri_h = kd * (0 - verticalVelocity) / PRECISION;
 //    }
 
 //    if (abs(error) < 1000) {
-        inte = (inte * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
+        inte_h = (inte_h * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
 //    }
 
-    outputs[CONTROL_HEIGHT] = prop + deri + inte;
+    outputs[CONTROL_HEIGHT] = prop_h + deri_h + inte_h;
 }
 
-
+static int32_t inte_y = 0;
+int32_t prop_y = 0, deri_y = 0;
 void updateYawChannel(uint32_t dt)
 {
     int32_t kp = tailGains[CURRENT_HELI][KP];
     int32_t kd = tailGains[CURRENT_HELI][KD];
     int32_t ki = tailGains[CURRENT_HELI][KI];
     int32_t error = targets[CONTROL_YAW] - yaw;
-    int32_t deri, prop = kp * error / PRECISION;
-    static int32_t inte = 0;
+    prop_y = kp * error / PRECISION;
 
 //    if (abs(error) < 3000 || abs(error) > 45000) {
 //        deri = 0;
 //    } else {
-        deri = kd * (0 - angularVelocity) / PRECISION;
+        deri_y = kd * (0 - angularVelocity) / PRECISION;
 //    }
 
 //    if (abs(error) < 1000) {
-        inte = (inte * PRECISION + (ki * (int32_t)dt / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)dt / MS_TO_SEC * yaw)) / PRECISION;
+        inte_y = (inte_y * PRECISION + (ki * (int32_t)dt / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)dt / MS_TO_SEC * yaw)) / PRECISION;
 //    }
 
-    outputs[CONTROL_YAW] = prop + deri + inte;
+    outputs[CONTROL_YAW] = prop_y + deri_y + inte_y;
 }
 
 
@@ -245,4 +248,14 @@ void updateCalibrationChannelTail(uint32_t deltaTime)
 
 void controlSetLandingSequence(bool state) {
     landingFlag = state;
+}
+
+void resetController(void) {
+    prop_h = 0;
+    deri_h = 0;
+    inte_h = 0;
+
+    prop_y = 0;
+    deri_y = 0;
+    inte_y = 0;
 }

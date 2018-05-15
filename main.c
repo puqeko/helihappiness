@@ -86,23 +86,23 @@ void heliMode(void)
     switch (current_heli_state) {
 
     case LANDED:
-
         heightCalibrate();
-
         if (checkButton(SW1) == PUSHED) {
             if (shouldCalibrate) {
                 current_heli_state = CALIBRATE_YAW;
                 quadEncoderCalibrate();
             } else {
                 current_heli_state = ALIGNING;
-
             }
             controlMotorSet(true, MAIN_ROTOR);  // turn  on motors
             controlMotorSet(true, TAIL_ROTOR);
               // start calibration
             controlEnable(CONTROL_CALIBRATE_MAIN);
             controlEnable(CONTROL_CALIBRATE_TAIL);
+            controlEnable(CONTROL_HEIGHT);
+            controlEnable(CONTROL_YAW);
             targetHeight = 0;
+            resetController();
         }
         break;
 
@@ -115,6 +115,7 @@ void heliMode(void)
             controlEnable(CONTROL_YAW);
             current_heli_state = FLYING;
             targetYaw = 0;
+
         }
         break;
 
@@ -122,11 +123,13 @@ void heliMode(void)
         //Find the zero point for the yaw
         targetYaw += 1;
         controlSetTarget(targetYaw, CONTROL_YAW);
+        controlSetTarget(targetHeight, CONTROL_HEIGHT);
         if (quadEncoderIsCalibrated()) {
             shouldCalibrate = false;
             current_heli_state = ALIGNING;
             targetYaw = 0;
         }
+        break;
 
     case LANDING:
         // TODO: Ramp input for landing
