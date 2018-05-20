@@ -10,7 +10,6 @@
 // *******************************************************
 
 #include "control.h"
-#include "pwmModule.h"
 #include "height.h"
 #include "yaw.h"
 #include "display.h"
@@ -18,6 +17,8 @@
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
 static bool enabled[CONTROL_NUM_CHANNELS] = {};
+
+static bool landingFlag = 0;
 
 typedef void (*control_channel_update_func_t)(uint32_t);
 
@@ -47,7 +48,7 @@ static int32_t mainTorqueConsts[] = {1000, 800};
 enum gains_e {KP=0, KD, KI};
 enum heli_e {HELI_1=0, HELI_2};
 #define NUM_GAINS 3
-#define CURRENT_HELI HELI_1
+#define CURRENT_HELI HELI_2
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -65,10 +66,9 @@ void controlInit(void)
 }
 
 
-void controlMotorSet(bool state)
+void controlMotorSet(bool state, pwm_channel_t channel)
 {
-    pwmSetOutputState(state, MAIN_ROTOR);
-    pwmSetOutputState(state, TAIL_ROTOR);
+    pwmSetOutputState(state, channel);
 }
 
 
@@ -146,9 +146,15 @@ void controlUpdate(uint32_t deltaTime)
         }
     }
 
+    if (!landingFlag) {
     // main rotor equation
-    mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffsets[CURRENT_HELI] / PRECISION +
+        mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffsets[CURRENT_HELI] / PRECISION +
             /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
+    } else {
+        if (mainDuty > LANDING_DUTY) {
+            mainDuty = mainDuty - 100;
+        }
+    }
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
@@ -178,52 +184,53 @@ static int32_t tailGains[][NUM_GAINS] = {
 //    {2000, 0, 500},
 //    {500, 0, 500}
 };
-static int32_t mainOffsets[] = {40, 40};  // temporary until calibration added
+static int32_t mainOffsets[] = {37, 40};  // temporary until calibration added
 
+static int32_t inte_h = 0;
+int32_t deri_h = 0, prop_h = 0;
 void updateHeightChannel(uint32_t deltaTime)
 {
     int32_t kp = mainGains[CURRENT_HELI][KP];
     int32_t kd = mainGains[CURRENT_HELI][KD];
     int32_t ki = mainGains[CURRENT_HELI][KI];
     int32_t error = targets[CONTROL_HEIGHT] - height;
-    int32_t deri, prop = kp * error / PRECISION;
+    prop_h = kp * error / PRECISION;
     // (kp * targets[CONTROL_HEIGHT] - kp * height)
-    static int32_t inte = 0;
 
 //    if (abs(error) > 25000) {
 //        deri = 0;
 //    } else {
-        deri = kd * (0 - verticalVelocity) / PRECISION;
+        deri_h = kd * (0 - verticalVelocity) / PRECISION;
 //    }
 
 //    if (abs(error) < 1000) {
-//        inte = (inte * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
+        inte_h = (inte_h * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
 //    }
 
-    outputs[CONTROL_HEIGHT] = prop + deri;
+    outputs[CONTROL_HEIGHT] = prop_h + deri_h + inte_h;
 }
 
-
+static int32_t inte_y = 0;
+int32_t prop_y = 0, deri_y = 0;
 void updateYawChannel(uint32_t dt)
 {
     int32_t kp = tailGains[CURRENT_HELI][KP];
     int32_t kd = tailGains[CURRENT_HELI][KD];
     int32_t ki = tailGains[CURRENT_HELI][KI];
     int32_t error = targets[CONTROL_YAW] - yaw;
-    int32_t deri, prop = kp * error / PRECISION;
-    static int32_t inte = 0;
+    prop_y = kp * error / PRECISION;
 
 //    if (abs(error) < 3000 || abs(error) > 45000) {
 //        deri = 0;
 //    } else {
-        deri = kd * (0 - angularVelocity) / PRECISION;
+        deri_y = kd * (0 - angularVelocity) / PRECISION;
 //    }
 
 //    if (abs(error) < 1000) {
-//        inte = (inte * PRECISION + (ki * (int32_t)dt / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)dt / MS_TO_SEC * yaw)) / PRECISION;
+        inte_y = (inte_y * PRECISION + (ki * (int32_t)dt / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)dt / MS_TO_SEC * yaw)) / PRECISION;
 //    }
 
-    outputs[CONTROL_YAW] = prop + deri;
+    outputs[CONTROL_YAW] = prop_y + deri_y + inte_y;
 }
 
 
@@ -237,4 +244,18 @@ void updateCalibrationChannelTail(uint32_t deltaTime)
 {
     // calc mainTourqueConst here ...
     controlDisable(CONTROL_CALIBRATE_TAIL);
+}
+
+void controlSetLandingSequence(bool state) {
+    landingFlag = state;
+}
+
+void resetController(void) {
+    prop_h = 0;
+    deri_h = 0;
+    inte_h = 0;
+
+    prop_y = 0;
+    deri_y = 0;
+    inte_y = 0;
 }
