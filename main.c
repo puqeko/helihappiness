@@ -173,6 +173,7 @@ void heliMode(void)
             // TODO: add landing control
             controlSetLandingSequence(true);
             targetYaw = 0;
+            targetHeight = 0;
             current_heli_state = LANDING;
         }
         controlSetTarget(targetHeight, CONTROL_HEIGHT);
