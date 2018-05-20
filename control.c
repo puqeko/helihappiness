@@ -152,7 +152,7 @@ void controlUpdate(uint32_t deltaTime)
             /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
     } else {
         if (mainDuty > LANDING_DUTY) {
-            mainDuty = mainDuty - 100;
+            mainDuty = mainDuty - LANDING_DECREMENT;
         }
     }
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
@@ -250,9 +250,10 @@ void controlSetLandingSequence(bool state) {
     landingFlag = state;
 }
 
-void controlLandingStability(uint32_t stabilityCounter) {
-    mainDuty = LANDING_DUTY - stabilityCounter * 1000;
+bool controlLandingStability(void) {
+    mainDuty = mainDuty - LANDING_DECREMENT;
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+    return mainDuty <= MIN_DUTY * PRECISION;
 }
 
 void resetController(void) {

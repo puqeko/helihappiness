@@ -20,6 +20,7 @@
 #define MAX_DUTY 95  // %
 #define MS_TO_SEC 1000
 #define LANDING_DUTY (25 * PRECISION)
+#define LANDING_DECREMENT 100
 
 typedef enum control_channel {
     CONTROL_HEIGHT=0, CONTROL_YAW, CONTROL_CALIBRATE_MAIN, CONTROL_CALIBRATE_TAIL, CONTROL_NUM_CHANNELS
@@ -43,7 +44,7 @@ void controlUpdate(uint32_t deltaTime);
 
 void controlSetLandingSequence(bool state);
 
-void controlLandingStability(uint32_t stabilityCounter);
+bool controlLandingStability(void);
 
 void resetController(void);
 

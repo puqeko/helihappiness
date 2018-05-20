@@ -136,23 +136,22 @@ void heliMode(void)
         // TODO: Ramp input for landing
         // done landing...
 
-        if (yawGetDegrees(1) == 0 && heightAsPercentage(1) <= 1) {
+        if (yawGetDegrees(1) <= 1 && heightAsPercentage(1) <= 1) {
             stabilityCounter++;
-            controlLandingStability(stabilityCounter);
-
         } else {
             stabilityCounter = 0;
         }
-        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME_MAIN / MS_TO_SEC) {
-            controlMotorSet(false, MAIN_ROTOR);
-        }
-        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME_TAIL / MS_TO_SEC) {
-            controlMotorSet(false, TAIL_ROTOR);
-            current_heli_state = LANDED;
-            ignoreButton(SW1);
-            controlDisable(CONTROL_YAW);
-            controlSetLandingSequence(false);
-            targetHeight = 0;
+        // STABILITY_TIME_MAIN is the number of milliseconds to wait for stability.
+        if (stabilityCounter >= STABILITY_TIME_MAIN / DELTA_TIME) {
+            if (controlLandingStability()) {;
+                controlMotorSet(false, MAIN_ROTOR);
+                controlMotorSet(false, TAIL_ROTOR);
+                current_heli_state = LANDED;
+                ignoreButton(SW1);
+                controlDisable(CONTROL_YAW);
+                controlSetLandingSequence(false);
+                targetHeight = 0;
+            }
         }
 
         break;
