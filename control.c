@@ -173,7 +173,7 @@ void controlUpdate(uint32_t deltaTime)
 
 // Eventually change this to work on generic heli
 static int32_t mainGains[][NUM_GAINS] = {
-    {2500, 500, 800},
+    {2500, 500, 800}, //2500
     {1500, 400, 500}
 //    {1500, 200, 500},
 //    {1500, 800, 500}
@@ -248,6 +248,11 @@ void updateCalibrationChannelTail(uint32_t deltaTime)
 
 void controlSetLandingSequence(bool state) {
     landingFlag = state;
+}
+
+void controlLandingStability(uint32_t stabilityCounter) {
+    mainDuty = LANDING_DUTY - stabilityCounter * 1000;
+    mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 }
 
 void resetController(void) {

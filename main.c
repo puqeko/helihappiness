@@ -51,7 +51,8 @@ int32_t targetYaw = 0; // should this be an int?
 #define LOOP_FREQUENCY (1000 / DELTA_TIME)
 #define UPDATE_COUNT (LOOP_FREQUENCY / UART_DISPLAY_FREQUENCY)
 #define HEIGHT_LANDING_COUNT (LOOP_FREQUENCY / LANDING_UPDATE_FREQUENCY)
-#define STABILITY_TIME 500 // 500 ms
+#define STABILITY_TIME_MAIN 500 // 500 ms
+#define STABILITY_TIME_TAIL 2000 // 2000 ms
 
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
@@ -137,12 +138,16 @@ void heliMode(void)
 
         if (yawGetDegrees(1) == 0 && heightAsPercentage(1) <= 1) {
             stabilityCounter++;
+            controlLandingStability(stabilityCounter);
+
         } else {
             stabilityCounter = 0;
         }
-        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME / MS_TO_SEC) {
-            controlMotorSet(false, TAIL_ROTOR);
+        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME_MAIN / MS_TO_SEC) {
             controlMotorSet(false, MAIN_ROTOR);
+        }
+        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME_TAIL / MS_TO_SEC) {
+            controlMotorSet(false, TAIL_ROTOR);
             current_heli_state = LANDED;
             ignoreButton(SW1);
             controlDisable(CONTROL_YAW);
