@@ -160,9 +160,9 @@ void heliMode(state_t* state, uint32_t deltaTime)
 
     case LANDING:
         // done landing...
-        if (quadEncoderIsCalibrated()) {
-            state->targetYaw = 0;
-        }
+//        if (quadEncoderIsCalibrated()) {
+//            state->targetYaw = 0;
+//        }
         if (yawGetDegrees(1) > 0 && abs(state->targetYaw) % 360 != 0) {
             state->targetYaw -= 1;
         } else if (yawGetDegrees(1) < 0 && abs(state->targetYaw) % 360 != 0) {
@@ -186,6 +186,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
                 controlDisable(CONTROL_YAW);
                 controlSetLandingSequence(false);
                 state->targetHeight = 0;
+                yawClipTo360Degrees();
             }
         }
         break;
@@ -204,11 +205,9 @@ void heliMode(state_t* state, uint32_t deltaTime)
             state->targetYaw += TAIL_STEP;
         }
         if (checkButton(SW1) == RELEASED) {  // switch down
-            // TODO: add landing control
             controlSetLandingSequence(true);
             state->targetHeight = 0;
             state->heliMode = LANDING;
-            quadEncoderCalibrate();
         }
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         controlSetTarget(state->targetYaw, CONTROL_YAW);
