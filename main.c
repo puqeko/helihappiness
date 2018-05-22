@@ -222,36 +222,81 @@ void displayInfo()
 }
 
 
+//typedef struct {
+//    void (*handler) (state_t state, uint32_t deltaTime);  // pointer to task handler function
+//    uint32_t period;  // number of ms between runs
+//    uint32_t referenceTime = 0;
+//} task_t;
+//
+//
+//#define NUM_TASKS 5
+//task_t tasks[NUM_TASKS] = {
+//    {heightUpdate, 100},  // for height smoothing
+//    {controlUpdate, 100},
+//    {displayInfo, 25},
+//    {updateButtons, 100},
+//    {heliMode, 100}
+//};
+//
+//
+//void runTasks(task_t* tasks) {
+////static const ticks_per_ms = ;
+//
+//    uint32_t initReference = timererGetTicks();
+//    int i = 0;
+//    for (; i < NUM_TASKS; i++) {
+//        tasks[i].referenceTime = initReference;
+//    }
+//
+//    while (true) {
+//        task_t* nextTask = 0;
+//        uint32_t largestOvershoot = 0;
+//
+//        uint32_t cur = timererGetTicks(); //get time, which is also the reference
+//
+//        int i = 0;
+//        for (; i < NUM_TASKS; i++) {
+//            // minus since counts down
+//            uint32_t target = tasks[i].referenceTime - tasks[i].period * ticks_per_ms;
+//            uint32_t diff = target - cur;  // +ve small number when past target (timer counts down)
+//
+//            // find the next task which has overshot and needs to be most urgently addressed.
+//            if (diff < overshoot_ticks && diff > largestOvershoot) {
+//                largestOvershoot = diff;
+//                nextTask = &tasks[i];
+//            }
+//        }
+//
+//
+//    }
+//}
+
+// TODO: round robin?
+
+
 int main(void)
 {
     initalise();
 
-    //*********************************TEST CODE START****************************************************
-//    quadEncoderCalibrate();
-//    pwmSetOutputState(true, TAIL_ROTOR);
-//    pwmSetDuty(150, 10, TAIL_ROTOR);
-//    while(!quadEncoderIsCalibrated());
-    //**********************************TEST CODE END*****************************************************
-
     timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // make sure ADC buffer has a chance to fill up
 
-	// main loop
-	while (true) {
-	    // don't include the time to execute the main loop in our time measurement
-	    // so measure DELTA_TIME from this point
-	    uint32_t referenceTime = timererGetTicks();
-
-	    heightUpdate();  // do convolution step
-	    controlUpdate(DELTA_TIME);  // update control
-
-	    displayInfo();
-
-	    // Update user inputs and run state machine
-        updateButtons();  // recommended 100 hz update
-        heliMode();
-
-	    // Wait any time that remains for this cycle to take DELTA_TIME
-	    timererWaitFrom(DELTA_TIME, referenceTime);
-	}
+//	// main loop
+//	while (true) {
+//	    // don't include the time to execute the main loop in our time measurement
+//	    // so measure DELTA_TIME from this point
+//	    uint32_t referenceTime = timererGetTicks();
+//
+//	    heightUpdate();  // do convolution step
+//	    controlUpdate(DELTA_TIME);  // update control
+//
+//	    displayInfo();
+//
+//	    // Update user inputs and run state machine
+//        updateButtons();  // recommended 100 hz update
+//        heliMode();
+//
+//	    // Wait any time that remains for this cycle to take DELTA_TIME
+//	    timererWaitFrom(DELTA_TIME, referenceTime);
+//	}
 }
 
