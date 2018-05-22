@@ -130,8 +130,6 @@ void heliMode(void)
             controlEnable(CONTROL_HEIGHT);
             controlEnable(CONTROL_YAW);
             current_heli_state = FLYING;
-            targetYaw = 0;
-
         }
         break;
 
@@ -186,7 +184,21 @@ void heliMode(void)
         if (checkButton(SW1) == RELEASED) {  // switch down
             // TODO: add landing control
 //            controlSetLandingSequence(true);
-            targetYaw = 0;
+            if (yawGetDegrees(1) > 0) {
+                if ((yawGetDegrees(1) % 360) > 180) {
+                    targetYaw = (yawGetDegrees(1) / 360) * 360 + 360;
+                } else {
+                    targetYaw = (yawGetDegrees(1) / 360) * 360;
+                }
+            } else if (yawGetDegrees(1) < 0) {
+                if ((yawGetDegrees(1) % (-360)) < (- 180)) {
+                        targetYaw = (yawGetDegrees(1) / 360) * 360 - 360;
+                } else {
+                    targetYaw = (yawGetDegrees(1) / 360) * 360;
+                }
+            } else {
+                targetYaw = 0;
+            }
             targetHeight = 0;
             current_heli_state = LANDING;
         }
