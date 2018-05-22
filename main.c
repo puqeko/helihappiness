@@ -92,7 +92,7 @@ void initalise()
     timererWait(1);  // Allow time for the oscillator to settle down (for 1.
 
     initButtons();
-//    initSoftReset();
+    initSoftReset();
     displayInit();
     yawInit();
     heightInit(CONV_UNIFORM);
