@@ -92,7 +92,7 @@ void initalise()
     timererWait(1);  // Allow time for the oscillator to settle down (for 1.
 
     initButtons();
-    initSoftReset();
+//    initSoftReset();
     displayInit();
     yawInit();
     heightInit(CONV_UNIFORM);
@@ -254,9 +254,15 @@ void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq)
     // tasks can run at different frequencies
     int32_t deltaTime = 1000 / baseFreq;  // in milliseconds, hence the 1000 factor
     int i = 0;
-    for (; i < NUM_TASKS; i++) {
+    while (tasks[i].handler) {
+        uint32_t triggerCount = baseFreq / tasks[i].updateFreq;
+        if (triggerCount == 0) {
+            triggerCount = 1;
+        }
+
         tasks[i].count = 0;
-        tasks[i].triggerAt = baseFreq / tasks[i].updateFreq;
+        tasks[i].triggerAt = triggerCount;  // make sure not zero
+        i++;
     }
 
     // begin the main loop
@@ -264,17 +270,17 @@ void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq)
         int32_t referenceTime = timererGetTicks();
 
         int i = 0;
-        for (; i < NUM_TASKS; i++) {
+        while (tasks[i].handler) {
             tasks[i].count++;
 
             // check if task should run in this update
-            // less-than-or-equal-to in the (baseFreq / tasks[i].updateFreq == 0) zero case
-            if (tasks[i].count <= tasks[i].triggerAt) {
+            if (tasks[i].count == tasks[i].triggerAt) {
                 tasks[i].count = 0;
 
                 // run the task
                 tasks[i].handler(sharedState, deltaTime);
             }
+              i++;
         }
 
         // make sure loop runs as a consistent speed
@@ -302,10 +308,11 @@ int main(void)
 
     // the tasks which need to run at what frequency
     // the frequency cannot be larger than the TASK_BASE_FREQ
-    task_t tasks[NUM_TASKS] = {
+    task_t tasks[] = {
         {controllerUpdate, 100},
+        {displayUpdate, 100},
         {stateUpdate, 100},
-        {displayUpdate, UART_DISPLAY_FREQUENCY}
+        {0}  // terminator
     };
 
     // any data which many tasks might need to know about
@@ -317,6 +324,3 @@ int main(void)
 
     runTasks(tasks, &sharedState, TASK_BASE_FREQ);
 }
-//
-//sanders
-
