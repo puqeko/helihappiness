@@ -43,7 +43,7 @@ static int32_t yaw, previousYaw = 0, angularVelocity = 0;
 // configurable constants (scaled by PRECISION)
 static int32_t gravOffsets[] = {250, 190};
 // ratio of main rotor speed to tail rotor speed
-static int32_t mainTorqueConsts[] = {1000, 800};
+static int32_t mainTorqueConsts[] = {1000, 1000};
 
 enum gains_e {KP=0, KD, KI};
 enum heli_e {HELI_1=0, HELI_2};
