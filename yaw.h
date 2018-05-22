@@ -14,7 +14,11 @@
 //************************************************************************
 
 #include <stdint.h>
+#include <stdbool.h>
 
+void yawRefIntHandler(void);
+void yawCalibrate(void);
+bool yawIsCalibrated(void);
 
 //************************************************************************
 //

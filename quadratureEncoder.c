@@ -30,9 +30,9 @@
 #define CHANNEL_A_PIN           GPIO_PIN_0
 #define CHANNEL_B_PIN           GPIO_PIN_1
 
-#define GPIO_REF_PERIPH         SYSCTL_PERIPH_GPIOC
-#define REF_PORT_BASE           GPIO_PORTC_BASE
-#define REF_PIN                 GPIO_PIN_4
+//#define GPIO_REF_PERIPH         SYSCTL_PERIPH_GPIOC
+//#define REF_PORT_BASE           GPIO_PORTC_BASE
+//#define REF_PIN                 GPIO_PIN_4
 
 #define CW_DIRECTION    1
 #define CCW_DIRECTION  -1
@@ -42,7 +42,7 @@
 static uint32_t initialPinState;
 static volatile int32_t direction, encoderCount = 0;
 static volatile uint32_t lastIntStatus = INITIAL_INT_STATUS;
-static volatile bool isCalibrated;
+//static volatile bool isCalibrated;
 
 
 
@@ -90,7 +90,7 @@ void quadEncoderIntHandler(void)
 
 
 
-void quadEncoderRefIntHandler(void)
+/*void quadEncoderRefIntHandler(void)
 {
     isCalibrated = true;
     encoderCount = 0;
@@ -111,11 +111,10 @@ void quadEncoderCalibrate(void)
 bool quadEncoderIsCalibrated(void)
 {
     return isCalibrated;
-}
+}*/
 
 
 
-//TODO is this still needed? i assume not
 void quadEncoderResetCount(void)
 {
     encoderCount = 0;
@@ -135,15 +134,15 @@ void quadEncoderInit(void)
 {
     //Enable GPIO peripheral on used ports
     SysCtlPeripheralEnable(GPIO_CHANNEL_PERIPH);
-    SysCtlPeripheralEnable(GPIO_REF_PERIPH);
+    //SysCtlPeripheralEnable(GPIO_REF_PERIPH);
 
     //configure channel input pins
     GPIOPadConfigSet(CHANNEL_PORT_BASE, CHANNEL_A_PIN | CHANNEL_B_PIN, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
     GPIODirModeSet(CHANNEL_PORT_BASE, CHANNEL_A_PIN | CHANNEL_B_PIN, GPIO_DIR_MODE_IN);
 
-    //configure reference input pin
+    /*//configure reference input pin
     GPIOPadConfigSet(REF_PORT_BASE, REF_PIN, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
-    GPIODirModeSet(REF_PORT_BASE, REF_PIN, GPIO_DIR_MODE_IN);
+    GPIODirModeSet(REF_PORT_BASE, REF_PIN, GPIO_DIR_MODE_IN);*/
 
     //Initialize channel interrupts
     GPIOIntRegister(CHANNEL_PORT_BASE, quadEncoderIntHandler);
@@ -153,7 +152,7 @@ void quadEncoderInit(void)
     //Enable encoder interrupts
     GPIOIntEnable(CHANNEL_PORT_BASE, CHANNEL_A_PIN | CHANNEL_B_PIN);
 
-    //initialize reference interrupt but do not enable
+    /*//initialize reference interrupt but do not enable
     GPIOIntRegister(REF_PORT_BASE, quadEncoderRefIntHandler);
-    GPIOIntTypeSet(REF_PORT_BASE, REF_PIN, GPIO_FALLING_EDGE);
+    GPIOIntTypeSet(REF_PORT_BASE, REF_PIN, GPIO_FALLING_EDGE);*/
 }

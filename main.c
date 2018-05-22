@@ -109,7 +109,7 @@ void heliMode(void)
         if (checkButton(SW1) == PUSHED) {
             if (shouldCalibrate) {
                 current_heli_state = CALIBRATE_YAW;
-                quadEncoderCalibrate();
+                yawCalibrate();
             } else {
                 current_heli_state = ALIGNING;
             }
@@ -143,7 +143,7 @@ void heliMode(void)
         targetYaw += 1;
         controlSetTarget(targetYaw, CONTROL_YAW);
         controlSetTarget(targetHeight, CONTROL_HEIGHT);
-        if (quadEncoderIsCalibrated()) {
+        if (yawIsCalibrated()) {
             shouldCalibrate = false;
             current_heli_state = ALIGNING;
             targetYaw = 0;
