@@ -31,11 +31,7 @@
 #include "display.h"
 #include "uartDisplay.h"
 #include "control.h"
-
-//TODO************TEST CODE START********************
-#include "pwmModule.h"
 #include "quadratureEncoder.h"
-//TODO*************TEST CODE END*********************
 
 enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, CALIBRATE_YAW, NUM_HELI_STATES};
 // list the mode that should be displayed for each state.
