@@ -184,7 +184,7 @@ static int32_t tailGains[][NUM_GAINS] = {
 //    {2000, 0, 500},
 //    {500, 0, 500}
 };
-static int32_t mainOffsets[] = {37, 40};  // temporary until calibration added
+static int32_t mainOffsets[] = {33, 33};  // temporary until calibration added
 
 static int32_t inte_h = 0;
 int32_t deri_h = 0, prop_h = 0;
