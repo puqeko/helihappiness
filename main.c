@@ -142,7 +142,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
             controlEnable(CONTROL_HEIGHT);
             controlEnable(CONTROL_YAW);
             state->heliMode = FLYING;
-            state->targetYaw = 0;
         }
         break;
 
@@ -164,9 +163,17 @@ void heliMode(state_t* state, uint32_t deltaTime)
 //            state->targetYaw = 0;
 //        }
         if (yawGetDegrees(1) > 0 && abs(state->targetYaw) % 360 != 0) {
-            state->targetYaw -= 1;
+            if (abs(yawGetDegrees(1)) % 360 <= 180) {
+                state->targetYaw -= 1;
+            } else {
+                state->targetYaw += 1;
+            }
         } else if (yawGetDegrees(1) < 0 && abs(state->targetYaw) % 360 != 0) {
-            state->targetYaw += 1;
+            if (abs(yawGetDegrees(1)) % 360 <= 180) {
+                state->targetYaw += 1;
+            } else {
+                state->targetYaw -= 1;
+            }
         }
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         controlSetTarget(state->targetYaw, CONTROL_YAW);
@@ -186,7 +193,10 @@ void heliMode(state_t* state, uint32_t deltaTime)
                 controlDisable(CONTROL_YAW);
                 controlSetLandingSequence(false);
                 state->targetHeight = 0;
-                yawClipTo360Degrees();
+                //state->targetYaw = 0;
+                if (yawClipTo360Degrees()) {
+                    state->targetYaw = 0;
+                }
             }
         }
         break;
