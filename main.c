@@ -198,15 +198,15 @@ void heliMode(state_t* state, uint32_t deltaTime)
 //            controlSetLandingSequence(true);
             if (yawGetDegrees(1) > 0) {
                 if ((yawGetDegrees(1) % 360) > 180) {
-                    targetYaw = (yawGetDegrees(1) / 360) * 360 + 360;
+                    state->targetYaw = (yawGetDegrees(1) / 360) * 360 + 360;
                 } else {
-                    targetYaw = (yawGetDegrees(1) / 360) * 360;
+                    state->targetYaw = (yawGetDegrees(1) / 360) * 360;
                 }
             } else if (yawGetDegrees(1) < 0) {
                 if ((yawGetDegrees(1) % (-360)) < (- 180)) {
-                        targetYaw = (yawGetDegrees(1) / 360) * 360 - 360;
+                    state->targetYaw = (yawGetDegrees(1) / 360) * 360 - 360;
                 } else {
-                    targetYaw = (yawGetDegrees(1) / 360) * 360;
+                    state->targetYaw = (yawGetDegrees(1) / 360) * 360;
                 }
             } else {
                 state->targetYaw = 0;
