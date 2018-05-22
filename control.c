@@ -152,7 +152,7 @@ void controlUpdate(uint32_t deltaTime)
             /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
     } else {
         if (mainDuty > LANDING_DUTY) {
-            mainDuty = mainDuty - 100;
+            mainDuty = mainDuty - LANDING_DECREMENT;
         }
     }
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
@@ -173,7 +173,7 @@ void controlUpdate(uint32_t deltaTime)
 
 // Eventually change this to work on generic heli
 static int32_t mainGains[][NUM_GAINS] = {
-    {2500, 500, 800},
+    {2500, 500, 800}, //2500
     {1500, 400, 500}
 //    {1500, 200, 500},
 //    {1500, 800, 500}
@@ -248,6 +248,12 @@ void updateCalibrationChannelTail(uint32_t deltaTime)
 
 void controlSetLandingSequence(bool state) {
     landingFlag = state;
+}
+
+bool controlLandingStability(void) {
+    mainDuty = mainDuty - LANDING_DECREMENT;
+    mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+    return mainDuty <= MIN_DUTY * PRECISION;
 }
 
 void resetController(void) {
