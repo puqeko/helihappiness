@@ -57,6 +57,24 @@ int32_t targetYaw = 0; // should this be an int?
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
 
+void softResetIntHandler(void)
+{
+    GPIOIntClear(GPIO_PORTA_BASE, GPIO_PIN_6);
+    SysCtlReset();
+}
+
+void initSoftReset(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+
+    GPIOPadConfigSet(GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+    GPIODirModeSet(GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_DIR_MODE_IN);
+
+    GPIOIntRegister(GPIO_PORTA_BASE, softResetIntHandler);
+    GPIOIntTypeSet(GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_FALLING_EDGE);
+    GPIOIntEnable(GPIO_PORTA_BASE, GPIO_PIN_6);
+}
+
 void initalise()
 {
     // TODO: reset peripherals
@@ -67,6 +85,7 @@ void initalise()
     timererWait(1);  // Allow time for the oscillator to settle down.
 
     initButtons();
+    initSoftReset();
     displayInit();
     yawInit();
     heightInit(CONV_UNIFORM);
@@ -153,7 +172,6 @@ void heliMode(void)
                 targetHeight = 0;
             }
         }
-
         break;
 
     case FLYING:
@@ -171,7 +189,7 @@ void heliMode(void)
         }
         if (checkButton(SW1) == RELEASED) {  // switch down
             // TODO: add landing control
-            controlSetLandingSequence(true);
+//            controlSetLandingSequence(true);
             targetYaw = 0;
             targetHeight = 0;
             current_heli_state = LANDING;
@@ -226,6 +244,13 @@ void displayInfo()
 int main(void)
 {
     initalise();
+
+    //*********************************TEST CODE START****************************************************
+//    quadEncoderCalibrate();
+//    pwmSetOutputState(true, TAIL_ROTOR);
+//    pwmSetDuty(150, 10, TAIL_ROTOR);
+//    while(!quadEncoderIsCalibrated());
+    //**********************************TEST CODE END*****************************************************
 
     timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // make sure ADC buffer has a chance to fill up
 
