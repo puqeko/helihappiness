@@ -57,6 +57,24 @@ int32_t targetYaw = 0; // should this be an int?
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
 
+void softResetIntHandler(void)
+{
+    GPIOIntClear(GPIO_PORTA_BASE, GPIO_PIN_6);
+    SysCtlReset();
+}
+
+void initSoftReset(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+
+    GPIOPadConfigSet(GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+    GPIODirModeSet(GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_DIR_MODE_IN);
+
+    GPIOIntRegister(GPIO_PORTA_BASE, softResetIntHandler);
+    GPIOIntTypeSet(GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_FALLING_EDGE);
+    GPIOIntEnable(GPIO_PORTA_BASE, GPIO_PIN_6);
+}
+
 void initalise()
 {
     // TODO: reset peripherals
@@ -67,6 +85,7 @@ void initalise()
     timererWait(1);  // Allow time for the oscillator to settle down.
 
     initButtons();
+    initSoftReset();
     displayInit();
     yawInit();
     heightInit(CONV_UNIFORM);
@@ -136,23 +155,22 @@ void heliMode(void)
         // TODO: Ramp input for landing
         // done landing...
 
-        if (yawGetDegrees(1) == 0 && heightAsPercentage(1) <= 1) {
+        if (yawGetDegrees(1) <= 1 && heightAsPercentage(1) <= 1) {
             stabilityCounter++;
-            controlLandingStability(stabilityCounter);
-
         } else {
             stabilityCounter = 0;
         }
-        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME_MAIN / MS_TO_SEC) {
-            controlMotorSet(false, MAIN_ROTOR);
-        }
-        if (stabilityCounter == LANDING_UPDATE_FREQUENCY * STABILITY_TIME_TAIL / MS_TO_SEC) {
-            controlMotorSet(false, TAIL_ROTOR);
-            current_heli_state = LANDED;
-            ignoreButton(SW1);
-            controlDisable(CONTROL_YAW);
-            controlSetLandingSequence(false);
-            targetHeight = 0;
+        // STABILITY_TIME_MAIN is the number of milliseconds to wait for stability.
+        if (stabilityCounter >= STABILITY_TIME_MAIN / DELTA_TIME) {
+            if (controlLandingStability()) {;
+                controlMotorSet(false, MAIN_ROTOR);
+                controlMotorSet(false, TAIL_ROTOR);
+                current_heli_state = LANDED;
+                ignoreButton(SW1);
+                controlDisable(CONTROL_YAW);
+                controlSetLandingSequence(false);
+                targetHeight = 0;
+            }
         }
         break;
 
@@ -173,6 +191,7 @@ void heliMode(void)
             // TODO: add landing control
 //            controlSetLandingSequence(true);
             targetYaw = 0;
+            targetHeight = 0;
             current_heli_state = LANDING;
         }
         controlSetTarget(targetHeight, CONTROL_HEIGHT);

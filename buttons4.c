@@ -84,7 +84,7 @@ initButtons (void)
     SysCtlPeripheralEnable (SW2_PERIPH);
     GPIOPinTypeGPIOInput (SW2_PORT_BASE, SW2_PIN);
     GPIOPadConfigSet (SW2_PORT_BASE, SW2_PIN, GPIO_STRENGTH_2MA,
-       GPIO_PIN_TYPE_STD_WPD);
+       GPIO_PIN_TYPE_STD_WPU);
     but_normal[SW2] = SW2_NORMAL;
 
     // init to whatever state the switch is in
