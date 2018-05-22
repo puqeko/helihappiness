@@ -31,11 +31,7 @@
 #include "display.h"
 #include "uartDisplay.h"
 #include "control.h"
-
-//TODO************TEST CODE START********************
-#include "pwmModule.h"
 #include "quadratureEncoder.h"
-//TODO*************TEST CODE END*********************
 
 enum heli_state {LANDED = 0, LANDING, ALIGNING, FLYING, CALIBRATE_YAW, NUM_HELI_STATES};
 // list the mode that should be displayed for each state.
@@ -244,13 +240,6 @@ void displayInfo()
 int main(void)
 {
     initalise();
-
-    //*********************************TEST CODE START****************************************************
-//    quadEncoderCalibrate();
-//    pwmSetOutputState(true, TAIL_ROTOR);
-//    pwmSetDuty(150, 10, TAIL_ROTOR);
-//    while(!quadEncoderIsCalibrated());
-    //**********************************TEST CODE END*****************************************************
 
     timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // make sure ADC buffer has a chance to fill up
 
