@@ -92,7 +92,7 @@ void initalise()
     timererWait(1);  // Allow time for the oscillator to settle down (for 1.
 
     initButtons();
-//    initSoftReset();
+    initSoftReset();
     displayInit();
     yawInit();
     heightInit(CONV_UNIFORM);
@@ -118,7 +118,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
         if (checkButton(SW1) == PUSHED) {
             if (shouldCalibrate) {
                 state->heliMode = CALIBRATE_YAW;
-                quadEncoderCalibrate();
+                yawCalibrate();
             } else {
                 state->heliMode = ALIGNING;
             }
@@ -151,7 +151,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
         state->targetYaw += 1;
         controlSetTarget(state->targetYaw, CONTROL_YAW);
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
-        if (quadEncoderIsCalibrated()) {
+        if (yawIsCalibrated()) {
             shouldCalibrate = false;
             state->heliMode = ALIGNING;
             state->targetYaw = 0;
