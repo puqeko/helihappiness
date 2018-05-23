@@ -87,3 +87,9 @@ int32_t yawGetDegrees(int32_t precision)
     // no update required as quadEncoderGetCount does not do any heavy calculations.
     return quadEncoderGetCount() * (precision*360)/COUNTS_PER_ROTATION;
 }
+
+bool yawClipTo360Degrees(void)
+{
+    quadEncoderSetCount(quadEncoderGetCount() % COUNTS_PER_ROTATION);// * (quadEncoderGetCount() / abs(quadEncoderGetCount())));
+    return abs(quadEncoderGetCount()) < (COUNTS_PER_ROTATION / 2);
+}

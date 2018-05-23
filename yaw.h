@@ -38,4 +38,7 @@ int32_t yawGetDegrees(int32_t precision);
 void yawCalibrate(void); //perhaps not part of yaw module???
 
 
+bool yawClipTo360Degrees(void);
+
+
 #endif /*YAW_H_*/

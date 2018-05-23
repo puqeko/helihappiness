@@ -121,6 +121,11 @@ void quadEncoderResetCount(void)
 }
 
 
+void quadEncoderSetCount(uint32_t newCount)
+{
+    encoderCount = newCount;
+}
+
 
 
 int32_t quadEncoderGetCount(void)
