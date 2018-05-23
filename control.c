@@ -13,6 +13,7 @@
 #include "height.h"
 #include "yaw.h"
 #include "display.h"
+#include "circBufT.h"
 
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
@@ -58,9 +59,13 @@ int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
     return pwmLevel;
 }
 
+static circBuf_t mainDutyFilter;
+#define MAIN_DUTY_FILTER_SIZE 20
+
 void controlInit(void)
 {
     pwmInit();
+    initCircBuf(&mainDutyFilter, MAIN_DUTY_FILTER_SIZE);
 }
 
 
@@ -125,6 +130,17 @@ int32_t controlGetPWMDuty(control_channel_t channel)
 }
 
 
+uint32_t getFilteredMain(void)
+{
+    uint32_t sum = 0;
+    int i = 0;
+    for (; i < MAIN_DUTY_FILTER_SIZE; i++) {
+        sum += readCircBuf(&mainDutyFilter);
+    }
+    return sum / MAIN_DUTY_FILTER_SIZE;
+}
+
+
 void controlUpdate(uint32_t deltaTime)
 {
     // get height and velocity
@@ -155,8 +171,11 @@ void controlUpdate(uint32_t deltaTime)
     }
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
+    writeCircBuf(&mainDutyFilter, mainDuty);
+
     // tail rotor equation
-    tailDuty = mainTorqueConst * mainDuty / PRECISION + outputs[CONTROL_YAW];
+    // filter main to take into account time delay and smoothing so that we get less oscillation
+    tailDuty = mainTorqueConst * getFilteredMain() / PRECISION + outputs[CONTROL_YAW];
     tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed

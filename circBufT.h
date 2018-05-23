@@ -42,8 +42,6 @@ writeCircBuf (circBuf_t *buffer, uint32_t entry);
 // if reading has advanced ahead of writing.
 uint32_t
 readCircBuf (circBuf_t *buffer);
-uint32_t
-readCircBufi (circBuf_t *buffer, uint32_t rindex);
 
 // *******************************************************
 // freeCircBuf: Releases the memory allocated to the buffer data,
