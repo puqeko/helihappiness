@@ -60,7 +60,7 @@ int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 }
 
 static circBuf_t mainDutyFilter;
-#define MAIN_DUTY_FILTER_SIZE 20
+#define MAIN_DUTY_FILTER_SIZE 5
 
 void controlInit(void)
 {
@@ -175,7 +175,7 @@ void controlUpdate(uint32_t deltaTime)
 
     // tail rotor equation
     // filter main to take into account time delay and smoothing so that we get less oscillation
-    tailDuty = mainTorqueConst * getFilteredMain() / PRECISION + outputs[CONTROL_YAW];
+    tailDuty = mainTorqueConst * mainDuty / PRECISION + outputs[CONTROL_YAW];
     tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed
@@ -190,7 +190,7 @@ void controlUpdate(uint32_t deltaTime)
 
 // Eventually change this to work on generic heli
 static int32_t mainGains[] = {1500, 400, 500};
-static int32_t tailGains[] = {1500, 400, 500};
+static int32_t tailGains[] = {1200, 800, 600};
 static int32_t mainOffset = 33;  // temporary until calibration added
 
 static int32_t inte_h = 0;
