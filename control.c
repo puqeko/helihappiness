@@ -13,6 +13,7 @@
 #include "height.h"
 #include "yaw.h"
 #include "display.h"
+#include "circBufT.h"
 
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
@@ -41,14 +42,12 @@ static int32_t height, previousHeight = 0, verticalVelocity;
 static int32_t yaw, previousYaw = 0, angularVelocity = 0;
 
 // configurable constants (scaled by PRECISION)
-static int32_t gravOffsets[] = {250, 190};
+static int32_t gravOffset = 200;
 // ratio of main rotor speed to tail rotor speed
-static int32_t mainTorqueConsts[] = {1000, 1000};
+static int32_t mainTorqueConst = 800;
 
 enum gains_e {KP=0, KD, KI};
-enum heli_e {HELI_1=0, HELI_2};
 #define NUM_GAINS 3
-#define CURRENT_HELI HELI_2
 
 int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
 {
@@ -60,9 +59,13 @@ int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
     return pwmLevel;
 }
 
+static circBuf_t mainDutyFilter;
+#define MAIN_DUTY_FILTER_SIZE 5
+
 void controlInit(void)
 {
     pwmInit();
+    initCircBuf(&mainDutyFilter, MAIN_DUTY_FILTER_SIZE);
 }
 
 
@@ -127,6 +130,17 @@ int32_t controlGetPWMDuty(control_channel_t channel)
 }
 
 
+uint32_t getFilteredMain(void)
+{
+    uint32_t sum = 0;
+    int i = 0;
+    for (; i < MAIN_DUTY_FILTER_SIZE; i++) {
+        sum += readCircBuf(&mainDutyFilter);
+    }
+    return sum / MAIN_DUTY_FILTER_SIZE;
+}
+
+
 void controlUpdate(uint32_t deltaTime)
 {
     // get height and velocity
@@ -148,7 +162,7 @@ void controlUpdate(uint32_t deltaTime)
 
     if (!landingFlag) {
     // main rotor equation
-        mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffsets[CURRENT_HELI] / PRECISION +
+        mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffset / PRECISION +
             /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
     } else {
         if (mainDuty > LANDING_DUTY) {
@@ -157,8 +171,11 @@ void controlUpdate(uint32_t deltaTime)
     }
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
+    writeCircBuf(&mainDutyFilter, mainDuty);
+
     // tail rotor equation
-    tailDuty = mainTorqueConsts[CURRENT_HELI] * mainDuty / PRECISION + outputs[CONTROL_YAW];
+    // filter main to take into account time delay and smoothing so that we get less oscillation
+    tailDuty = mainTorqueConst * mainDuty / PRECISION + outputs[CONTROL_YAW];
     tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed
@@ -172,27 +189,17 @@ void controlUpdate(uint32_t deltaTime)
 ///
 
 // Eventually change this to work on generic heli
-static int32_t mainGains[][NUM_GAINS] = {
-    {2500, 500, 800}, //2500
-    {1500, 400, 500}
-//    {1500, 200, 500},
-//    {1500, 800, 500}
-};
-static int32_t tailGains[][NUM_GAINS] = {
-    {2000, 500, 200},
-    {1500, 400, 500}
-//    {2000, 0, 500},
-//    {500, 0, 500}
-};
-static int32_t mainOffsets[] = {33, 33};  // temporary until calibration added
+static int32_t mainGains[] = {1500, 400, 500};
+static int32_t tailGains[] = {1200, 800, 600};
+static int32_t mainOffset = 33;  // temporary until calibration added
 
 static int32_t inte_h = 0;
 int32_t deri_h = 0, prop_h = 0;
 void updateHeightChannel(uint32_t deltaTime)
 {
-    int32_t kp = mainGains[CURRENT_HELI][KP];
-    int32_t kd = mainGains[CURRENT_HELI][KD];
-    int32_t ki = mainGains[CURRENT_HELI][KI];
+    int32_t kp = mainGains[KP];
+    int32_t kd = mainGains[KD];
+    int32_t ki = mainGains[KI];
     int32_t error = targets[CONTROL_HEIGHT] - height;
     prop_h = kp * error / PRECISION;
     // (kp * targets[CONTROL_HEIGHT] - kp * height)
@@ -214,9 +221,9 @@ static int32_t inte_y = 0;
 int32_t prop_y = 0, deri_y = 0;
 void updateYawChannel(uint32_t dt)
 {
-    int32_t kp = tailGains[CURRENT_HELI][KP];
-    int32_t kd = tailGains[CURRENT_HELI][KD];
-    int32_t ki = tailGains[CURRENT_HELI][KI];
+    int32_t kp = tailGains[KP];
+    int32_t kd = tailGains[KD];
+    int32_t ki = tailGains[KI];
     int32_t error = targets[CONTROL_YAW] - yaw;
     prop_y = kp * error / PRECISION;
 
@@ -236,7 +243,7 @@ void updateYawChannel(uint32_t dt)
 
 void updateCalibrationChannelMain(uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE_MAIN] = mainOffsets[CURRENT_HELI] * PRECISION;
+    outputs[CONTROL_CALIBRATE_MAIN] = mainOffset * PRECISION;
     controlDisable(CONTROL_CALIBRATE_MAIN);
 }
 

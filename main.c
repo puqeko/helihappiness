@@ -124,7 +124,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
         if (checkButton(SW1) == PUSHED) {
             if (shouldCalibrate) {
                 state->heliMode = CALIBRATE_YAW;
-                quadEncoderCalibrate();
+                yawCalibrate();
             } else {
                 state->heliMode = ALIGNING;
             }
@@ -156,7 +156,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
         state->targetYaw += 1;
         controlSetTarget(state->targetYaw, CONTROL_YAW);
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
-        if (quadEncoderIsCalibrated()) {
+        if (yawIsCalibrated()) {
             shouldCalibrate = false;
             state->heliMode = ALIGNING;
             state->targetYaw = 0;
@@ -289,6 +289,8 @@ void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq)
     // initalise the value to count up to for each task so that
     // tasks can run at different frequencies
     int32_t deltaTime = 1000 / baseFreq;  // in milliseconds, hence the 1000 factor
+
+    // loop until empty terminator task
     int i = 0;
     while (tasks[i].handler) {
         uint32_t triggerCount = baseFreq / tasks[i].updateFreq;
@@ -297,7 +299,7 @@ void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq)
         }
 
         tasks[i].count = 0;
-        tasks[i].triggerAt = triggerCount;  // make sure not zero
+        tasks[i].triggerAt = triggerCount;
         i++;
     }
 
