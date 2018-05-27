@@ -20,32 +20,6 @@ void displayInit(void)
 }
 
 
-//// ************************************************************
-//// Display a single value on a line of the OLED display according to a format
-//// string provided.
-//void displayValueWithFormat(char* format, uint32_t value, uint32_t line)
-//{
-//    char str[17] = "                 ";  // 16 characters across the display
-//    usnprintf (str, sizeof(str), format, value);
-//    str[strlen(str)] = ' ';  // overwrite null terminator added by usnprintf
-//    str[DISPLAY_CHAR_WIDTH] = '\0';  // ensure there is one at the end of the string
-//    OLEDStringDraw (str, 0, line);
-//}
-
-
-//// ************************************************************
-//// Display a two values on a line of the OLED display according to a format
-//// string provided.
-//void displayTwoValuesWithFormat(char* format, uint32_t value1, uint32_t value2, uint32_t line)
-//{
-//    char str[17] = "                 ";  // 16 characters across the display
-//    usnprintf (str, sizeof(str), format, value1, value2);
-//    str[strlen(str)] = ' ';  // overwrite null terminator added by usnprintf
-//    str[DISPLAY_CHAR_WIDTH] = '\0';  // ensure there is one at the end of the string
-//    OLEDStringDraw (str, 0, line);
-//}
-
-
 void displayPrintLineWithFormat(const char* format, int lineNum, ...)
 {
     va_list args;
@@ -76,3 +50,48 @@ void displayClear(uint32_t line)
 {
     OLEDStringDraw ("                 ", 0, line);  // 16 characters across the display
 }
+
+
+// TODO: remove
+//#define UPDATE_COUNT (TASK_BASE_FREQ / UART_DISPLAY_FREQUENCY)
+//void displayUpdate(state_t* state, uint32_t deltaTime)
+//{
+//    static int uartCount = 0;
+//    static const char* heliStateWordMap[] = {
+//       "Landed", "Landing", "Aligning", "Flying", "Calibrate Yaw"
+//    };
+//
+//    // Take measurements
+//    uint32_t percentageHeight = heightAsPercentage(1);  // precision = 1
+//    uint32_t degreesYaw = yawGetDegrees(1);  // precision = 1
+//    uint32_t mainDuty = controlGetPWMDuty(CONTROL_HEIGHT);
+//    uint32_t tailDuty = controlGetPWMDuty(CONTROL_YAW);
+//
+//    // Update OLED display
+//    displayPrintLineWithFormat("Height = %4d%%", 1, percentageHeight);  // line 1
+//    displayPrintLineWithFormat("M = %2d, T = %2d", 2, mainDuty, tailDuty);  // line 2
+//
+//    // Update UART display
+//    // Use a collaborative technique to update the display across updates
+//
+//    switch (uartCount) {
+//    case UPDATE_COUNT - 5:
+//        UARTPrintLineWithFormat("\nALT %d [%d] %%\n", state->targetHeight, percentageHeight);
+//        break;
+//    case UPDATE_COUNT - 4:
+//        UARTPrintLineWithFormat("YAW %d [%d] deg\n", state->targetYaw, degreesYaw);
+//        break;
+//    case UPDATE_COUNT - 3:
+//        UARTPrintLineWithFormat("MAIN %d %%, TAIL %d %%\n", mainDuty, tailDuty);
+//        break;
+//    case UPDATE_COUNT - 2:
+//        UARTPrintLineWithFormat("MODE %s\n", heliStateWordMap[state->heliMode]);
+//        break;
+//    case UPDATE_COUNT - 1:
+//        UARTPrintLineWithFormat("%s", "----------------\n");
+//        break;
+//    case UPDATE_COUNT:
+//        uartCount = 0;
+//    }
+//    uartCount++;
+//}
