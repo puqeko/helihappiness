@@ -106,7 +106,7 @@ void initalise()
 }
 
 bool isLandingYawStable(int32_t degreesYaw) {
-    return ((abs(degreesYaw) % 360) <= 2 || (abs(degreesYaw) % 360) >= 358);
+    return ((abs(degreesYaw) % 360) <= 5 || (abs(degreesYaw) % 360) >= 355);
 }
 
 
