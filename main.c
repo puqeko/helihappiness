@@ -32,10 +32,7 @@
 #include "uartDisplay.h"
 #include "control.h"
 #include "quadratureEncoder.h"
-
-typedef enum {
-    LANDED = 0, LANDING, ALIGNING, FLYING, CALIBRATE_YAW, NUM_HELI_STATES
-} heli_state_e;
+#include "kernalMustardWithThePipeInTheDiningRoom.h"
 
 #define UART_DISPLAY_FREQUENCY 4  // hz
 #define LANDING_UPDATE_FREQUENCY 10 // hz
@@ -47,20 +44,6 @@ typedef enum {
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
 
-typedef struct {
-    heli_state_e heliMode;
-    uint32_t targetHeight;
-    uint32_t targetYaw;
-} state_t;
-
-typedef struct {
-    void (*handler) (state_t* state, uint32_t deltaTime);  // pointer to task handler function
-    uint32_t updateFreq;  // number of ms between runs
-    uint32_t count;
-    uint32_t triggerAt;
-} task_t;
-
-
 #define NUM_TASKS 5
 #define TASK_BASE_FREQ 100
 
@@ -69,6 +52,7 @@ void softResetIntHandler(void)
     GPIOIntClear(GPIO_PORTA_BASE, GPIO_PIN_6);
     SysCtlReset();
 }
+
 
 void initSoftReset(void)
 {
@@ -284,47 +268,7 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
     uartCount++;
 }
 
-void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq)
-{
-    // initalise the value to count up to for each task so that
-    // tasks can run at different frequencies
-    int32_t deltaTime = 1000 / baseFreq;  // in milliseconds, hence the 1000 factor
 
-    // loop until empty terminator task
-    int i = 0;
-    while (tasks[i].handler) {
-        uint32_t triggerCount = baseFreq / tasks[i].updateFreq;
-        if (triggerCount == 0) {
-            triggerCount = 1;
-        }
-
-        tasks[i].count = 0;
-        tasks[i].triggerAt = triggerCount;
-        i++;
-    }
-
-    // begin the main loop
-    while (true) {
-        int32_t referenceTime = timererGetTicks();
-
-        int i = 0;
-        while (tasks[i].handler) {
-            tasks[i].count++;
-
-            // check if task should run in this update
-            if (tasks[i].count == tasks[i].triggerAt) {
-                tasks[i].count = 0;
-
-                // run the task
-                tasks[i].handler(sharedState, deltaTime);
-            }
-              i++;
-        }
-
-        // make sure loop runs as a consistent speed
-        timererWaitFrom(deltaTime, referenceTime);
-    }
-}
 
 void controllerUpdate(state_t* state, uint32_t deltaTime)
 {
@@ -332,11 +276,13 @@ void controllerUpdate(state_t* state, uint32_t deltaTime)
     controlUpdate(deltaTime);
 }
 
+
 void stateUpdate(state_t* state, uint32_t deltaTime)
 {
     updateButtons();
     heliMode(state, deltaTime);
 }
+
 
 int main(void)
 {
