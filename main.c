@@ -116,6 +116,8 @@ void heliMode(state_t* state, uint32_t deltaTime)
     static uint32_t landingDecrementCounter = 0;
     static bool shouldCalibrate = true;
     static bool shouldDescend = false;
+    bool plzLandplz = false;
+    static uint32_t landingTime = 0;
 
     switch (state->heliMode) {
 
@@ -165,24 +167,26 @@ void heliMode(state_t* state, uint32_t deltaTime)
 
     case LANDING:
         #define LANDING_SPEED 25 // in % per second
+        #define LANDING_TIME_OUT 1000 // 1000 ms
 
-        if (yawGetDegrees(1) > 0 && abs(state->targetYaw) % 360 != 0) {
-            if (abs(yawGetDegrees(1)) % 360 <= 180) {
+        // Ramp function for yaw: Finds nearest 360 degree target and moves to this position
+        if (yawGetDegrees(1) > 0 && abs(state->targetYaw) % 360 != 0) { // Case for +ve yaw
+            if (abs(yawGetDegrees(1)) % 360 <= 180) { // Evaluates position relative to target to find nearest
                 state->targetYaw -= 1;
             } else {
                 state->targetYaw += 1;
             }
-        } else if (yawGetDegrees(1) < 0 && abs(state->targetYaw) % 360 != 0) {
+        } else if (yawGetDegrees(1) < 0 && abs(state->targetYaw) % 360 != 0) { // Case for -ve yaw
             if (abs(yawGetDegrees(1)) % 360 <= 180) {
                 state->targetYaw += 1;
             } else {
                 state->targetYaw -= 1;
             }
         }
-        if (isLandingYawStable(yawGetDegrees(1))) {
+        if (isLandingYawStable(yawGetDegrees(1))) { // Check whether yaw has reached target within acceptable range
             shouldDescend = true;
         }
-        if (landingDecrementCounter == TASK_BASE_FREQ / LANDING_SPEED) {
+        if (landingDecrementCounter == MS_TO_SEC / (deltaTime * LANDING_SPEED)) {
             landingDecrementCounter = 0;
             if (shouldDescend && state->targetHeight != 0) {
                 state->targetHeight -= 1;
@@ -192,17 +196,27 @@ void heliMode(state_t* state, uint32_t deltaTime)
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         controlSetTarget(state->targetYaw, CONTROL_YAW);
 
-        if (isLandingYawStable(yawGetDegrees(1)) && heightAsPercentage(1) <= 1) {
-            stabilityCounter++;
+        if (heightAsPercentage(1) <= 1 && state->targetHeight == 0) {
+            if (isLandingYawStable(yawGetDegrees(1))) {
+                stabilityCounter++;
+            } else {
+                stabilityCounter = 0;
+            }
+            landingTime++;
+            if (landingTime >= LANDING_TIME_OUT / deltaTime) {
+                plzLandplz = true;
+            }
         } else {
             stabilityCounter = 0;
         }
         // STABILITY_TIME_MAIN is the number of milliseconds to wait for stability.
-        if (stabilityCounter >= STABILITY_TIME_MAIN / deltaTime) {
+        if (stabilityCounter >= STABILITY_TIME_MAIN / deltaTime || plzLandplz) {
             //if (controlLandingStability()) {
                 controlMotorSet(false, MAIN_ROTOR);
                 controlMotorSet(false, TAIL_ROTOR);
                 state->heliMode = LANDED;
+                plzLandplz = false;
+                landingTime = 0;
                 ignoreButton(SW1);
                 controlDisable(CONTROL_YAW);
                 //controlSetLandingSequence(false);
