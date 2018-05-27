@@ -147,7 +147,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         controlSetTarget(state->targetYaw, CONTROL_YAW);
 
-        if (hasFinishedLanding(state, yawDegrees, heightAsPercentage(1))) {
+        if (hasFinishedLanding(state, deltaTime, yawDegrees, heightAsPercentage(1))) {
             controlMotorSet(false, MAIN_ROTOR);
             controlMotorSet(false, TAIL_ROTOR);
             state->heliMode = LANDED;

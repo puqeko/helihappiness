@@ -19,7 +19,7 @@ void land(state_t *state, uint32_t deltaTime, int32_t yawDegrees)
 }
 
 // Ramp function for yaw: Finds nearest 360 degree target and moves to this position
-void rampYaw(state_t *state, yawDegrees)
+void rampYaw(state_t *state, int32_t yawDegrees)
 {
     if (yawDegrees > 0 && abs(state->targetYaw) % 360 != 0) { // Case for +ve yaw
         if (abs(yawDegrees) % 360 <= 180) { // Evaluates position relative to target to find nearest
@@ -51,7 +51,7 @@ bool isLandingYawStable(int32_t yawDegrees) {
     return ((abs(yawDegrees) % 360) <= 5 || (abs(yawDegrees) % 360) >= 355);
 }
 
-bool hasFinishedLanding (state_t *state, int32_t yawDegrees, int32_t heightPercentage)
+bool hasFinishedLanding (state_t *state, uint32_t deltaTime, int32_t yawDegrees, int32_t heightPercentage)
 {
     static uint32_t stabilityCounter;
     static uint32_t landingTime = 0;
