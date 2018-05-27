@@ -34,15 +34,8 @@
 #include "uartDisplay.h"
 #include "control.h"
 #include "quadratureEncoder.h"
-<<<<<<< HEAD
 #include "landingController.h"
-
-typedef enum {
-    LANDED = 0, LANDING, ALIGNING, FLYING, CALIBRATE_YAW, NUM_HELI_STATES
-} heli_state_e;
-=======
 #include "kernalMustardWithThePipeInTheDiningRoom.h"
->>>>>>> thomas
 
 #define UART_DISPLAY_FREQUENCY 4  // hz
 #define LANDING_UPDATE_FREQUENCY 10 // hz
