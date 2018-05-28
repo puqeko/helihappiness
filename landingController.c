@@ -1,5 +1,5 @@
 // ************************************************************
-// main.c
+// landingController.c
 // Helicopter project
 // Group: A03 Group 10
 // Last edited: 21-04-2018
@@ -9,14 +9,6 @@
 
 
 #include "landingController.h"
-
-void land(state_t *state, uint32_t deltaTime, int32_t yawDegrees)
-{
-    rampYaw(state, yawDegrees);
-    if (isLandingYawStable(yawDegrees)) {
-        rampHeight(state, deltaTime);
-    }
-}
 
 // Ramp function for yaw: Finds nearest 360 degree target and moves to this position
 void rampYaw(state_t *state, int32_t yawDegrees)
@@ -55,8 +47,6 @@ bool hasFinishedLanding (state_t *state, uint32_t deltaTime, int32_t yawDegrees,
 {
     static uint32_t stabilityCounter;
     static uint32_t landingTime = 0;
-    static bool shouldEnterLandedState = false;
-    static bool plzLandplz = false;
 
     if (heightPercentage <= 1 && state->targetHeight == 0) {
         if (isLandingYawStable(yawDegrees)) {
@@ -66,13 +56,22 @@ bool hasFinishedLanding (state_t *state, uint32_t deltaTime, int32_t yawDegrees,
         }
         landingTime++;
         if (landingTime >= LANDING_TIME_OUT / deltaTime) {
-            plzLandplz = true;
+            return true;
         }
     } else {
         stabilityCounter = 0;
     }
-    if (stabilityCounter >= STABILITY_TIME_MAIN / deltaTime || plzLandplz) {
-        shouldEnterLandedState = true;
+    if (stabilityCounter >= STABILITY_TIME_MAIN / deltaTime) {
+        return true;
+    }
+    return false;
+}
+
+void land(state_t *state, uint32_t deltaTime, int32_t yawDegrees)
+{
+    rampYaw(state, yawDegrees);
+    if (isLandingYawStable(yawDegrees)) {
+        rampHeight(state, deltaTime);
     }
 }
 
