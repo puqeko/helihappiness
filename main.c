@@ -108,7 +108,8 @@ void heliMode(state_t* state, uint32_t deltaTime)
             }
             controlMotorSet(true, MAIN_ROTOR);  // turn  on motors
             controlMotorSet(true, TAIL_ROTOR);
-              // start calibration
+
+            // start calibration
             controlEnable(CONTROL_CALIBRATE_MAIN);
             controlEnable(CONTROL_CALIBRATE_TAIL);
             controlEnable(CONTROL_HEIGHT);
@@ -174,8 +175,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
             state->targetYaw += TAIL_STEP;
         }
         if (checkButton(SW1) == RELEASED) {  // switch down
-            //controlSetLandingSequence(true);
-            //state->targetHeight = 0;
             state->heliMode = LANDING;
         }
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
@@ -229,7 +228,6 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
 }
 
 
-
 void controllerUpdate(state_t* state, uint32_t deltaTime)
 {
     heightUpdate();
@@ -237,7 +235,7 @@ void controllerUpdate(state_t* state, uint32_t deltaTime)
 }
 
 
-void stateUpdate(state_t* state, uint32_t deltaTime)
+void stateUpdate(state_t* state , uint32_t deltaTime)
 {
     updateButtons();
     heliMode(state, deltaTime);
