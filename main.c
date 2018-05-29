@@ -106,7 +106,7 @@ void initalise()
 }
 
 bool isLandingYawStable(int32_t degreesYaw) {
-    return ((abs(degreesYaw) % 360) <= 5 || (abs(degreesYaw) % 360) >= 355);
+    return ((abs(degreesYaw) % 360) <= 2 || (abs(degreesYaw) % 360) >= 358);
 }
 
 
@@ -167,7 +167,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
 
     case LANDING:
         #define LANDING_SPEED 25 // in % per second
-        #define LANDING_TIME_OUT 1000 // 1000 ms
+        #define LANDING_TIME_OUT 7500 // 7.5 s
 
         // Ramp function for yaw: Finds nearest 360 degree target and moves to this position
         if (yawGetDegrees(1) > 0 && abs(state->targetYaw) % 360 != 0) { // Case for +ve yaw
@@ -219,6 +219,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
                 landingTime = 0;
                 ignoreButton(SW1);
                 controlDisable(CONTROL_YAW);
+                controlDisable(CONTROL_HEIGHT);
                 //controlSetLandingSequence(false);
                 state->targetHeight = 0;
                 //state->targetYaw = 0;
