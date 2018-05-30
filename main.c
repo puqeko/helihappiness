@@ -37,6 +37,7 @@
 #include "landingController.h"
 #include "kernalMustardWithThePipeInTheDiningRoom.h"
 
+
 #define UART_DISPLAY_FREQUENCY 4  // hz
 #define LANDING_UPDATE_FREQUENCY 10 // hz
 
@@ -47,6 +48,7 @@
 
 #define NUM_TASKS 5
 #define TASK_BASE_FREQ 100
+
 
 void softResetIntHandler(void)
 {
