@@ -2,7 +2,7 @@
 // timerer.c
 // Helicopter project
 // Group: A03 Group 10
-// Last edited: 14-04-2018 by Thomas M
+// Last edited: 30-05-2018 by Thomas M
 //
 // Purpose: More accurate timer for delays and loop timing.
 // ************************************************************
@@ -15,19 +15,18 @@
 #define TIMERER_BASE WTIMER5_BASE
 #define TIMERER_INTERAL TIMER_A
 #define TIMERER_MODE TIMER_CFG_A_PERIODIC
-static const uint32_t TIMERER_MAX_TICKS = (0xffffffff - 1);  // 32 bits for Timer0 A
+#define TIMERER_MAX_TICKS INT32_MAX  // 32 bits for Timer0 A
+#define TIMERER_OVERSHOOT_TICKS (TIMERER_MAX_TICKS / 2)
 
-static uint32_t clock_rate;
-static uint32_t overshoot_ticks;
-static uint32_t ticks_per_ms;
+static uint32_t clockRate;
+static uint32_t ticksPerMs;
 
 
-// *******************************************************
+// Enable the hardware timer and calculate clock parameters
 void timererInit(void)
 {
-    clock_rate = SysCtlClockGet();
-    ticks_per_ms = clock_rate / 1000;
-    overshoot_ticks = TIMERER_MAX_TICKS / 2;
+    clockRate = SysCtlClockGet();
+    ticksPerMs = clockRate / 1000;  // 1000 ms = 1 s
 
     // timer counts down by default
     // config to reset to max value
@@ -51,16 +50,15 @@ void timererWait(uint32_t milliseconds)
 }
 
 
-
 bool timererBeen(uint32_t milliseconds, uint32_t reference)
 {
     // minus since counts down
-    uint32_t target = reference - milliseconds * ticks_per_ms;
+    uint32_t target = reference - milliseconds * ticksPerMs;
     uint32_t cur = timererGetTicks(); //get time
     uint32_t diff = target - cur;  // +ve small number when past target (timer counts down)
 
     // false until this condition is met
-    return diff < overshoot_ticks;
+    return diff < TIMERER_OVERSHOOT_TICKS;
 }
 
 
@@ -68,9 +66,7 @@ void timererWaitFrom(uint32_t milliseconds, uint32_t reference)
 {
     while (true) {
 
-        // block until this condition is met
-        if (timererBeen(milliseconds, reference)) {
-            return;  // we have passed the target time
-        }
+        // block until we pass the target time
+        if (timererBeen(milliseconds, reference)) return;
     }
 }
