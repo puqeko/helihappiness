@@ -4,7 +4,8 @@
 // Group: A03 Group 10
 // Last edited: 30-05-2018 by Thomas M
 //
-// Purpose: More accurate timer for delays and loop timing.
+// Purpose: More accurate timer for delays and loop timing using a
+// 32-bit down counter and timer 5.
 // ************************************************************
 
 
@@ -22,7 +23,7 @@ static uint32_t clockRate;
 static uint32_t ticksPerMs;
 
 
-// Enable the hardware timer and calculate clock parameters
+// enable the hardware timer and calculate clock parameters
 void timererInit(void)
 {
     clockRate = SysCtlClockGet();
@@ -38,18 +39,21 @@ void timererInit(void)
 }
 
 
+// return the current timer value in ticks.
 uint32_t timererGetTicks(void)
 {
     return TimerValueGet(TIMERER_BASE, TIMERER_INTERAL);
 }
 
 
+// waits for some given milliseconds.
 void timererWait(uint32_t milliseconds)
 {
     timererWaitFrom(milliseconds, timererGetTicks());
 }
 
 
+// returns true after milliseconds have passed from reference.
 bool timererBeen(uint32_t milliseconds, uint32_t reference)
 {
     // minus since counts down
@@ -62,6 +66,8 @@ bool timererBeen(uint32_t milliseconds, uint32_t reference)
 }
 
 
+// waits until a given milliseconds passed some reference timer value.
+// useful for keeping time in a loop with many operations.
 void timererWaitFrom(uint32_t milliseconds, uint32_t reference)
 {
     while (true) {
