@@ -1,68 +1,55 @@
-//************************************************************************
+// ************************************************************
 // adcModule.c
-//
 // Helicopter project
-//
-// Group:       A03 Group 10
-// Created:     14/3/18
-// Last Edited: 16/4/18
+// Group: A03 Group 10
+// Last edited: 16-04-2018
 //
 // Purpose: Initialize and handle analog to digital
 //          conversion (ADC) peripheral
-//************************************************************************
+// ************************************************************
 
+#include "adcModule.h"
 
-#include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_memmap.h"
 #include "driverlib/adc.h"
 #include "driverlib/sysctl.h"
 
-#include "adcModule.h"
-
 //function called to store ADC value
-static valueHandler_t ADCValueHandler;
+static valueHandler_t adcValueHandler;
 
 
-//************************************************************************
 // Interrupt handler for completion of ADC conversion
 // Resets interrupt and registers ADC value with ADCValueHandler function
-//************************************************************************
 void adcIntHandler(void)
 {
-    uint32_t ADCValue;
+    uint32_t adcValue;
 
     //get the ADC sample value from ADC0
-    ADCSequenceDataGet(ADC0_BASE, 3, &ADCValue);
+    ADCSequenceDataGet(ADC0_BASE, 3, &adcValue);
 
     //register the ADC value with the specified ADCValueHandler function
-    ADCValueHandler(ADCValue);
+    adcValueHandler(adcValue);
 
     //clear the interrupt
     ADCIntClear(ADC0_BASE, 3);
 }
 
 
-
-//************************************************************************
 // Initiate an ADC conversion
-//************************************************************************
 void adcTrigger(void)
 {
     ADCProcessorTrigger(ADC0_BASE, 3);
 }
 
 
-
-//************************************************************************
 // Initialize ADC and register interrupt handler
 //
 // Parameters:
-// -valueHandler_t handler -> handler function called to store ADC value
-//************************************************************************
+// valueHandler_t handler -> handler function called to store ADC value
 void adcInit(valueHandler_t handler)
 {
-    ADCValueHandler = handler;
+    adcValueHandler = handler;
 
     //enable ADC peripheral
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
