@@ -23,6 +23,6 @@ void land(state_t *state, uint32_t deltaTime, int32_t yawDegrees);
 
 bool isLandingYawStable(int32_t yawDegrees);
 
-
+void checkLandingStability (state_t *state, uint32_t deltaTime, int32_t yawDegrees, int32_t heightPercentage);
 
 #endif /* LANDINGCONTROLLER_H_ */

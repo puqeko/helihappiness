@@ -12,14 +12,12 @@
 #include "control.h"
 #include "height.h"
 #include "yaw.h"
-#include "display.h"
-#include "circBufT.h"
 
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
 static bool enabled[CONTROL_NUM_CHANNELS] = {};
 
-static bool landingFlag = 0;
+static bool shouldRampMain = false;
 
 typedef void (*control_channel_update_func_t)(uint32_t);
 
@@ -59,13 +57,10 @@ int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
     return pwmLevel;
 }
 
-static circBuf_t mainDutyFilter;
-#define MAIN_DUTY_FILTER_SIZE 5
 
 void controlInit(void)
 {
     pwmInit();
-    initCircBuf(&mainDutyFilter, MAIN_DUTY_FILTER_SIZE);
 }
 
 
@@ -130,17 +125,6 @@ int32_t controlGetPWMDuty(control_channel_t channel)
 }
 
 
-uint32_t getFilteredMain(void)
-{
-    uint32_t sum = 0;
-    int i = 0;
-    for (; i < MAIN_DUTY_FILTER_SIZE; i++) {
-        sum += readCircBuf(&mainDutyFilter);
-    }
-    return sum / MAIN_DUTY_FILTER_SIZE;
-}
-
-
 void controlUpdate(uint32_t deltaTime)
 {
     // get height and velocity
@@ -160,18 +144,15 @@ void controlUpdate(uint32_t deltaTime)
         }
     }
 
-    if (!landingFlag) {
+
     // main rotor equation
+    if (!shouldRampMain) {
         mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffset / PRECISION +
             /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
-    } else {
-        if (mainDuty > LANDING_DUTY) {
-            mainDuty = mainDuty - LANDING_DECREMENT;
-        }
+    } else if (mainDuty > DUTY_DECREMENT_PER_CYCLE * deltaTime) {
+        mainDuty -= DUTY_DECREMENT_PER_CYCLE * deltaTime;
     }
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
-
-    writeCircBuf(&mainDutyFilter, mainDuty);
 
     // tail rotor equation
     // filter main to take into account time delay and smoothing so that we get less oscillation
@@ -253,14 +234,14 @@ void updateCalibrationChannelTail(uint32_t deltaTime)
     controlDisable(CONTROL_CALIBRATE_TAIL);
 }
 
-void controlSetLandingSequence(bool state) {
-    landingFlag = state;
+void setRampActive(bool state)
+{
+    shouldRampMain = state;
 }
 
-bool controlLandingStability(void) {
-    mainDuty = mainDuty - LANDING_DECREMENT;
-    mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
-    return mainDuty <= MIN_DUTY * PRECISION;
+bool getRampActive(void)
+{
+    return shouldRampMain;
 }
 
 void resetController(void) {

@@ -147,12 +147,15 @@ void heliMode(state_t* state, uint32_t deltaTime)
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         controlSetTarget(state->targetYaw, CONTROL_YAW);
 
-        if (hasFinishedLanding(state, deltaTime, yawDegrees, heightAsPercentage(1))) {
+        checkLandingStability(state, deltaTime, yawDegrees, heightAsPercentage(1));
+        if (controlGetPWMDuty(CONTROL_HEIGHT) == MIN_DUTY && getRampActive()) {
+            ignoreButton(SW1);
             controlMotorSet(false, MAIN_ROTOR);
             controlMotorSet(false, TAIL_ROTOR);
-            state->heliMode = LANDED;
-            ignoreButton(SW1);
             controlDisable(CONTROL_YAW);
+            controlDisable(CONTROL_HEIGHT);
+            setRampActive(false);
+            state->heliMode = LANDED;
             state->targetHeight = 0;
             if (yawClipTo360Degrees()) {
                 state->targetYaw = 0;
