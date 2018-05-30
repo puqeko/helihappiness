@@ -8,13 +8,12 @@
 //          conversion (ADC) peripheral
 // ************************************************************
 
+#include "adcModule.h"
 
 #include <stdbool.h>
 #include "inc/hw_memmap.h"
 #include "driverlib/adc.h"
 #include "driverlib/sysctl.h"
-
-#include "adcModule.h"
 
 //function called to store ADC value
 static valueHandler_t adcValueHandler;
@@ -27,7 +26,7 @@ void adcIntHandler(void)
     uint32_t adcValue;
 
     //get the ADC sample value from ADC0
-    ADCSequenceDataGet(ADC0_BASE, 3, &ADCValue);
+    ADCSequenceDataGet(ADC0_BASE, 3, &adcValue);
 
     //register the ADC value with the specified ADCValueHandler function
     adcValueHandler(adcValue);
