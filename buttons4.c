@@ -8,7 +8,6 @@
 // Edited from code by P.J. Bones UCECE
 //
 // Support for a set of FOUR specific buttons on the Tiva/Orbit.
-// ENCE361 sample code.
 // The buttons are:  UP and DOWN (on the Orbit daughterboard) plus
 // LEFT and RIGHT on the Tiva.
 //
@@ -27,19 +26,16 @@
 #include "buttons4.h"
 
 
-// *******************************************************
 // Globals to module
-// *******************************************************
 static bool but_state[NUM_BUTS];	// Corresponds to the electrical state
 static uint8_t but_count[NUM_BUTS];
 static bool but_flag[NUM_BUTS];
 static bool but_normal[NUM_BUTS];   // Corresponds to the electrical state
 
-// *******************************************************
-// initButtons: Initialise the variables associated with the set of buttons
+
+// buttonsInit: Initialise the variables associated with the set of buttons
 // defined by the constants in the buttons2.h header file.
-void
-initButtons (void)
+void buttonsInit (void)
 {
 	int i;
 
@@ -98,8 +94,8 @@ initButtons (void)
 	but_state[SW2] = (GPIOPinRead (SW2_PORT_BASE, SW2_PIN) == SW2_PIN);
 }
 
-// *******************************************************
-// updateButtons: Function designed to be called regularly. It polls all
+
+// buttonsUpdate: Function designed to be called regularly. It polls all
 // buttons once and updates variables associated with the buttons if
 // necessary.  It is efficient enough to be part of an ISR, e.g. from
 // a SysTick interrupt.
@@ -107,8 +103,7 @@ initButtons (void)
 // A state change occurs only after NUM_BUT_POLLS consecutive polls have
 // read the pin in the opposite condition, before the state changes and
 // a flag is set.  Set NUM_BUT_POLLS according to the polling rate.
-void
-updateButtons (void)
+void buttonsUpdate (void)
 {
 	bool but_value[NUM_BUTS];
 	int i;
@@ -139,12 +134,11 @@ updateButtons (void)
 	}
 }
 
-// *******************************************************
-// checkButton: Function returns the new button logical state if the button
+
+// buttonsCheck: Function returns the new button logical state if the button
 // logical state (PUSHED or RELEASED) has changed since the last call,
 // otherwise returns NO_CHANGE.
-uint8_t
-checkButton (uint8_t butName)
+uint8_t buttonsCheck (uint8_t butName)
 {
 	if (but_flag[butName])
 	{
@@ -157,9 +151,9 @@ checkButton (uint8_t butName)
 	return NO_CHANGE;
 }
 
-// ********************************************************
+
 // ignore a change in state which may have occured for this button.
-void ignoreButton(uint8_t butName)
+void buttonsIgnore(uint8_t butName)
 {
     but_flag[butName] = false;
 }

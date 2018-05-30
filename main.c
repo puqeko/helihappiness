@@ -78,7 +78,7 @@ void initalise()
     timererInit();
     timererWait(1);  // Allow time for the oscillator to settle down (for 1.
 
-    initButtons();
+    buttonsInit();
     initSoftReset();
     displayInit();
     yawInit();
@@ -101,7 +101,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
 
     case LANDED:
         heightCalibrate();
-        if (checkButton(SW1) == PUSHED) {
+        if (buttonsCheck(SW1) == PUSHED) {
             if (shouldCalibrate) {
                 state->heliMode = CALIBRATE_YAW;
                 yawCalibrate();
@@ -125,7 +125,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
         // calibration is auto disabled when complete
         if (!controlIsEnabled(CONTROL_CALIBRATE_MAIN) && !controlIsEnabled(CONTROL_CALIBRATE_TAIL)) {
             // done aligning...
-            ignoreButton(SW1);
+            buttonsIgnore(SW1);
             controlEnable(CONTROL_HEIGHT);
             controlEnable(CONTROL_YAW);
             state->heliMode = FLYING;
@@ -154,7 +154,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
             controlMotorSet(false, MAIN_ROTOR);
             controlMotorSet(false, TAIL_ROTOR);
             state->heliMode = LANDED;
-            ignoreButton(SW1);
+            buttonsIgnore(SW1);
             controlDisable(CONTROL_YAW);
             state->targetHeight = 0;
             if (yawClipTo360Degrees()) {
@@ -164,19 +164,19 @@ void heliMode(state_t* state, uint32_t deltaTime)
         break;
 
     case FLYING:
-        if (checkButton(UP) == PUSHED && state->targetHeight < MAX_DUTY) {
+        if (buttonsCheck(UP) == PUSHED && state->targetHeight < MAX_DUTY) {
             state->targetHeight += MAIN_STEP;
         }
-        if (checkButton(DOWN) == PUSHED && state->targetHeight > MIN_DUTY) {
+        if (buttonsCheck(DOWN) == PUSHED && state->targetHeight > MIN_DUTY) {
             state->targetHeight -= MAIN_STEP;
         }
-        if (checkButton(LEFT) == PUSHED) {
+        if (buttonsCheck(LEFT) == PUSHED) {
             state->targetYaw -= TAIL_STEP;
         }
-        if (checkButton(RIGHT) == PUSHED) {
+        if (buttonsCheck(RIGHT) == PUSHED) {
             state->targetYaw += TAIL_STEP;
         }
-        if (checkButton(SW1) == RELEASED) {  // switch down
+        if (buttonsCheck(SW1) == RELEASED) {  // switch down
             state->heliMode = LANDING;
         }
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
@@ -239,7 +239,7 @@ void controllerUpdate(state_t* state, uint32_t deltaTime)
 
 void stateUpdate(state_t* state , uint32_t deltaTime)
 {
-    updateButtons();
+    buttonsUpdate();
     heliMode(state, deltaTime);
 }
 
