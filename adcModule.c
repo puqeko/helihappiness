@@ -65,8 +65,7 @@ void adcInit(valueHandler_t handler)
     // that this is the last conversion on sequence 3 (ADC_CTL_END).  Sequence
     // 3 has only one programmable step.  Sequence 1 and 2 have 4 steps, and
     // sequence 0 has 8 programmable steps.  Since we are only doing a single
-    // conversion using sequence 3 we will only configure step 0.  For more
-    // on the ADC sequences and steps, refer to the LM3S1968 datasheet.
+    // conversion using sequence 3 we will only configure step 0.
     ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH9 | ADC_CTL_IE | ADC_CTL_END); // ADC_CTL_CH9, ADC_CTL_CH0 = rig, pot
 
     // Since sample sequence 3 is now configured, it must be enabled.
