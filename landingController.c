@@ -56,17 +56,18 @@ void checkLandingStability (state_t *state, uint32_t deltaTime, int32_t yawDegre
     }
 }
 
+
 void land(state_t *state, uint32_t deltaTime, int32_t yawDegrees)
 {
+    static uint32_t landingCounter = 0;
     rampYaw(state, yawDegrees);
     if (isLandingYawStable(yawDegrees)) {
-        if (state->targetHeight != 0) {
+        if (state->targetHeight != 0 && landingCounter >= MS_TO_SEC / (LANDING_RATE * deltaTime) ) {
             state->targetHeight -= 1;
-        } else {
-            //main--
-            //raise flag
+            landingCounter = 0;
         }
     }
+    landingCounter++;
 }
 
 
