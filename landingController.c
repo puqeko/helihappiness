@@ -2,18 +2,22 @@
 // landingController.c
 // Helicopter project
 // Group: A03 Group 10
-// Last edited: 21-04-2018
+// Last edited: 21-04-2018 by Ryan Hall
 //
 // Purpose: This modules controls the ramp function for both yaw
-//          and height that are activated upon landing
+//          and height that are activated upon landing. It contains
+//          functions to check for stability to communicate if the
+//          landing task stages have been exectuted successfully
 // ************************************************************
 
 
 #include "landingController.h"
 #include "control.h"
 
+
 // Description: Ramp function for yaw: Finds nearest 360 degree target and increments/decrements the target to this position
-// Parameters:
+// Parameters:  state_t* state is a pointer to the data structure containing the yaw and height targets. int32_t yawDegrees
+//              is the measured yaw of the heli in degrees, scaled by PRECISION.
 void rampYaw(state_t *state, int32_t yawDegrees)
 {
     if (yawDegrees > 0 && abs(state->targetYaw) % 360 != 0) { // Case for +ve yaw
@@ -33,8 +37,8 @@ void rampYaw(state_t *state, int32_t yawDegrees)
 
 
 // Description: This function checks whether the yaw is within the specified error range of the reference yaw position.
-// Parameters: The function takes the int32_t yawDegrees parameter; the measured quantity for the yaw scaled by PRECISION
-// Return: The function returns a boolean type; true when the yaw is within the specified range
+// Parameters:  The function takes the int32_t yawDegrees parameter; the measured quantity for the yaw scaled by PRECISION
+// Return:      The function returns a boolean type; true when the yaw is within the specified range
 bool isLandingYawStable(int32_t yawDegrees) {
     // 360 represents the number of degrees in a full rotation.
     // % operator returns remainder after division.
@@ -43,12 +47,13 @@ bool isLandingYawStable(int32_t yawDegrees) {
 }
 
 
-// Description: This function checks that the helicopter remains stable while in its landing position (reference yaw and 0 height)
-// for a set period of time. The function includes a time out in case the helicopter does not stabilise.
-// Parameters: state_t* state points to the struct containing the target height and target yaw variables
-//             deltaTime is the task period in ms and yawDegrees and heightPercentage pass in the measured
-//             quantities for yaw and height respectively scaled by PRECISION.
-// Return: returns a boolean indicating true when landing stability has been reached.
+// Description: This function checks that the helicopter remains stable while in its landing position
+//              (reference yaw and 0 height) for a set period of time. The function includes a time
+//              out in case the helicopter does not stabilize.
+// Parameters:  state_t* state points to the struct containing the target height and target yaw variables
+//              deltaTime is the task period in ms and yawDegrees and heightPercentage pass in the measured
+//              quantities for yaw and height respectively scaled by PRECISION.
+// Return:      Returns a boolean indicating true when landing stability has been reached.
 bool checkLandingStability (state_t* state, uint32_t deltaTime, int32_t yawDegrees, int32_t heightPercentage)
 {
     static uint32_t stabilityCounter;
@@ -74,12 +79,19 @@ bool checkLandingStability (state_t* state, uint32_t deltaTime, int32_t yawDegre
 }
 
 
-//
+// Description: This function shedules the landing sequence. First it calls the function
+//              to ramp the yaw to the reference position It then checks the yaw has met
+//              the target before ramping down the height at a set rate
+// Parameters:  state_t* state points to the struct containing the targets for yaw and height
+//              deltaTime is a 32-bit unsigned integer. It is the task period in ms
+//              int32_t yawDegrees is the measured yaw scaled by PRECISION
 void land(state_t *state, uint32_t deltaTime, int32_t yawDegrees)
 {
-    static uint32_t landingCounter = 0;
+    static uint32_t landingCounter = 0; // counter to determine rate of height ramp
     rampYaw(state, yawDegrees);
     if (isLandingYawStable(yawDegrees)) {
+        // LANDING_RATE specified in % per sec
+        // MS_TO_SEC / detlaTime converts period (in ms) to frequency in Hz
         if (state->targetHeight != 0 && landingCounter >= MS_TO_SEC / (LANDING_RATE * deltaTime) ) {
             state->targetHeight -= 1;
             landingCounter = 0;
