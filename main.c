@@ -72,6 +72,7 @@ void initSoftReset(void)
 void initalise()
 {
     // TODO: reset peripherals
+    // SysCtlPeripheralReset(SYSCTL_PERIPH_PWM);
 
     // Set system clock rate to 20 MHz.
     SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_10);
@@ -158,18 +159,16 @@ void heliMode(state_t* state, uint32_t deltaTime)
         break;
 
     case FLYING:
-        if (buttonsCheck(UP) == PUSHED && state->targetHeight < MAX_DUTY) {
+        if (buttonsCheck(UP) == PUSHED && state->targetHeight < MAX_DUTY)
             state->targetHeight += MAIN_STEP;
-        }
-        if (buttonsCheck(DOWN) == PUSHED && state->targetHeight > MIN_DUTY) {
+        if (buttonsCheck(DOWN) == PUSHED && state->targetHeight > MIN_DUTY)
             state->targetHeight -= MAIN_STEP;
-        }
-        if (buttonsCheck(LEFT) == PUSHED) {
+
+        if (buttonsCheck(LEFT) == PUSHED)
             state->targetYaw -= TAIL_STEP;
-        }
-        if (buttonsCheck(RIGHT) == PUSHED) {
+        if (buttonsCheck(RIGHT) == PUSHED)
             state->targetYaw += TAIL_STEP;
-        }
+
         if (buttonsCheck(SW1) == RELEASED) {  // switch down
             state->heliMode = DESCENDING;
             controlEnable(CONTROL_DESCENDING);
