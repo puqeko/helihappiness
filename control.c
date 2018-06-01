@@ -83,13 +83,11 @@ void controlEnable(control_channel_t channel)
 
     // handle inital conditions
     switch(channel) {
-    // add here ...
     case CONTROL_POWER_DOWN:
         outputs[CONTROL_POWER_DOWN] = mainDuty;
         break;
     default:
         outputs[channel] = 0;
-        targets[channel] = 0;
     }
 }
 
@@ -208,7 +206,7 @@ void updateYawChannel(state_t* state, uint32_t dt)
     int32_t kp = tailGains[KP];
     int32_t kd = tailGains[KD];
     int32_t ki = tailGains[KI];
-    int32_t error = targets[CONTROL_YAW] - yaw;
+    int32_t error = state->targetYaw * PRECISION - yaw;
     prop_y = kp * error / PRECISION;
 
 //    if (abs(error) < 3000 || abs(error) > 45000) {
@@ -217,9 +215,9 @@ void updateYawChannel(state_t* state, uint32_t dt)
         deri_y = kd * (0 - angularVelocity) / PRECISION;
 //    }
 
-//    if (abs(error) < 1000) {
-        inte_y = (inte_y * PRECISION + (ki * (int32_t)dt / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)dt / MS_TO_SEC * yaw)) / PRECISION;
-//    }
+    if (abs(inte_y) < 1e8) {
+        inte_y += ki * (int32_t)dt * error / MS_TO_SEC / PRECISION;
+    }
 
     outputs[CONTROL_YAW] = prop_y + deri_y + inte_y;
 }

@@ -22,8 +22,8 @@ typedef enum {
 // Entries which more than one task needs to know about.
 typedef struct {
     heli_state_e heliMode;
-    uint32_t targetHeight;
-    uint32_t targetYaw;
+    int32_t targetHeight;
+    int32_t targetYaw;
 } state_t;
 
 
