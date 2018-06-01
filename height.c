@@ -14,7 +14,7 @@
 #include "circBufT.h"
 #include "adcModule.h"
 
-#define   100
+#define CONV_UNIFORM_MULTIPLIER 100
 #define CONV_BASE (CONV_SIZE * CONV_UNIFORM_MULTIPLIER)
 #define ADC_MAX_RANGE 4095
 
