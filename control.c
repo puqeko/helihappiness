@@ -12,6 +12,7 @@
 #include "control.h"
 #include "height.h"
 #include "yaw.h"
+#include "landingController.h"
 
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
@@ -19,17 +20,18 @@ static bool enabled[CONTROL_NUM_CHANNELS] = {};
 
 static bool shouldRampMain = false;
 
-typedef void (*control_channel_update_func_t)(uint32_t);
+typedef void (*control_channel_update_func_t)(state_t*, uint32_t);
 
 // defined later on
-void updateHeightChannel(uint32_t deltaTime);
-void updateYawChannel(uint32_t deltaTime);
-void updateCalibrationChannelMain(uint32_t deltaTime);
-void updateCalibrationChannelTail(uint32_t deltaTime);
+void updateHeightChannel(state_t* state, uint32_t deltaTime);
+void updateYawChannel(state_t* state, uint32_t deltaTime);
+void updateCalibrationChannelMain(state_t* state, uint32_t deltaTime);
+void updateCalibrationChannelTail(state_t* state, uint32_t deltaTime);
+void updateLandingChannel(state_t* state, uint32_t deltaTime);
 
 // functions which get called to update each channel
 static control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
-    updateHeightChannel, updateYawChannel, updateCalibrationChannelMain, updateCalibrationChannelTail
+updateHeightChannel, updateYawChannel, updateCalibrationChannelMain, updateCalibrationChannelTail, updateLandingChannel
 };
 
 // final output parameters (so that we may display these in main)
@@ -96,6 +98,9 @@ void controlDisable(control_channel_t channel)
         break;
     case CONTROL_CALIBRATE_TAIL:
         break;
+    case LANDING_SEQUENCE:
+        shouldRampMain = false;
+        break;
     default:
         outputs[channel] = 0;
     }
@@ -125,7 +130,7 @@ int32_t controlGetPWMDuty(control_channel_t channel)
 }
 
 
-void controlUpdate(uint32_t deltaTime)
+void controlUpdate(state_t* state, uint32_t deltaTime)
 {
     // get height and velocity
     height = heightAsPercentage(PRECISION);
@@ -140,7 +145,7 @@ void controlUpdate(uint32_t deltaTime)
     int i = 0;
     for (; i < CONTROL_NUM_CHANNELS; i++) {
         if (enabled[i]) {
-            chanelUpdateFuncs[i](deltaTime);
+            chanelUpdateFuncs[i](state, deltaTime);
         }
     }
 
@@ -149,7 +154,7 @@ void controlUpdate(uint32_t deltaTime)
     if (!shouldRampMain) {
         mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffset / PRECISION +
             /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
-    } else if (mainDuty > DUTY_DECREMENT_PER_CYCLE * deltaTime) {
+    } else if (mainDuty >= DUTY_DECREMENT_PER_CYCLE * deltaTime) {
         mainDuty -= DUTY_DECREMENT_PER_CYCLE * deltaTime;
     }
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
@@ -176,7 +181,7 @@ static int32_t mainOffset = 33;  // temporary until calibration added
 
 static int32_t inte_h = 0;
 int32_t deri_h = 0, prop_h = 0;
-void updateHeightChannel(uint32_t deltaTime)
+void updateHeightChannel(state_t* state, uint32_t deltaTime)
 {
     int32_t kp = mainGains[KP];
     int32_t kd = mainGains[KD];
@@ -200,7 +205,7 @@ void updateHeightChannel(uint32_t deltaTime)
 
 static int32_t inte_y = 0;
 int32_t prop_y = 0, deri_y = 0;
-void updateYawChannel(uint32_t dt)
+void updateYawChannel(state_t* state, uint32_t dt)
 {
     int32_t kp = tailGains[KP];
     int32_t kd = tailGains[KD];
@@ -222,27 +227,28 @@ void updateYawChannel(uint32_t dt)
 }
 
 
-void updateCalibrationChannelMain(uint32_t deltaTime)
+void updateCalibrationChannelMain(state_t* state, uint32_t deltaTime)
 {
     outputs[CONTROL_CALIBRATE_MAIN] = mainOffset * PRECISION;
     controlDisable(CONTROL_CALIBRATE_MAIN);
 }
 
-void updateCalibrationChannelTail(uint32_t deltaTime)
+void updateCalibrationChannelTail(state_t* state, uint32_t deltaTime)
 {
     // calc mainTourqueConst here ...
     controlDisable(CONTROL_CALIBRATE_TAIL);
 }
 
-void setRampActive(bool state)
+void updateLandingChannel(state_t* state, uint32_t deltaTime)
 {
-    shouldRampMain = state;
+    int32_t yaw = yawGetDegrees(1);
+    int32_t height = heightAsPercentage(1);
+    land(state, deltaTime, yaw);
+    controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
+    controlSetTarget(state->targetYaw, CONTROL_YAW);
+    shouldRampMain = checkLandingStability(state, deltaTime, yaw, height);
 }
 
-bool getRampActive(void)
-{
-    return shouldRampMain;
-}
 
 void resetController(void) {
     prop_h = 0;

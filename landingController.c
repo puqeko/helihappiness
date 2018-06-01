@@ -9,7 +9,17 @@
 
 
 #include "landingController.h"
-#include "control.h"
+
+static bool shouldRampMain = false;
+void setRampActive(bool state)
+{
+    shouldRampMain = state;
+}
+
+bool getRampActive(void)
+{
+    return shouldRampMain;
+}
 
 // Ramp function for yaw: Finds nearest 360 degree target and moves to this position
 void rampYaw(state_t *state, int32_t yawDegrees)
@@ -33,7 +43,7 @@ bool isLandingYawStable(int32_t yawDegrees) {
     return ((abs(yawDegrees) % 360) <= 5 || (abs(yawDegrees) % 360) >= 355);
 }
 
-void checkLandingStability (state_t *state, uint32_t deltaTime, int32_t yawDegrees, int32_t heightPercentage)
+bool checkLandingStability (state_t *state, uint32_t deltaTime, int32_t yawDegrees, int32_t heightPercentage)
 {
     static uint32_t stabilityCounter;
     static uint32_t landingTime = 0;
@@ -46,14 +56,12 @@ void checkLandingStability (state_t *state, uint32_t deltaTime, int32_t yawDegre
         }
         landingTime++;
         if (landingTime >= LANDING_TIME_OUT / deltaTime) {
-            setRampActive(true);
+            return true;
         }
     } else {
         stabilityCounter = 0;
     }
-    if (stabilityCounter >= STABILITY_TIME_MAIN / deltaTime) {
-        setRampActive(true);
-    }
+    return stabilityCounter >= STABILITY_TIME_MAIN / deltaTime;
 }
 
 

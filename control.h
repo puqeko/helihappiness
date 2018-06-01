@@ -14,18 +14,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "pwmModule.h"
+#include "kernalMustardWithThePipeInTheDiningRoom.h"
 
 #define PRECISION 1000  // zeros represent how many dp of precision to get with integer math
 #define MIN_DUTY 5  // %
 #define MAX_DUTY 95  // %
 #define MS_TO_SEC 1000
 #define LANDING_DUTY (25 * PRECISION)
-#define LANDING_RATE 25
 #define DUTY_DECREMENT_PER_SECOND 7
 #define DUTY_DECREMENT_PER_CYCLE (DUTY_DECREMENT_PER_SECOND * PRECISION / MS_TO_SEC)
 
 typedef enum control_channel {
-    CONTROL_HEIGHT=0, CONTROL_YAW, CONTROL_CALIBRATE_MAIN, CONTROL_CALIBRATE_TAIL, CONTROL_NUM_CHANNELS
+    CONTROL_HEIGHT=0, CONTROL_YAW, CONTROL_CALIBRATE_MAIN, CONTROL_CALIBRATE_TAIL, LANDING_SEQUENCE, CONTROL_NUM_CHANNELS
 } control_channel_t;
 
 void controlInit(void);
@@ -42,7 +42,7 @@ void controlSetTarget(int32_t target, control_channel_t channel);
 
 int32_t controlGetPWMDuty(control_channel_t channel);
 
-void controlUpdate(uint32_t deltaTime);
+void controlUpdate(state_t* state, uint32_t deltaTime);
 
 void enableMotorRampSequence(bool state);
 

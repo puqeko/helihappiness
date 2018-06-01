@@ -95,7 +95,6 @@ void initalise()
 void heliMode(state_t* state, uint32_t deltaTime)
 {
     static bool shouldCalibrate = true;
-    int32_t yawDegrees = 0;
 
     switch (state->heliMode) {
 
@@ -145,19 +144,13 @@ void heliMode(state_t* state, uint32_t deltaTime)
         break;
 
     case LANDING:
-        yawDegrees = yawGetDegrees(1);
-        land(state, deltaTime, yawDegrees);
-        controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
-        controlSetTarget(state->targetYaw, CONTROL_YAW);
-
-        checkLandingStability(state, deltaTime, yawDegrees, heightAsPercentage(1));
-        if (controlGetPWMDuty(CONTROL_HEIGHT) == MIN_DUTY && getRampActive()) {
+        if (controlGetPWMDuty(CONTROL_HEIGHT) == MIN_DUTY && state->targetHeight == 0) {
             buttonsIgnore(SW1);
             controlMotorSet(false, MAIN_ROTOR);
             controlMotorSet(false, TAIL_ROTOR);
             controlDisable(CONTROL_YAW);
             controlDisable(CONTROL_HEIGHT);
-            setRampActive(false);
+            controlDisable(LANDING_SEQUENCE);
             state->heliMode = LANDED;
             state->targetHeight = 0;
             if (yawClipTo360Degrees()) {
@@ -181,6 +174,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
         }
         if (buttonsCheck(SW1) == RELEASED) {  // switch down
             state->heliMode = LANDING;
+            controlEnable(LANDING_SEQUENCE);
         }
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         controlSetTarget(state->targetYaw, CONTROL_YAW);
@@ -236,7 +230,7 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
 void controllerUpdate(state_t* state, uint32_t deltaTime)
 {
     heightUpdate();
-    controlUpdate(deltaTime);
+    controlUpdate(state, deltaTime);
 }
 
 
