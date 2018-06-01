@@ -15,7 +15,6 @@
 #include "landingController.h"
 
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {0};  // values to send to motor
-static int32_t targets[CONTROL_NUM_CHANNELS] = {0};  // target values to compare aganst
 static bool enabled[CONTROL_NUM_CHANNELS] = {0};
 
 typedef void (*control_channel_update_func_t)(state_t*, uint32_t);
@@ -113,12 +112,6 @@ bool controlIsEnabled(control_channel_t channel)
 }
 
 
-void controlSetTarget(int32_t target, control_channel_t channel)
-{
-    targets[channel] = target * PRECISION;
-}
-
-
 int32_t controlGetPWMDuty(control_channel_t channel)
 {
     switch (channel) {
@@ -175,50 +168,51 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
 
 
 
-static int32_t inte_h = 0;
-int32_t deri_h = 0, prop_h = 0;
+static int32_t prop_h = 0, inte_h = 0, deri_h = 0;
 void updateHeightChannel(state_t* state, uint32_t deltaTime)
 {
-    int32_t kp = mainGains[KP];
-    int32_t kd = mainGains[KD];
-    int32_t ki = mainGains[KI];
-    int32_t error = targets[CONTROL_HEIGHT] - height;
-    prop_h = kp * error / PRECISION;
-    // (kp * targets[CONTROL_HEIGHT] - kp * height)
+    // difference between the target and actual height value
+    int32_t error = state->targetHeight * PRECISION - height;
 
-//    if (abs(error) > 25000) {
-//        deri = 0;
-//    } else {
-        deri_h = kd * (0 - verticalVelocity) / PRECISION;
-//    }
+    // proportonal component = Kp * error
+    prop_h = mainGains[KP] * error / PRECISION;
 
-//    if (abs(error) < 1000) {
-        inte_h = (inte_h * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
-//    }
+    // derivitive component = Kd * d/dt(error) = Kd * (d/dt(target) - d/dt(verticalVelocity))
+    // since d/dt(target) can be assumed 0 where the target is stationary, we get the
+    // below simplification. Although the target is not always stationary, this is a good
+    // appoximation.
+    deri_h = mainGains[KD] * (0 - verticalVelocity) / PRECISION;
+
+    // cumulative component = Ki * sum(error) from t0 to t. Hence, we sum. However, a bound
+    // is put on the cumulative component to stop overflow.
+    if (abs(inte_h) < 1e8)
+            inte_h += mainGains[KI] * (int32_t)deltaTime * error / MS_TO_SEC / PRECISION;
 
     outputs[CONTROL_HEIGHT] = prop_h + deri_h + inte_h;
 }
 
-static int32_t inte_y = 0;
-int32_t prop_y = 0, deri_y = 0;
-void updateYawChannel(state_t* state, uint32_t dt)
+
+static int32_t prop_y = 0, inte_y = 0, deri_y = 0;
+void updateYawChannel(state_t* state, uint32_t deltaTime)
 {
-    int32_t kp = tailGains[KP];
-    int32_t kd = tailGains[KD];
-    int32_t ki = tailGains[KI];
+    // difference between the target and actual yaw value
     int32_t error = state->targetYaw * PRECISION - yaw;
-    prop_y = kp * error / PRECISION;
 
-//    if (abs(error) < 3000 || abs(error) > 45000) {
-//        deri = 0;
-//    } else {
-        deri_y = kd * (0 - angularVelocity) / PRECISION;
-//    }
+    // proportonal component = Kp * error
+    prop_y = tailGains[KP] * error / PRECISION;
 
-    if (abs(inte_y) < 1e8) {
-        inte_y += ki * (int32_t)dt * error / MS_TO_SEC / PRECISION;
-    }
+    // derivitive component = Kd * d/dt(error) = Kd * (d/dt(target) - d/dt(angularVelocity))
+    // since d/dt(target) can be assumed 0 where the target is stationary, we get the
+    // below simplification. Although the target is not always stationary, this is a good
+    // appoximation
+    deri_y = tailGains[KD] * (0 - angularVelocity) / PRECISION;
 
+    // cumulative component = Ki * sum(error) from t0 to t. Hence, we sum. However, a bound
+    // is put on the cumulative component to stop overflow.
+    if (abs(inte_y) < 1e8)
+        inte_y += tailGains[KI] * (int32_t)deltaTime * error / MS_TO_SEC / PRECISION;
+
+    // combine components for the overall result
     outputs[CONTROL_YAW] = prop_y + deri_y + inte_y;
 }
 
@@ -236,11 +230,7 @@ void updateCalibrationChannelTail(state_t* state, uint32_t deltaTime)
 
 void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 {
-//    int32_t yaw = yawGetDegrees(1);
-//    int32_t height = heightAsPercentage(1);
     land(state, deltaTime, yaw);
-    controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
-    controlSetTarget(state->targetYaw, CONTROL_YAW);
     if (checkLandingStability(state, deltaTime, yaw, height)) {
         controlDisable(CONTROL_DESCENDING);
     }

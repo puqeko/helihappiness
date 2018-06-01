@@ -124,8 +124,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
     case CALIBRATE_YAW:
         //Find the zero point for the yaw
         state->targetYaw += 1;
-        controlSetTarget(state->targetYaw, CONTROL_YAW);
-        controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         if (yawIsCalibrated()) {
             shouldCalibrate = false;
             state->heliMode = FLYING;
@@ -173,8 +171,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
             state->heliMode = DESCENDING;
             controlEnable(CONTROL_DESCENDING);
         }
-        controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
-        controlSetTarget(state->targetYaw, CONTROL_YAW);
         break;
     }
 }
