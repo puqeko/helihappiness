@@ -105,7 +105,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
                 state->heliMode = CALIBRATE_YAW;
                 yawCalibrate();
             } else {
-                state->heliMode = ALIGNING;
+                state->heliMode = FLYING;
             }
             controlMotorSet(true, MAIN_ROTOR);  // turn  on motors
             controlMotorSet(true, TAIL_ROTOR);
@@ -120,17 +120,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
         }
         break;
 
-    case ALIGNING:
-        // calibration is auto disabled when complete
-        if (!controlIsEnabled(CONTROL_CALIBRATE_MAIN) && !controlIsEnabled(CONTROL_CALIBRATE_TAIL)) {
-            // done aligning...
-            buttonsIgnore(SW1);
-            controlEnable(CONTROL_HEIGHT);
-            controlEnable(CONTROL_YAW);
-            state->heliMode = FLYING;
-        }
-        break;
-
     case CALIBRATE_YAW:
         //Find the zero point for the yaw
         state->targetYaw += 1;
@@ -138,19 +127,28 @@ void heliMode(state_t* state, uint32_t deltaTime)
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         if (yawIsCalibrated()) {
             shouldCalibrate = false;
-            state->heliMode = ALIGNING;
+            state->heliMode = FLYING;
             state->targetYaw = 0;
         }
         break;
 
-    case LANDING:
-        if (controlGetPWMDuty(CONTROL_HEIGHT) == MIN_DUTY && state->targetHeight == 0) {
+    case DESCENDING:
+        if (!controlIsEnabled(CONTROL_DESCENDING)) {
+            buttonsIgnore(SW1);
+            controlDisable(CONTROL_HEIGHT);
+            controlDisable(CONTROL_CALIBRATE_MAIN);
+            controlEnable(CONTROL_POWER_DOWN);
+            state->heliMode = POWER_DOWN;
+        }
+        break;
+
+    case POWER_DOWN:
+        if (controlGetPWMDuty(CONTROL_POWER_DOWN) <= MIN_DUTY) {
             buttonsIgnore(SW1);
             controlMotorSet(false, MAIN_ROTOR);
             controlMotorSet(false, TAIL_ROTOR);
             controlDisable(CONTROL_YAW);
-            controlDisable(CONTROL_HEIGHT);
-            controlDisable(LANDING_SEQUENCE);
+            controlDisable(CONTROL_POWER_DOWN);
             state->heliMode = LANDED;
             state->targetHeight = 0;
             if (yawClipTo360Degrees()) {
@@ -173,8 +171,8 @@ void heliMode(state_t* state, uint32_t deltaTime)
             state->targetYaw += TAIL_STEP;
         }
         if (buttonsCheck(SW1) == RELEASED) {  // switch down
-            state->heliMode = LANDING;
-            controlEnable(LANDING_SEQUENCE);
+            state->heliMode = DESCENDING;
+            controlEnable(CONTROL_DESCENDING);
         }
         controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         controlSetTarget(state->targetYaw, CONTROL_YAW);
@@ -188,13 +186,13 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
 {
     static int uartCount = 0;
     static const char* heliStateWordMap[] = {
-       "Landed", "Landing", "Aligning", "Flying", "Calibrate Yaw"
+       "Landed", "Descending", "Power Down", "Flying", "Calibrate Yaw"
     };
 
     // Take measurements
     uint32_t percentageHeight = heightAsPercentage(1);  // precision = 1
     uint32_t degreesYaw = yawGetDegrees(1);  // precision = 1
-    uint32_t mainDuty = controlGetPWMDuty(CONTROL_HEIGHT);
+    uint32_t mainDuty = controlGetPWMDuty(CONTROL_POWER_DOWN); //CONTROL_HEIGHT
     uint32_t tailDuty = controlGetPWMDuty(CONTROL_YAW);
 
     // Update OLED display

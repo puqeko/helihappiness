@@ -18,8 +18,6 @@ static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
 static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
 static bool enabled[CONTROL_NUM_CHANNELS] = {};
 
-static bool shouldRampMain = false;
-
 typedef void (*control_channel_update_func_t)(state_t*, uint32_t);
 
 // defined later on
@@ -27,11 +25,12 @@ void updateHeightChannel(state_t* state, uint32_t deltaTime);
 void updateYawChannel(state_t* state, uint32_t deltaTime);
 void updateCalibrationChannelMain(state_t* state, uint32_t deltaTime);
 void updateCalibrationChannelTail(state_t* state, uint32_t deltaTime);
-void updateLandingChannel(state_t* state, uint32_t deltaTime);
+void updateDescendingChannel(state_t* state, uint32_t deltaTime);
+void updatePowerDownChannel(state_t* state, uint32_t deltaTime);
 
 // functions which get called to update each channel
 static control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
-updateHeightChannel, updateYawChannel, updateCalibrationChannelMain, updateCalibrationChannelTail, updateLandingChannel
+updateHeightChannel, updateYawChannel, updateCalibrationChannelMain, updateCalibrationChannelTail, updateDescendingChannel, updatePowerDownChannel
 };
 
 // final output parameters (so that we may display these in main)
@@ -45,6 +44,11 @@ static int32_t yaw, previousYaw = 0, angularVelocity = 0;
 static int32_t gravOffset = 200;
 // ratio of main rotor speed to tail rotor speed
 static int32_t mainTorqueConst = 800;
+
+// Eventually change this to work on generic heli
+static int32_t mainGains[] = {1500, 600, 400};
+static int32_t tailGains[] = {1200, 800, 500};
+static int32_t mainOffset = 33;  // temporary until calibration added
 
 enum gains_e {KP=0, KD, KI};
 #define NUM_GAINS 3
@@ -80,6 +84,9 @@ void controlEnable(control_channel_t channel)
     // handle inital conditions
     switch(channel) {
     // add here ...
+    case CONTROL_POWER_DOWN:
+        outputs[CONTROL_POWER_DOWN] = mainDuty;
+        break;
     default:
         outputs[channel] = 0;
         targets[channel] = 0;
@@ -94,12 +101,7 @@ void controlDisable(control_channel_t channel)
 
     // handle ending conditions
     switch(channel) {
-    case CONTROL_CALIBRATE_MAIN:
-        break;
     case CONTROL_CALIBRATE_TAIL:
-        break;
-    case LANDING_SEQUENCE:
-        shouldRampMain = false;
         break;
     default:
         outputs[channel] = 0;
@@ -121,12 +123,16 @@ void controlSetTarget(int32_t target, control_channel_t channel)
 
 int32_t controlGetPWMDuty(control_channel_t channel)
 {
-    if (channel == CONTROL_HEIGHT) {
+    switch (channel) {
+    case CONTROL_HEIGHT:
         return enabled[channel] ? (mainDuty / PRECISION) : 0;
-    } else if (channel == CONTROL_YAW) {
+    case CONTROL_YAW:
         return enabled[channel] ? (tailDuty / PRECISION) : 0;
+    case CONTROL_POWER_DOWN:
+        return mainDuty / PRECISION;
+    default:
+        return -1;  // error
     }
-    return -1;  // error
 }
 
 
@@ -151,12 +157,7 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
 
 
     // main rotor equation
-    if (!shouldRampMain) {
-        mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + height * gravOffset / PRECISION +
-            /*angularVelocity +*/ outputs[CONTROL_HEIGHT];  // ang vel must be radians;
-    } else if (mainDuty >= DUTY_DECREMENT_PER_CYCLE * deltaTime) {
-        mainDuty -= DUTY_DECREMENT_PER_CYCLE * deltaTime;
-    }
+    mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + outputs[CONTROL_HEIGHT] + outputs[CONTROL_POWER_DOWN];  // ang vel must be radians;
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
@@ -174,10 +175,7 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
 /// Channel update functions
 ///
 
-// Eventually change this to work on generic heli
-static int32_t mainGains[] = {1500, 600, 400};
-static int32_t tailGains[] = {1200, 800, 500};
-static int32_t mainOffset = 33;  // temporary until calibration added
+
 
 static int32_t inte_h = 0;
 int32_t deri_h = 0, prop_h = 0;
@@ -229,8 +227,7 @@ void updateYawChannel(state_t* state, uint32_t dt)
 
 void updateCalibrationChannelMain(state_t* state, uint32_t deltaTime)
 {
-    outputs[CONTROL_CALIBRATE_MAIN] = mainOffset * PRECISION;
-    controlDisable(CONTROL_CALIBRATE_MAIN);
+    outputs[CONTROL_CALIBRATE_MAIN] = mainOffset * PRECISION + height * gravOffset / PRECISION;
 }
 
 void updateCalibrationChannelTail(state_t* state, uint32_t deltaTime)
@@ -239,14 +236,22 @@ void updateCalibrationChannelTail(state_t* state, uint32_t deltaTime)
     controlDisable(CONTROL_CALIBRATE_TAIL);
 }
 
-void updateLandingChannel(state_t* state, uint32_t deltaTime)
+void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 {
-    int32_t yaw = yawGetDegrees(1);
-    int32_t height = heightAsPercentage(1);
+//    int32_t yaw = yawGetDegrees(1);
+//    int32_t height = heightAsPercentage(1);
     land(state, deltaTime, yaw);
     controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
     controlSetTarget(state->targetYaw, CONTROL_YAW);
-    shouldRampMain = checkLandingStability(state, deltaTime, yaw, height);
+    if (checkLandingStability(state, deltaTime, yaw, height)) {
+        controlDisable(CONTROL_DESCENDING);
+    }
+}
+
+void updatePowerDownChannel(state_t* state, uint32_t deltaTime) {
+    if (outputs[CONTROL_POWER_DOWN] >= DUTY_DECREMENT_PER_CYCLE * deltaTime) {
+        outputs[CONTROL_POWER_DOWN] -= DUTY_DECREMENT_PER_CYCLE * deltaTime;
+    }
 }
 
 

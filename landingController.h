@@ -14,9 +14,8 @@
 #include "kernalMustardWithThePipeInTheDiningRoom.h"
 
 #define LANDING_RATE 25 // % per second
-#define LANDING_TIME_OUT 1000 // 1000 ms
+#define LANDING_TIME_OUT 7500 // 7.5 s
 #define STABILITY_TIME_MAIN 500 // 500 ms
-#define STABILITY_TIME_TAIL 2000 // 2000 ms
 #define MS_TO_SEC 1000
 
 void land(state_t *state, uint32_t deltaTime, int32_t yawDegrees);

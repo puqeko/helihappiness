@@ -9,6 +9,7 @@
 
 
 #include "landingController.h"
+#include "control.h"
 
 static bool shouldRampMain = false;
 void setRampActive(bool state)
@@ -25,13 +26,13 @@ bool getRampActive(void)
 void rampYaw(state_t *state, int32_t yawDegrees)
 {
     if (yawDegrees > 0 && abs(state->targetYaw) % 360 != 0) { // Case for +ve yaw
-        if (abs(yawDegrees) % 360 <= 180) { // Evaluates position relative to target to find nearest
+        if (abs(yawDegrees) % (360 * PRECISION) <= (180 * PRECISION)) { // Evaluates position relative to target to find nearest
             state->targetYaw -= 1;
         } else {
             state->targetYaw += 1;
         }
     } else if (yawDegrees < 0 && abs(state->targetYaw) % 360 != 0) { // Case for -ve yaw
-        if (abs(yawDegrees) % 360 <= 180) {
+        if (abs(yawDegrees) % (360 * PRECISION) <= (180 * PRECISION)) {
             state->targetYaw += 1;
         } else {
             state->targetYaw -= 1;
@@ -40,7 +41,8 @@ void rampYaw(state_t *state, int32_t yawDegrees)
 }
 
 bool isLandingYawStable(int32_t yawDegrees) {
-    return ((abs(yawDegrees) % 360) <= 5 || (abs(yawDegrees) % 360) >= 355);
+    return ((abs(yawDegrees) % (360 * PRECISION)) <= (2 * PRECISION) ||
+            (abs(yawDegrees) % (360 * PRECISION)) >= (358 * PRECISION));
 }
 
 bool checkLandingStability (state_t *state, uint32_t deltaTime, int32_t yawDegrees, int32_t heightPercentage)
@@ -48,7 +50,7 @@ bool checkLandingStability (state_t *state, uint32_t deltaTime, int32_t yawDegre
     static uint32_t stabilityCounter;
     static uint32_t landingTime = 0;
 
-    if (heightPercentage <= 1 && state->targetHeight == 0) {
+    if (heightPercentage <= PRECISION && state->targetHeight == 0) {
         if (isLandingYawStable(yawDegrees)) {
             stabilityCounter++;
         } else {
