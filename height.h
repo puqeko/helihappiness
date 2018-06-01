@@ -1,15 +1,17 @@
-#ifndef HEIGHT_H_
-#define HEIGHT_H_
-
-// *******************************************************
+// ************************************************************
 // height.h
-//
-// Generates and uses averaging function to smooth data stream from ADCs
-// P.J. Bones UCECE, modified by Ryan H and Thomas M
-// Last modified:  17.04.2017
 // Helicopter project
 // Group: A03 Group 10
-// *******************************************************
+// Created by P.J. Bones UCECE
+// Last edited: 18.04.2017
+//
+// Generates and uses averaging function to smooth data stream from ADCs
+// Warning: Systick timer is used, so don't use it for other stuff
+// P.J. Bones UCECE, modified by Ryan Hall
+// ************************************************************
+
+#ifndef HEIGHT_H_
+#define HEIGHT_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -22,23 +24,32 @@
 
 // *******************************************************
 #define ADC_SAMPLE_RATE 160  // Hz
-#define CONV_SIZE 20
+#define CONV_SIZE 20  // length of convolution array
 
-// convolution type
+
+// convolution type used for avera
 typedef enum height_conv_t {
     CONV_UNIFORM
 } height_conv;
 
 
+// setup the system tick timer to run adc
 void heightInit(height_conv convType);
 
+
+// reset the height with which the percentage is calculated in reference to
 void heightCalibrate(void);
 
+
+// return the raw adc height value after averaging
 int32_t heightGetRaw(void);
 
-// Returns a percentage form 0 to 100 scaled by precision
+
+// returns a percentage height from 0 to 100 scaled by precision
 int32_t heightAsPercentage(int32_t precision);
 
+
+// recalculate the averaged height
 void heightUpdate(void);
 
 

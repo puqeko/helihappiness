@@ -83,7 +83,7 @@ void initalise()
     displayInit();
     yawInit();
     heightInit(CONV_UNIFORM);
-    initialiseUSB_UART();
+    uartInit();
     IntMasterEnable ();  // Enable interrupts to the processor.
     timererWait(1);
 
@@ -204,19 +204,19 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
 
     switch (uartCount) {
     case UPDATE_COUNT - 5:
-        UARTPrintLineWithFormat("\nALT %d [%d] %%\n", state->targetHeight, percentageHeight);
+        uartPrintLineWithFormat("\nALT %d [%d] %%\n", state->targetHeight, percentageHeight);
         break;
     case UPDATE_COUNT - 4:
-        UARTPrintLineWithFormat("YAW %d [%d] deg\n", state->targetYaw, degreesYaw);
+        uartPrintLineWithFormat("YAW %d [%d] deg\n", state->targetYaw, degreesYaw);
         break;
     case UPDATE_COUNT - 3:
-        UARTPrintLineWithFormat("MAIN %d %%, TAIL %d %%\n", mainDuty, tailDuty);
+        uartPrintLineWithFormat("MAIN %d %%, TAIL %d %%\n", mainDuty, tailDuty);
         break;
     case UPDATE_COUNT - 2:
-        UARTPrintLineWithFormat("MODE %s\n", heliStateWordMap[state->heliMode]);
+        uartPrintLineWithFormat("MODE %s\n", heliStateWordMap[state->heliMode]);
         break;
     case UPDATE_COUNT - 1:
-        UARTPrintLineWithFormat("%s", "----------------\n");
+        uartPrintLineWithFormat("%s", "----------------\n");
         break;
     case UPDATE_COUNT:
         uartCount = 0;

@@ -1,50 +1,47 @@
 //************************************************************************
 // yaw.c
-//
 // Helicopter project
-//
-// Group:       A03 Group 10
-// Created:     16/4/18
-// Last Edited: 10/5/18
+// Group: A03 Group 10
+// Last Edited: 31-5-18
 //
 // Purpose: Handles the yaw of the helicopter
 //************************************************************************
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-
-// TivaWare library includes
-#include "inc/hw_memmap.h"        // defines GPIO_PORTF_BASE
-#include "inc/tm4c123gh6pm.h"     // defines interrupt vectors and register addresses
-#include "driverlib/gpio.h"       // defines for GPIO peripheral
-#include "driverlib/sysctl.h"     // system control functions
-#include "driverlib/systick.h"
-#include "driverlib/interrupt.h"
-
-#include "quadratureEncoder.h"
-
 #include "yaw.h"
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "inc/hw_memmap.h"
+#include "driverlib/gpio.h"
+#include "driverlib/sysctl.h"
+#include "quadratureEncoder.h"
+
+// Define constants for yaw reference GPIO pin PC4
 #define GPIO_REF_PERIPH         SYSCTL_PERIPH_GPIOC
 #define REF_PORT_BASE           GPIO_PORTC_BASE
 #define REF_PIN                 GPIO_PIN_4
 
-#define COUNTS_PER_ROTATION (112*4) //112 slots and x4 because quadrature encoding used
+#define COUNTS_PER_ROTATION (112*4) // 112 slots and x4 because quadrature encoding used
+
 
 static volatile bool isCalibrated;
 
+
+// Interrupt handler for the yaw reference
+// Resets the yaw to zero when reference point is reached
 void yawRefIntHandler(void)
 {
     isCalibrated = true;
     quadEncoderResetCount();
+
+    // Reset and disable the interrupt
     GPIOIntDisable(REF_PORT_BASE, REF_PIN);
     GPIOIntClear(REF_PORT_BASE, REF_PIN);
 }
 
 
-
+// Initiate Calibration
+// Enables yaw calibration interrupt
 void yawCalibrate(void)
 {
     isCalibrated = false;
@@ -52,44 +49,47 @@ void yawCalibrate(void)
 }
 
 
-
+// Return true if yaw has been calibrated against the reference position
 bool yawIsCalibrated(void)
 {
     return isCalibrated;
 }
 
 
-//************************************************************************
-//
-//************************************************************************
+// Initialize quadrature encoder and configure yaw reference GPIO pin and interrupt
 void yawInit(void)
 {
-    //initialise quadrature encoder module
+    // Initialize quadrature encoder module
     quadEncoderInit();
 
-    //Enable GPIO peripheral on used ports
+    // Enable GPIO peripheral on used port
     SysCtlPeripheralEnable(GPIO_REF_PERIPH);
 
-    //configure reference input pin
+    // Configure yaw reference input pin (active LOW)
     GPIOPadConfigSet(REF_PORT_BASE, REF_PIN, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
     GPIODirModeSet(REF_PORT_BASE, REF_PIN, GPIO_DIR_MODE_IN);
 
-    //initialise reference interrupt but do not enable
+    // Initialize yaw reference interrupt but do not enable
     GPIOIntRegister(REF_PORT_BASE, yawRefIntHandler);
     GPIOIntTypeSet(REF_PORT_BASE, REF_PIN, GPIO_FALLING_EDGE);
 }
 
-//************************************************************************
+
+// Return the current yaw in degrees
 //
-//************************************************************************
+// Parameters:
+//   int32_t precision    scale factor for retaining accuracy with integers
 int32_t yawGetDegrees(int32_t precision)
 {
-    // no update required as quadEncoderGetCount does not do any heavy calculations.
+    // No update required as quadEncoderGetCount does not do any heavy calculations.
     return quadEncoderGetCount() * (precision*360)/COUNTS_PER_ROTATION;
 }
 
+
+// Remove excess factors of 360 degrees from yaw
+// Returns true if the adjusted yaw value is less than 180 degrees
 bool yawClipTo360Degrees(void)
 {
-    quadEncoderSetCount(quadEncoderGetCount() % COUNTS_PER_ROTATION);// * (quadEncoderGetCount() / abs(quadEncoderGetCount())));
+    quadEncoderSetCount(quadEncoderGetCount() % COUNTS_PER_ROTATION);
     return abs(quadEncoderGetCount()) < (COUNTS_PER_ROTATION / 2);
 }
