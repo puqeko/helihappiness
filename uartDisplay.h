@@ -1,15 +1,15 @@
-#ifndef UARTDISPLAY_H_
-#define UARTDISPLAY_H_
-
-// *******************************************************
+// ************************************************************
 // uartDisplay.h
-//
-// Generates serial data to print for debugging
-// P.J. Bones UCECE, modified by Ryan H and Thomas M
-// Last modified:  21.04.2017
 // Helicopter project
 // Group: A03 Group 10
-// *******************************************************
+// Based on code from P.J. Bones 21.04.2018
+// Last edited: 30-05-2018
+//
+// Purpose: Write string output to USB using UART.
+// ************************************************************
+
+#ifndef UARTDISPLAY_H_
+#define UARTDISPLAY_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -20,13 +20,21 @@
 #include "driverlib/systick.h"
 #include "driverlib/interrupt.h"
 
-#define UART_LINE_LENGTH 25
+#define UART_LINE_LENGTH 25  // where should a line be truncated
 
-// *******************************************************
-void initialiseUSB_UART (void);
+// Configure the UART with 8 bits, 1 stop bit, no parity
+void uartInit (void);
 
-void UARTSend (char *pucBuffer);
 
-void UARTPrintLineWithFormat(const char* format, ...);
+// Transmit a string via UART0
+// The FIFO is 16 bytes so only send a 16 byte string for optimal performance
+void uartSend (char *pucBuffer);
+
+
+// Print a single formated line to the terminal and truncate if too long.
+// Takes format with arguments (like fprintf) but adds a newline to the end
+// and truncates to UART_LINE_LENGTH. An ellipsis is added to the end if the
+// line is too long. A format string is always required.
+void uartPrintLineWithFormat(const char* format, ...);
 
 #endif /* UARTDISPLAY_H_ */
