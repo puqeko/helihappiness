@@ -274,10 +274,10 @@ void updateYawChannel(state_t* state, uint32_t deltaTime)
 // once either: stability is reached, or the stability checker times out.
 void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 {
-    if (checkLandingStability(state, deltaTime, yaw, height)) {
+    if (landingControllerIsStable(state, deltaTime, yaw, height)) {
         controlDisable(state, CONTROL_DESCENDING);
     } else {
-        land(state, deltaTime, yaw);
+        landingControllerUpdate(state, deltaTime, yaw);
     }
 }
 

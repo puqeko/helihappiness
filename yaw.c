@@ -93,7 +93,7 @@ int32_t yawGetDegrees(int32_t precision)
 void yawClipTo360Degrees(void)
 {
     // Start critical section
-    boo prevIntState = IntMasterDisable();
+    bool prevIntState = IntMasterDisable();
 
     // Calculate the new encoder value and assign it.
     // If an interrupt to update the encoder count occurs during this time, it will be
