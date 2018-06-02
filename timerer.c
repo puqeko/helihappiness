@@ -29,6 +29,8 @@ void timererInit(void)
     clockRate = SysCtlClockGet();
     ticksPerMs = clockRate / 1000;  // 1000 ms = 1 s
 
+    SysCtlPeripheralReset(TIMERER_PERIPH);  // reset for good measure
+
     // timer counts down by default
     // config to reset to max value
     SysCtlPeripheralEnable(TIMERER_PERIPH);

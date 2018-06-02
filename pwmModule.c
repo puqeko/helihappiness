@@ -65,6 +65,10 @@
 // M0PWM7 (J4-05, PC5) is used for the main rotor motor
 void pwmInit(void)
 {
+    // reset PWM generators, the GPIO pins are reset elsewhere
+    SysCtlPeripheralReset(PWM_MAIN_PERIPH_PWM);
+    SysCtlPeripheralReset(PWM_TAIL_PERIPH_PWM);
+
     SysCtlPeripheralEnable(PWM_MAIN_PERIPH_PWM);
     SysCtlPeripheralEnable(PWM_TAIL_PERIPH_PWM);
     SysCtlPeripheralEnable(PWM_MAIN_PERIPH_GPIO);

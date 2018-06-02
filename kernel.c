@@ -1,14 +1,23 @@
-/*
- * kernalMustardWithThePipeTheDiningRoom.c
- *
- *  Created on: 28/05/2018
- *      Author: Thomas
- */
+// ************************************************************
+// kernel.c
+// Helicopter project
+// Group: A03 Group 10
+// Last edited: 02-06-18
+//
+// Purpose: A paced round robin scheduler for running tasks as specified frequencies.
+// Different frequencies are achieved by dividing the base frequency (using counters).
+// ************************************************************
 
-#include "kernalMustardWithThePipeInTheDiningRoom.h"
+
+#include "kernel.h"
 #include "timerer.h"
 
 
+// A simple round robin scheduler.
+// Uses an infinite loop to run the tasks at specified frequencies relative to baseFreq. Make
+// sure baseFreq is greater than or equal to all task frequencies otherwise the tasks will
+// not be run at the correct rate. A pointer to a state object stores entries applicable to
+// many tasks.
 void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq)
 {
     // initalise the value to count up to for each task so that
@@ -45,7 +54,7 @@ void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq)
                 tasks[i].count = 0;
 
                 // run the task
-                tasks[i].handler(sharedState, deltaTime);
+                tasks[i].handler(sharedState, deltaTime * tasks[i].triggerAt);
             }
               i++;
         }

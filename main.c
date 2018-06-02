@@ -4,7 +4,8 @@
 // Group: A03 Group 10
 // Last edited: 21-04-2018
 //
-// Purpose: This program may destroy helicopters.
+// Purpose: Apply control to a helicopter rig which allows the user to set the height
+// and yaw, and switch between a landed and flying mode.
 // ************************************************************
 
 #include <control.h>
@@ -33,21 +34,16 @@
 #include "display.h"
 #include "uartDisplay.h"
 #include "control.h"
+#include "kernel.h"
 #include "quadratureEncoder.h"
 #include "landingController.h"
-#include "kernalMustardWithThePipeInTheDiningRoom.h"
 
-
-#define UART_DISPLAY_FREQUENCY 4  // hz
-#define LANDING_UPDATE_FREQUENCY 10 // hz
-
-#define HEIGHT_LANDING_COUNT (LOOP_FREQUENCY / LANDING_UPDATE_FREQUENCY)
+#define TASK_BASE_FREQ 100  // Hz
+#define UART_DISPLAY_FREQUENCY 4  // Hz
+#define UPDATE_DISPLAY_COUNT (TASK_BASE_FREQ / UART_DISPLAY_FREQUENCY)
 
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
-
-#define NUM_TASKS 5
-#define TASK_BASE_FREQ 100
 
 
 void softResetIntHandler(void)
@@ -69,15 +65,23 @@ void initSoftReset(void)
     GPIOIntEnable(GPIO_PORTA_BASE, GPIO_PIN_6);
 }
 
+
 void initalise()
 {
-    // TODO: reset peripherals
-    // SysCtlPeripheralReset(SYSCTL_PERIPH_PWM);
+    // Reset ports for good measure
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOA);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOB);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOC);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOD);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOE);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOF);
+
+    // Other peripherals are reset inside each module
 
     // Set system clock rate to 20 MHz.
     SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_10);
     timererInit();
-    timererWait(1);  // Allow time for the oscillator to settle down (for 1.
+    timererWait(1);  // Allow time for the oscillator to settle down (for 1 millisecond).
 
     buttonsInit();
     initSoftReset();
@@ -85,131 +89,153 @@ void initalise()
     yawInit();
     heightInit(CONV_UNIFORM);
     uartInit();
-    IntMasterEnable ();  // Enable interrupts to the processor.
-    timererWait(1);
 
+    // Enable interrupts to the processor.
+    IntMasterEnable ();
+    timererWait(1);
     heightCalibrate();
     controlInit();
-
 }
 
-void heliMode(state_t* state, uint32_t deltaTime)
+
+void stateTransitionUpdate(state_t* state, uint32_t deltaTime)
 {
-    static bool shouldCalibrate = true;
+    static bool shouldCalibrate = true;  // only calibrate the yaw once
 
     switch (state->heliMode) {
+    case STATE_LANDED:
+        heightCalibrate();  // always re-calibrate the height
 
-    case LANDED:
-        heightCalibrate();
+        // wait for switch to trigger take off
         if (buttonsCheck(SW1) == PUSHED) {
+            // start calibration and enable PID control on height and yaw
+            controlEnable(state, CONTROL_HEIGHT);
+            controlEnable(state, CONTROL_YAW);
+            state->targetHeight = 0;
+
+            // set integral controllers back to zero to prevent windup
+            controlReset();
+
             if (shouldCalibrate) {
-                state->heliMode = CALIBRATE_YAW;
                 yawCalibrate();
+                state->heliMode = STATE_CALIBRATE_YAW;
             } else {
-                state->heliMode = FLYING;
+                state->heliMode = STATE_FLYING;
             }
-            controlMotorSet(true, MAIN_ROTOR);  // turn  on motors
-            controlMotorSet(true, TAIL_ROTOR);
-
-            // start calibration
-            controlEnable(CONTROL_HEIGHT);
-            controlEnable(CONTROL_YAW);
-            state->targetHeight = 0;
-            resetController();
         }
         break;
 
-    case CALIBRATE_YAW:
-        //Find the zero point for the yaw
+    case STATE_CALIBRATE_YAW:
+        // seek the zero point for the yaw
         state->targetYaw += 1;
+
         if (yawIsCalibrated()) {
+            // when the zero point is found, move to the flying mode
             shouldCalibrate = false;
-            state->heliMode = FLYING;
             state->targetYaw = 0;
+            state->heliMode = STATE_FLYING;
         }
         break;
 
-    case DESCENDING:
-        if (!controlIsEnabled(CONTROL_DESCENDING)) {
-            buttonsIgnore(SW1);
-            controlDisable(CONTROL_HEIGHT);
-            controlEnable(CONTROL_POWER_DOWN);
-            state->heliMode = POWER_DOWN;
-        }
-        break;
-
-    case POWER_DOWN:
-        if (controlGetPWMDuty(CONTROL_POWER_DOWN) <= MIN_DUTY) {
-            buttonsIgnore(SW1);
-            controlMotorSet(false, MAIN_ROTOR);
-            controlMotorSet(false, TAIL_ROTOR);
-            controlDisable(CONTROL_YAW);
-            controlDisable(CONTROL_POWER_DOWN);
-            yawClipTo360Degrees(); // finds the remainder of the measured yaw with 360.
-            state->heliMode = LANDED;
-            state->targetHeight = 0;
-            state->targetYaw = 0;
-        }
-        break;
-
-    case FLYING:
-        if (buttonsCheck(UP) == PUSHED && state->targetHeight < MAX_DUTY)
+    case STATE_FLYING:
+        // change height with buttons
+        if (buttonsCheck(UP) == PUSHED && state->targetHeight < CONTROL_MAX_DUTY)
             state->targetHeight += MAIN_STEP;
-        if (buttonsCheck(DOWN) == PUSHED && state->targetHeight > MIN_DUTY)
+        if (buttonsCheck(DOWN) == PUSHED && state->targetHeight > CONTROL_MIN_DUTY)
             state->targetHeight -= MAIN_STEP;
 
+        // change yaw with buttons
         if (buttonsCheck(LEFT) == PUSHED)
             state->targetYaw -= TAIL_STEP;
         if (buttonsCheck(RIGHT) == PUSHED)
             state->targetYaw += TAIL_STEP;
 
+        // switch one to go into the landing sequence
         if (buttonsCheck(SW1) == RELEASED) {  // switch down
-            state->heliMode = DESCENDING;
-            controlEnable(CONTROL_DESCENDING);
+            controlEnable(state, CONTROL_DESCENDING);
+            state->heliMode = STATE_DESCENDING;
+        }
+        break;
+
+    case STATE_DESCENDING:
+        if (!controlIsEnabled(CONTROL_DESCENDING)) {
+            // when the descending controller auto-disables, move to the power down sequence
+            // and disable PID control on the height
+            controlDisable(state, CONTROL_HEIGHT);
+            controlEnable(state, CONTROL_POWER_DOWN);
+
+            // prevent a toggle of the switch causing the heli to take off again once landed
+            buttonsIgnore(SW1);
+            state->heliMode = STATE_POWER_DOWN;
+        }
+        break;
+
+    case STATE_POWER_DOWN:
+        if (!controlIsEnabled(CONTROL_POWER_DOWN)) {
+            // when the power down controller auto-disables, move to the landed sequence
+            controlDisable(state, CONTROL_YAW);
+            state->targetHeight = 0;
+            state->targetYaw = 0;
+
+            // round the yaw measurement so that we always return to 0 degrees by the shortest
+            // path. i.e. don't unwind if we have spun multiple times.
+            yawClipTo360Degrees();
+
+            // prevent a toggle of the switch causing the heli to take off again once landed
+            buttonsIgnore(SW1);
+            state->heliMode = STATE_LANDED;
         }
         break;
     }
 }
 
-// TODO: remove
-#define UPDATE_COUNT (TASK_BASE_FREQ / UART_DISPLAY_FREQUENCY)
+
+//
+// Tasks to be run by the scheduler
+//
+
+
 void displayUpdate(state_t* state, uint32_t deltaTime)
 {
     static int uartCount = 0;
-    static const char* heliStateWordMap[] = {
-       "Landed", "Descending", "Power Down", "Flying", "Calibrate Yaw"
+    // Remember to update these strings when changing the states above
+    // These are the string values to be displayed when in each state
+    static const char* heliModeDisplayStringMap[] = {
+       "Landed",
+       "Calibrate Yaw",
+       "Flying",
+       "Descending",
+       "Power Down"
     };
 
     // Take measurements
     uint32_t percentageHeight = heightAsPercentage(1);  // precision = 1
     uint32_t degreesYaw = yawGetDegrees(1);  // precision = 1
-    uint32_t mainDuty = controlGetPWMDuty(CONTROL_POWER_DOWN); //CONTROL_HEIGHT
-    uint32_t tailDuty = controlGetPWMDuty(CONTROL_YAW);
 
     // Update OLED display
     displayPrintLineWithFormat("Height = %4d%%", 1, percentageHeight);  // line 1
-    displayPrintLineWithFormat("M = %2d, T = %2d", 2, mainDuty, tailDuty);  // line 2
+    displayPrintLineWithFormat("M = %2d, T = %2d", 2, state->outputMainDuty, state->outputTailDuty);  // line 2
 
     // Update UART display
     // Use a collaborative technique to update the display across updates
 
     switch (uartCount) {
-    case UPDATE_COUNT - 5:
+    case UPDATE_DISPLAY_COUNT - 5:
         uartPrintLineWithFormat("\nALT %d [%d] %%\n", state->targetHeight, percentageHeight);
         break;
-    case UPDATE_COUNT - 4:
+    case UPDATE_DISPLAY_COUNT - 4:
         uartPrintLineWithFormat("YAW %d [%d] deg\n", state->targetYaw, degreesYaw);
         break;
-    case UPDATE_COUNT - 3:
-        uartPrintLineWithFormat("MAIN %d %%, TAIL %d %%\n", mainDuty, tailDuty);
+    case UPDATE_DISPLAY_COUNT - 3:
+        uartPrintLineWithFormat("MAIN %d %%, TAIL %d %%\n", state->outputMainDuty, state->outputTailDuty);
         break;
-    case UPDATE_COUNT - 2:
-        uartPrintLineWithFormat("MODE %s\n", heliStateWordMap[state->heliMode]);
+    case UPDATE_DISPLAY_COUNT - 2:
+        uartPrintLineWithFormat("MODE %s\n", heliModeDisplayStringMap[state->heliMode]);
         break;
-    case UPDATE_COUNT - 1:
+    case UPDATE_DISPLAY_COUNT - 1:
         uartPrintLineWithFormat("%s", "----------------\n");
         break;
-    case UPDATE_COUNT:
+    case UPDATE_DISPLAY_COUNT:
         uartCount = 0;
     }
     uartCount++;
@@ -226,7 +252,7 @@ void controllerUpdate(state_t* state, uint32_t deltaTime)
 void stateUpdate(state_t* state , uint32_t deltaTime)
 {
     buttonsUpdate();
-    heliMode(state, deltaTime);
+    stateTransitionUpdate(state, deltaTime);
 }
 
 
@@ -234,7 +260,8 @@ int main(void)
 {
     initalise();
 
-    timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // make sure ADC buffer has a chance to fill up
+    // make sure ADC buffer has a chance to fill up for the height measurement
+    timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);
 
     // the tasks which need to run at what frequency
     // the frequency cannot be larger than the TASK_BASE_FREQ
@@ -242,14 +269,16 @@ int main(void)
         {controllerUpdate, 100},
         {displayUpdate, 100},
         {stateUpdate, 100},
-        {0}  // terminator
+        {0}  // terminator (read until this value when processing the array)
     };
 
     // any data which many tasks might need to know about
     state_t sharedState = {
-        .heliMode = LANDED,
+        .heliMode = STATE_LANDED,
         .targetHeight = 0,
-        .targetYaw = 0
+        .targetYaw = 0,
+        .outputMainDuty = 0,
+        .outputTailDuty = 0
     };
 
     runTasks(tasks, &sharedState, TASK_BASE_FREQ);

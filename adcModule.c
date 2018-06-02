@@ -51,7 +51,9 @@ void adcInit(valueHandler_t handler)
 {
     adcValueHandler = handler;
 
-    //enable ADC peripheral
+    SysCtlPeripheralReset(SYSCTL_PERIPH_ADC0);  // reset for good measure
+
+    // Enable ADC peripheral
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
 
     // Enable sample sequence 3 with a processor signal trigger.  Sequence 3

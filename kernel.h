@@ -1,31 +1,20 @@
-/*
- * kernalMustardWithThePipeInTheDiningRoom.h
- *
- *  Created on: 28/05/2018
- *      Author: Thomas
- */
+// ************************************************************
+// kernel.h
+// Helicopter project
+// Group: A03 Group 10
+// Last edited: 02-06-18
+//
+// Purpose: A paced round robin scheduler for running tasks as specified frequencies.
+// Different frequencies are achieved by dividing the base frequency (using counters).
+// ************************************************************
+
+#ifndef KERNEL_H_
+#define KERNEL_H_
 
 #include <stdint.h>
 #include <stdbool.h>
 
-
-#ifndef KERNAL_H_
-#define KERNAL_H_
-
-
-// Inform tasks about the global state of the helicopter.
-typedef enum {
-    LANDED = 0, DESCENDING, POWER_DOWN, FLYING, CALIBRATE_YAW, NUM_HELI_STATES
-} heli_state_e;
-
-
-// Entries which more than one task needs to know about.
-typedef struct {
-    heli_state_e heliMode;
-    int32_t targetHeight;
-    int32_t targetYaw;
-} state_t;
-
+#include "stateInfo.h"
 
 // Object to configure a handler for use in the task scheduler.
 typedef struct {
@@ -44,4 +33,4 @@ typedef struct {
 void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq);
 
 
-#endif /* KERNAL_H_ */
+#endif /* KERNEL_H_ */

@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "kernalMustardWithThePipeInTheDiningRoom.h"
+#include "stateInfo.h"
 
 #define LANDING_RATE 25 // height descent rate in % per second
 #define LANDING_TIME_OUT 7500 // heli will time out (force land) if stability not reached in 7.5 seconds
