@@ -45,7 +45,7 @@ void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq)
                 tasks[i].count = 0;
 
                 // run the task
-                tasks[i].handler(sharedState, deltaTime);
+                tasks[i].handler(sharedState, deltaTime * tasks[i].triggerAt);
             }
               i++;
         }
