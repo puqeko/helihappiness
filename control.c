@@ -15,7 +15,6 @@
 #include "landingController.h"
 
 static int32_t outputs[CONTROL_NUM_CHANNELS] = {0};  // values to send to motor
-static int32_t targets[CONTROL_NUM_CHANNELS] = {0};  // target values to compare aganst
 static bool enabled[CONTROL_NUM_CHANNELS] = {0};
 
 typedef void (*control_channel_update_func_t)(state_t*, uint32_t);
@@ -23,14 +22,16 @@ typedef void (*control_channel_update_func_t)(state_t*, uint32_t);
 // defined later on
 void updateHeightChannel(state_t* state, uint32_t deltaTime);
 void updateYawChannel(state_t* state, uint32_t deltaTime);
-void updateCalibrationChannelMain(state_t* state, uint32_t deltaTime);
 void updateCalibrationChannelTail(state_t* state, uint32_t deltaTime);
 void updateDescendingChannel(state_t* state, uint32_t deltaTime);
 void updatePowerDownChannel(state_t* state, uint32_t deltaTime);
 
 // functions which get called to update each channel
 static control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
-updateHeightChannel, updateYawChannel, updateCalibrationChannelMain, updateCalibrationChannelTail, updateDescendingChannel, updatePowerDownChannel
+    updateHeightChannel,  // updated first so yaw can use mainDuty
+    updateYawChannel,
+    updateDescendingChannel,
+    updatePowerDownChannel
 };
 
 // final output parameters (so that we may display these in main)
@@ -83,13 +84,11 @@ void controlEnable(control_channel_t channel)
 
     // handle inital conditions
     switch(channel) {
-    // add here ...
     case CONTROL_POWER_DOWN:
         outputs[CONTROL_POWER_DOWN] = mainDuty;
         break;
     default:
         outputs[channel] = 0;
-        targets[channel] = 0;
     }
 }
 
@@ -101,8 +100,6 @@ void controlDisable(control_channel_t channel)
 
     // handle ending conditions
     switch(channel) {
-    case CONTROL_CALIBRATE_TAIL:
-        break;
     default:
         outputs[channel] = 0;
     }
@@ -115,12 +112,7 @@ bool controlIsEnabled(control_channel_t channel)
 }
 
 
-void controlSetTarget(int32_t target, control_channel_t channel)
-{
-    targets[channel] = target * PRECISION;
-}
-
-
+// TODO: fix this
 int32_t controlGetPWMDuty(control_channel_t channel)
 {
     switch (channel) {
@@ -157,15 +149,16 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
 
 
     // main rotor equation
-    mainDuty = outputs[CONTROL_CALIBRATE_MAIN] + outputs[CONTROL_HEIGHT] + outputs[CONTROL_POWER_DOWN];  // ang vel must be radians;
+    mainDuty = outputs[CONTROL_HEIGHT] + outputs[CONTROL_POWER_DOWN];  // ang vel must be radians;
     mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // tail rotor equation
     // filter main to take into account time delay and smoothing so that we get less oscillation
-    tailDuty = mainTorqueConst * mainDuty / PRECISION + outputs[CONTROL_YAW];
+    tailDuty = outputs[CONTROL_YAW];
     tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
 
     // Set motor speed
+    // Since tail and main duty are clamped, it is safe to cast to uint32_t types
     pwmSetDuty((uint32_t)mainDuty, PRECISION, MAIN_ROTOR);
     pwmSetDuty((uint32_t)tailDuty, PRECISION, TAIL_ROTOR);
 }
@@ -178,71 +171,72 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
 
 
 static int32_t inte_h = 0;
-int32_t deri_h = 0, prop_h = 0;
 void updateHeightChannel(state_t* state, uint32_t deltaTime)
 {
-    int32_t kp = mainGains[KP];
-    int32_t kd = mainGains[KD];
-    int32_t ki = mainGains[KI];
-    int32_t error = targets[CONTROL_HEIGHT] - height;
-    prop_h = kp * error / PRECISION;
-    // (kp * targets[CONTROL_HEIGHT] - kp * height)
+    // calculate inital offset + a factor which varies with height.
+    // this correction model was obtained experimentally.
+    outputs[CONTROL_HEIGHT] = mainOffset * PRECISION + height * gravOffset / PRECISION;
 
-//    if (abs(error) > 25000) {
-//        deri = 0;
-//    } else {
-        deri_h = kd * (0 - verticalVelocity) / PRECISION;
-//    }
+    // difference between the target and actual height value
+    int32_t error = state->targetHeight * PRECISION - height;
 
-//    if (abs(error) < 1000) {
-        inte_h = (inte_h * PRECISION + (ki * (int32_t)deltaTime / MS_TO_SEC * targets[CONTROL_HEIGHT] - ki * (int32_t)deltaTime / MS_TO_SEC * height)) / PRECISION;
-//    }
+    // proportonal component = Kp * error
+    int32_t prop = mainGains[KP] * error / PRECISION;
+    outputs[CONTROL_HEIGHT] += prop;
 
-    outputs[CONTROL_HEIGHT] = prop_h + deri_h + inte_h;
+    // derivitive component = Kd * d/dt(error) = Kd * (d/dt(target) - d/dt(verticalVelocity))
+    // since d/dt(target) can be assumed 0 where the target is stationary, we get the
+    // below simplification. Although the target is not always stationary, this is a good
+    // appoximation.
+    int32_t deri = mainGains[KD] * (0 - verticalVelocity) / PRECISION;
+    outputs[CONTROL_HEIGHT] += deri;
+
+    // cumulative component = Ki * sum(error) from t0 to t. Hence, we sum. However, a bound
+    // is put on the cumulative component to stop overflow.
+    inte_h += mainGains[KI] * (int32_t)deltaTime * error / MS_TO_SEC / PRECISION;
+    if (abs(inte_h) > 1e8) inte_h = 1e8;
+    outputs[CONTROL_HEIGHT] += inte_h;
 }
+
 
 static int32_t inte_y = 0;
-int32_t prop_y = 0, deri_y = 0;
-void updateYawChannel(state_t* state, uint32_t dt)
+void updateYawChannel(state_t* state, uint32_t deltaTime)
 {
-    int32_t kp = tailGains[KP];
-    int32_t kd = tailGains[KD];
-    int32_t ki = tailGains[KI];
-    int32_t error = targets[CONTROL_YAW] - yaw;
-    prop_y = kp * error / PRECISION;
+    // cuple to main rotor speed since changes in speed effect the tail rotor
+    outputs[CONTROL_YAW] = mainTorqueConst * mainDuty / PRECISION;
 
-//    if (abs(error) < 3000 || abs(error) > 45000) {
-//        deri = 0;
-//    } else {
-        deri_y = kd * (0 - angularVelocity) / PRECISION;
-//    }
+    // difference between the target and actual yaw value
+    int32_t error = state->targetYaw * PRECISION - yaw;
 
-//    if (abs(error) < 1000) {
-        inte_y = (inte_y * PRECISION + (ki * (int32_t)dt / MS_TO_SEC * targets[CONTROL_YAW] - ki * (int32_t)dt / MS_TO_SEC * yaw)) / PRECISION;
-//    }
+    // proportonal component = Kp * error
+    int32_t prop = tailGains[KP] * error / PRECISION;
+    outputs[CONTROL_YAW] += prop;
 
-    outputs[CONTROL_YAW] = prop_y + deri_y + inte_y;
+    // derivitive component = Kd * d/dt(error) = Kd * (d/dt(target) - d/dt(angularVelocity))
+    // since d/dt(target) can be assumed 0 where the target is stationary, we get the
+    // below simplification. Although the target is not always stationary, this is a good
+    // appoximation
+    int32_t deri = tailGains[KD] * (0 - angularVelocity) / PRECISION;
+    outputs[CONTROL_YAW] += deri;
+
+    // cumulative component = Ki * sum(error) from t0 to t. Hence, we sum. However, a bound
+    // is put on the cumulative component to stop overflow.
+    inte_y += tailGains[KI] * (int32_t)deltaTime * error / MS_TO_SEC / PRECISION;
+    if (abs(inte_y) > 1e8) inte_y = 1e8;
+    outputs[CONTROL_YAW] += inte_y;
 }
 
 
-void updateCalibrationChannelMain(state_t* state, uint32_t deltaTime)
+void resetController(void)
 {
-    outputs[CONTROL_CALIBRATE_MAIN] = mainOffset * PRECISION + height * gravOffset / PRECISION;
+    inte_h = 0;
+    inte_y = 0;
 }
 
-void updateCalibrationChannelTail(state_t* state, uint32_t deltaTime)
-{
-    // calc mainTourqueConst here ...
-    controlDisable(CONTROL_CALIBRATE_TAIL);
-}
 
 void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 {
-//    int32_t yaw = yawGetDegrees(1);
-//    int32_t height = heightAsPercentage(1);
     land(state, deltaTime, yaw);
-    controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
-    controlSetTarget(state->targetYaw, CONTROL_YAW);
     if (checkLandingStability(state, deltaTime, yaw, height)) {
         controlDisable(CONTROL_DESCENDING);
     }
@@ -252,15 +246,4 @@ void updatePowerDownChannel(state_t* state, uint32_t deltaTime) {
     if (outputs[CONTROL_POWER_DOWN] >= DUTY_DECREMENT_PER_CYCLE * deltaTime) {
         outputs[CONTROL_POWER_DOWN] -= DUTY_DECREMENT_PER_CYCLE * deltaTime;
     }
-}
-
-
-void resetController(void) {
-    prop_h = 0;
-    deri_h = 0;
-    inte_h = 0;
-
-    prop_y = 0;
-    deri_y = 0;
-    inte_y = 0;
 }

@@ -72,6 +72,7 @@ void initSoftReset(void)
 void initalise()
 {
     // TODO: reset peripherals
+    // SysCtlPeripheralReset(SYSCTL_PERIPH_PWM);
 
     // Set system clock rate to 20 MHz.
     SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_10);
@@ -111,8 +112,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
             controlMotorSet(true, TAIL_ROTOR);
 
             // start calibration
-            controlEnable(CONTROL_CALIBRATE_MAIN);
-            controlEnable(CONTROL_CALIBRATE_TAIL);
             controlEnable(CONTROL_HEIGHT);
             controlEnable(CONTROL_YAW);
             state->targetHeight = 0;
@@ -123,8 +122,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
     case CALIBRATE_YAW:
         //Find the zero point for the yaw
         state->targetYaw += 1;
-        controlSetTarget(state->targetYaw, CONTROL_YAW);
-        controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
         if (yawIsCalibrated()) {
             shouldCalibrate = false;
             state->heliMode = FLYING;
@@ -136,7 +133,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
         if (!controlIsEnabled(CONTROL_DESCENDING)) {
             buttonsIgnore(SW1);
             controlDisable(CONTROL_HEIGHT);
-            controlDisable(CONTROL_CALIBRATE_MAIN);
             controlEnable(CONTROL_POWER_DOWN);
             state->heliMode = POWER_DOWN;
         }
@@ -158,24 +154,20 @@ void heliMode(state_t* state, uint32_t deltaTime)
         break;
 
     case FLYING:
-        if (buttonsCheck(UP) == PUSHED && state->targetHeight < MAX_DUTY) {
+        if (buttonsCheck(UP) == PUSHED && state->targetHeight < MAX_DUTY)
             state->targetHeight += MAIN_STEP;
-        }
-        if (buttonsCheck(DOWN) == PUSHED && state->targetHeight > MIN_DUTY) {
+        if (buttonsCheck(DOWN) == PUSHED && state->targetHeight > MIN_DUTY)
             state->targetHeight -= MAIN_STEP;
-        }
-        if (buttonsCheck(LEFT) == PUSHED) {
+
+        if (buttonsCheck(LEFT) == PUSHED)
             state->targetYaw -= TAIL_STEP;
-        }
-        if (buttonsCheck(RIGHT) == PUSHED) {
+        if (buttonsCheck(RIGHT) == PUSHED)
             state->targetYaw += TAIL_STEP;
-        }
+
         if (buttonsCheck(SW1) == RELEASED) {  // switch down
             state->heliMode = DESCENDING;
             controlEnable(CONTROL_DESCENDING);
         }
-        controlSetTarget(state->targetHeight, CONTROL_HEIGHT);
-        controlSetTarget(state->targetYaw, CONTROL_YAW);
         break;
     }
 }
