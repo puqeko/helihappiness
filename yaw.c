@@ -92,16 +92,19 @@ int32_t yawGetDegrees(int32_t precision)
 // Remove excess factors of 360 degrees from yaw and normalises difference about 0
 void yawClipTo360Degrees(void)
 {
-    // start critical section
-    static bool prevIntState;
-    prevIntState = IntMasterDisable();
+    // Start critical section
+    boo prevIntState = IntMasterDisable();
 
+    // Calculate the new encoder value and assign it.
+    // If an interrupt to update the encoder count occurs during this time, it will be
+    // serviced after the calculation. Hence, this prevents the possibility of missing a
+    // tick and causing an error in the yaw reading.
     int32_t quadEncoderCount = quadEncoderGetCount();
     quadEncoderCount = quadEncoderCount % COUNTS_PER_ROTATION;
     if (abs(quadEncoderCount) > COUNTS_PER_ROTATION / 2)
         quadEncoderSetCount(quadEncoderCount - SIGN(quadEncoderCount) * COUNTS_PER_ROTATION);
 
-    // re-enable interrupts if they were enabled before
-    if (prevIntState)
+    // Re-enable interrupts if they were enabled before
+    if (!prevIntState)
         IntMasterEnable();
 }
