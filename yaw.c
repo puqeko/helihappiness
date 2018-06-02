@@ -15,7 +15,9 @@
 #include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
 #include "quadratureEncoder.h"
-#include "driverlib/interrupt.h"
+#include "nfclib/types.h"        // recommended by TI when using IntMasterDisable
+#include "driverlib/interrupt.h" // (and other bool type interrupt status functions)
+                                 // useful for porting code between architectures
 
 // Define constants for yaw reference GPIO pin PC4
 #define GPIO_REF_PERIPH         SYSCTL_PERIPH_GPIOC
