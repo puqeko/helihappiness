@@ -103,12 +103,16 @@ void controlDisable(control_channel_t channel)
 }
 
 
+// Returns ture if the control channel 'channel' is enabled in
+// the controller.
 bool controlIsEnabled(control_channel_t channel)
 {
     return enabled[channel];
 }
 
 
+// Returns the current actual value of motor duty cycle for a given channel.
+// Returns -1 if the channel is not valid.
 int32_t controlGetPWMDuty(control_duty_t channel)
 {
     switch (channel)
@@ -188,6 +192,9 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
 ///
 
 
+#define CONTROL_INTE_LIMIT (PRECISION * 200)  // set to 200% compensation
+#define SIGN(n) ((n) < 0 ? -1 : 1)
+
 static int32_t inte_h = 0;
 void updateHeightChannel(state_t* state, uint32_t deltaTime)
 {
@@ -212,7 +219,10 @@ void updateHeightChannel(state_t* state, uint32_t deltaTime)
     // cumulative component = Ki * sum(error) from t0 to t. Hence, we sum. However, a bound
     // is put on the cumulative component to stop overflow.
     inte_h += mainGains[KI] * (int32_t)deltaTime * error / MS_TO_SEC / PRECISION;
-    if (abs(inte_h) > 1e8) inte_h = 1e8;  // PRECISION * 50
+    if (abs(inte_h) > CONTROL_INTE_LIMIT) {
+        // limit to the max integral value (as a +ve or -ve value) with the correct sign
+        inte_h = SIGN(inte_h) * CONTROL_INTE_LIMIT;
+    }
     outputs[CONTROL_HEIGHT] += inte_h;
 }
 
@@ -240,7 +250,10 @@ void updateYawChannel(state_t* state, uint32_t deltaTime)
     // cumulative component = Ki * sum(error) from t0 to t. Hence, we sum. However, a bound
     // is put on the cumulative component to stop overflow.
     inte_y += tailGains[KI] * (int32_t)deltaTime * error / MS_TO_SEC / PRECISION;
-    if (abs(inte_y) > 1e8) inte_y = 1e8;
+    if (abs(inte_y) > CONTROL_INTE_LIMIT) {
+        // limit to the max integral value and preserve
+        inte_y = SIGN(inte_y) * CONTROL_INTE_LIMIT;
+    }
     outputs[CONTROL_YAW] += inte_y;
 }
 
