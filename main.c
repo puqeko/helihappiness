@@ -4,7 +4,8 @@
 // Group: A03 Group 10
 // Last edited: 21-04-2018
 //
-// Purpose: This program may destroy helicopters.
+// Purpose: Apply control to a helicopter rig which allows the user to set the height
+// and yaw, and switch between a landed and flying mode.
 // ************************************************************
 
 #include <control.h>
@@ -87,37 +88,42 @@ void initalise()
 
 }
 
-void heliMode(state_t* state, uint32_t deltaTime)
+void stateTransitionUpdate(state_t* state, uint32_t deltaTime)
 {
-    static bool shouldCalibrate = true;
+    static bool shouldCalibrate = true;  // only calibrate the yaw once
 
     switch (state->heliMode) {
-
     case STATE_LANDED:
-        heightCalibrate();
-        if (buttonsCheck(SW1) == PUSHED) {
-            if (shouldCalibrate) {
-                state->heliMode = STATE_CALIBRATE_YAW;
-                yawCalibrate();
-            } else {
-                state->heliMode = STATE_FLYING;
-            }
+        heightCalibrate();  // always re-calibrate the height
 
-            // start calibration
+        // wait for switch to trigger take off
+        if (buttonsCheck(SW1) == PUSHED) {
+            // start calibration and enable PID control on height and yaw
             controlEnable(state, CONTROL_HEIGHT);
             controlEnable(state, CONTROL_YAW);
             state->targetHeight = 0;
+
+            // set integral controllers back to zero to prevent windup
             controlReset();
+
+            if (shouldCalibrate) {
+                yawCalibrate();
+                state->heliMode = STATE_CALIBRATE_YAW;
+            } else {
+                state->heliMode = STATE_FLYING;
+            }
         }
         break;
 
     case STATE_CALIBRATE_YAW:
-        //Find the zero point for the yaw
+        // seek the zero point for the yaw
         state->targetYaw += 1;
+
         if (yawIsCalibrated()) {
+            // when the zero point is found, move to the flying mode
             shouldCalibrate = false;
-            state->heliMode = STATE_FLYING;
             state->targetYaw = 0;
+            state->heliMode = STATE_FLYING;
         }
         break;
 
@@ -135,34 +141,49 @@ void heliMode(state_t* state, uint32_t deltaTime)
         if (buttonsCheck(RIGHT) == PUSHED)
             state->targetYaw += TAIL_STEP;
 
+        // switch one to go into the landing sequence
         if (buttonsCheck(SW1) == RELEASED) {  // switch down
-            state->heliMode = STATE_DESCENDING;
             controlEnable(state, CONTROL_DESCENDING);
+            state->heliMode = STATE_DESCENDING;
         }
         break;
 
     case STATE_DESCENDING:
         if (!controlIsEnabled(CONTROL_DESCENDING)) {
-            buttonsIgnore(SW1);
+            // when the descending controller auto-disables, move to the power down sequence
+            // and disable PID control on the height
             controlDisable(state, CONTROL_HEIGHT);
             controlEnable(state, CONTROL_POWER_DOWN);
+
+            // prevent a toggle of the switch causing the heli to take off again once landed
+            buttonsIgnore(SW1);
             state->heliMode = STATE_POWER_DOWN;
         }
         break;
 
     case STATE_POWER_DOWN:
         if (!controlIsEnabled(CONTROL_POWER_DOWN)) {
-            buttonsIgnore(SW1);
+            // when the power down controller auto-disables, move to the landed sequence
             controlDisable(state, CONTROL_YAW);
-            state->heliMode = STATE_LANDED;
             state->targetHeight = 0;
-            if (yawClipTo360Degrees()) {
-                state->targetYaw = 0;
-            }
+            state->targetYaw = 0;
+
+            // round the yaw measurement so that we always return to 0 degrees by the shortest
+            // path. i.e. don't unwind if we have spun multiple times.
+            yawClipTo360Degrees();
+
+            // prevent a toggle of the switch causing the heli to take off again once landed
+            buttonsIgnore(SW1);
+            state->heliMode = STATE_LANDED;
         }
         break;
     }
 }
+
+
+//
+// Tasks to be run by the scheduler
+//
 
 
 void displayUpdate(state_t* state, uint32_t deltaTime)
@@ -222,7 +243,7 @@ void controllerUpdate(state_t* state, uint32_t deltaTime)
 void stateUpdate(state_t* state , uint32_t deltaTime)
 {
     buttonsUpdate();
-    heliMode(state, deltaTime);
+    stateTransitionUpdate(state, deltaTime);
 }
 
 
