@@ -37,19 +37,12 @@
 #include "quadratureEncoder.h"
 #include "landingController.h"
 
-
+#define TASK_BASE_FREQ 100
 #define UART_DISPLAY_FREQUENCY 4  // hz
-#define LANDING_UPDATE_FREQUENCY 10 // hz
 #define UPDATE_DISPLAY_COUNT (TASK_BASE_FREQ / UART_DISPLAY_FREQUENCY)
-
-#define HEIGHT_LANDING_COUNT (LOOP_FREQUENCY / LANDING_UPDATE_FREQUENCY)
 
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
-
-#define NUM_TASKS 5
-#define TASK_BASE_FREQ 100
-
 
 void softResetIntHandler(void)
 {
@@ -100,14 +93,14 @@ void heliMode(state_t* state, uint32_t deltaTime)
 
     switch (state->heliMode) {
 
-    case LANDED:
+    case STATE_LANDED:
         heightCalibrate();
         if (buttonsCheck(SW1) == PUSHED) {
             if (shouldCalibrate) {
-                state->heliMode = CALIBRATE_YAW;
+                state->heliMode = STATE_CALIBRATE_YAW;
                 yawCalibrate();
             } else {
-                state->heliMode = FLYING;
+                state->heliMode = STATE_FLYING;
             }
 
             // start calibration
@@ -118,18 +111,18 @@ void heliMode(state_t* state, uint32_t deltaTime)
         }
         break;
 
-    case CALIBRATE_YAW:
+    case STATE_CALIBRATE_YAW:
         //Find the zero point for the yaw
         state->targetYaw += 1;
         if (yawIsCalibrated()) {
             shouldCalibrate = false;
-            state->heliMode = FLYING;
+            state->heliMode = STATE_FLYING;
             state->targetYaw = 0;
         }
         break;
 
 
-    case FLYING:
+    case STATE_FLYING:
         // change height with buttons
         if (buttonsCheck(UP) == PUSHED && state->targetHeight < CONTROL_MAX_DUTY)
             state->targetHeight += MAIN_STEP;
@@ -143,25 +136,25 @@ void heliMode(state_t* state, uint32_t deltaTime)
             state->targetYaw += TAIL_STEP;
 
         if (buttonsCheck(SW1) == RELEASED) {  // switch down
-            state->heliMode = DESCENDING;
+            state->heliMode = STATE_DESCENDING;
             controlEnable(state, CONTROL_DESCENDING);
         }
         break;
 
-    case DESCENDING:
+    case STATE_DESCENDING:
         if (!controlIsEnabled(CONTROL_DESCENDING)) {
             buttonsIgnore(SW1);
             controlDisable(state, CONTROL_HEIGHT);
             controlEnable(state, CONTROL_POWER_DOWN);
-            state->heliMode = POWER_DOWN;
+            state->heliMode = STATE_POWER_DOWN;
         }
         break;
 
-    case POWER_DOWN:
+    case STATE_POWER_DOWN:
         if (!controlIsEnabled(CONTROL_POWER_DOWN)) {
             buttonsIgnore(SW1);
             controlDisable(state, CONTROL_YAW);
-            state->heliMode = LANDED;
+            state->heliMode = STATE_LANDED;
             state->targetHeight = 0;
             if (yawClipTo360Degrees()) {
                 state->targetYaw = 0;
@@ -245,13 +238,13 @@ int main(void)
     task_t tasks[] = {
         {controllerUpdate, 100},
         {displayUpdate, 100},
-        {stateUpdate, 100}, n
+        {stateUpdate, 100},
         {0}  // terminator (read until this value when processing the array)
     };
 
     // any data which many tasks might need to know about
     state_t sharedState = {
-        .heliMode = LANDED,
+        .heliMode = STATE_LANDED,
         .targetHeight = 0,
         .targetYaw = 0,
         .outputMainDuty = 0,

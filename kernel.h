@@ -5,36 +5,13 @@
  *      Author: Thomas
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-
-
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
+#include <stdint.h>
+#include <stdbool.h>
 
-// Inform tasks about the global state of the helicopter.
-typedef enum {
-    LANDED = 0,
-    CALIBRATE_YAW,
-    FLYING,
-    DESCENDING,
-    POWER_DOWN,
-
-    // the value of this enum is the number of heli states defined above
-    NUM_HELI_STATES
-} heli_state_t;
-
-
-// Entries which more than one task needs to know about.
-typedef struct {
-    heli_state_t heliMode;
-    int32_t targetHeight;
-    int32_t targetYaw;
-    int32_t outputMainDuty;
-    int32_t outputTailDuty;
-} state_t;
-
+#include "stateInfo.h"
 
 // Object to configure a handler for use in the task scheduler.
 typedef struct {
