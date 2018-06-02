@@ -36,6 +36,6 @@ int32_t yawGetDegrees(int32_t precision);
 
 // Remove excess factors of 360 degrees from yaw
 // Returns true if the adjusted yaw value is less than 180 degree
-bool yawClipTo360Degrees(void);
+void yawClipTo360Degrees(void);
 
 #endif /*YAW_H_*/

@@ -86,10 +86,18 @@ int32_t yawGetDegrees(int32_t precision)
 }
 
 
-// Remove excess factors of 360 degrees from yaw
-// Returns true if the adjusted yaw value is less than 180 degrees
-bool yawClipTo360Degrees(void)
+// Remove excess factors of 360 degrees from yaw and normalises difference about 0
+void yawClipTo360Degrees(void)
 {
-    quadEncoderSetCount(quadEncoderGetCount() % COUNTS_PER_ROTATION);
-    return abs(quadEncoderGetCount()) < (COUNTS_PER_ROTATION / 2);
+    static bool prevIntState;
+    prevIntState = IntMasterDisable();
+    int32_t quadEncoderCount = quadEncoderGetCount();
+    int32_t sign = (quadEncoderCount < 0) ? -1 : 1;
+    quadEncoderCount = quadEncoderCount % COUNTS_PER_ROTATION;
+    if (abs(quadEncoderCount) > (COUNTS_PER_ROTATION / 2)) {
+        quadEncoderSetCount(quadEncoderCount - sign * COUNTS_PER_ROTATION);
+    }
+    if (prevIntState) {
+        IntMasterEnable();
+    }
 }

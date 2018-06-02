@@ -145,11 +145,10 @@ void heliMode(state_t* state, uint32_t deltaTime)
             controlMotorSet(false, TAIL_ROTOR);
             controlDisable(CONTROL_YAW);
             controlDisable(CONTROL_POWER_DOWN);
+            yawClipTo360Degrees(); // finds the remainder of the measured yaw with 360.
             state->heliMode = LANDED;
             state->targetHeight = 0;
-            if (yawClipTo360Degrees()) {
-                state->targetYaw = 0;
-            }
+            state->targetYaw = 0;
         }
         break;
 
