@@ -100,10 +100,9 @@ void yawClipTo360Degrees(void)
     // If an interrupt to update the encoder count occurs during this time, it will be
     // serviced after the calculation. Hence, this prevents the possibility of missing a
     // tick and causing an error in the yaw reading.
-    int32_t quadEncoderCount = quadEncoderGetCount();
-    quadEncoderCount = quadEncoderCount % COUNTS_PER_ROTATION;
-    if (abs(quadEncoderCount) > COUNTS_PER_ROTATION / 2)
-        quadEncoderSetCount(quadEncoderCount - SIGN(quadEncoderCount) * COUNTS_PER_ROTATION);
+    int32_t count = quadEncoderGetCount() % COUNTS_PER_ROTATION;
+    if (abs(count) > COUNTS_PER_ROTATION / 2)
+        quadEncoderSetCount(count - SIGN(count) * COUNTS_PER_ROTATION);
 
     // Re-enable interrupts if they were enabled before
     if (!prevIntState)
