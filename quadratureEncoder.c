@@ -84,6 +84,11 @@ void quadEncoderResetCount(void)
 
 
 // Set the running encoder count to the parameter newCount
+//
+// WARNING: When setting count value based on the existing count value,
+//          do so in an atomic manner as the existing count value could
+//          change before it is set to the new count value. Failing to
+//          do so could result in the zero position "moving" over time.
 void quadEncoderSetCount(uint32_t newCount)
 {
     encoderCount = newCount;
@@ -91,6 +96,9 @@ void quadEncoderSetCount(uint32_t newCount)
 
 
 // Returns the current encoder count
+//
+// WARNING: Function must be used in an atomic manner as the encoder count
+//          can change at any time because it is interrupt driven
 int32_t quadEncoderGetCount(void)
 {
     return encoderCount;

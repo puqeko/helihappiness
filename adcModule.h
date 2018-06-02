@@ -24,6 +24,9 @@ void adcTrigger(void);
 // Initialize ADC and register interrupt handler
 // Parameters:
 // valueHandler_t handler -> handler function called to store ADC value
+//
+// WARNING: Ensure passed handler function has a short execution time
+//          as it is executed on every ADC conversion interrupt
 void adcInit(valueHandler_t);
 
 #endif /*ADC_MODULE_H_*/
