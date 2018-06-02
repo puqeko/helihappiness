@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "pwmModule.h"
 #include "kernalMustardWithThePipeInTheDiningRoom.h"
 
 #define PRECISION 1000  // zeros represent how many dp of precision to get with integer math
@@ -23,6 +22,7 @@
 #define LANDING_DUTY (25 * PRECISION)
 #define DUTY_DECREMENT_PER_SECOND 7
 #define DUTY_DECREMENT_PER_CYCLE (DUTY_DECREMENT_PER_SECOND * PRECISION / MS_TO_SEC)
+
 
 typedef enum control_channel {
     CONTROL_HEIGHT=0,
@@ -34,29 +34,45 @@ typedef enum control_channel {
     CONTROL_NUM_CHANNELS
 } control_channel_t;
 
+
+// Give access to the pwm duty cycles for displaying.
+typedef enum control_duty {
+    CONTROL_DUTY_MAIN,
+    CONTROL_DUTY_TAIL
+} control_duty_t;
+
+
 void controlInit(void);
 
-void controlMotorSet(bool state, pwm_channel_t channel);
 
 void controlEnable(control_channel_t channel);
 
+
 void controlDisable(control_channel_t channel);
+
 
 bool controlIsEnabled(control_channel_t channel);
 
+
 void controlSetTarget(int32_t target, control_channel_t channel);
 
-int32_t controlGetPWMDuty(control_channel_t channel);
 
 void controlUpdate(state_t* state, uint32_t deltaTime);
 
+
 void enableMotorRampSequence(bool state);
+
 
 void setRampActive(bool state);
 
-bool getRampActive(void);
 
 void resetController(void);
+
+
+int32_t controlGetPWMDuty(control_duty_t channel);
+
+
+bool getRampActive(void);
 
 
 #endif /* CONTROL_H_ */

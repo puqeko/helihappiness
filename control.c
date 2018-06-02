@@ -10,6 +10,7 @@
 // *******************************************************
 
 #include "control.h"
+#include "pwmModule.h"
 #include "height.h"
 #include "yaw.h"
 #include "landingController.h"
@@ -71,12 +72,6 @@ void controlInit(void)
 }
 
 
-void controlMotorSet(bool state, pwm_channel_t channel)
-{
-    pwmSetOutputState(state, channel);
-}
-
-
 void controlEnable(control_channel_t channel)
 {
     // enable only one channel
@@ -85,6 +80,7 @@ void controlEnable(control_channel_t channel)
     // handle inital conditions
     switch(channel) {
     case CONTROL_POWER_DOWN:
+        // start ramping down from this point
         outputs[CONTROL_POWER_DOWN] = mainDuty;
         break;
     default:
@@ -100,6 +96,7 @@ void controlDisable(control_channel_t channel)
 
     // handle ending conditions
     switch(channel) {
+    // add final conditions here
     default:
         outputs[channel] = 0;
     }
@@ -112,62 +109,83 @@ bool controlIsEnabled(control_channel_t channel)
 }
 
 
-// TODO: fix this
-int32_t controlGetPWMDuty(control_channel_t channel)
+int32_t controlGetPWMDuty(control_duty_t channel)
 {
-    switch (channel) {
-    case CONTROL_HEIGHT:
-        return enabled[channel] ? (mainDuty / PRECISION) : 0;
-    case CONTROL_YAW:
-        return enabled[channel] ? (tailDuty / PRECISION) : 0;
-    case CONTROL_POWER_DOWN:
+    switch (channel)
+    {
+    case CONTROL_DUTY_MAIN:
         return mainDuty / PRECISION;
+    case CONTROL_DUTY_TAIL:
+        return tailDuty / PRECISION;
     default:
-        return -1;  // error
+        break;
     }
+
+    return -1;
 }
 
 
 void controlUpdate(state_t* state, uint32_t deltaTime)
 {
+    static bool wereAllDisabled = true;
+
+    // always calculate velocities here so that we don't get discontinuities
     // get height and velocity
     height = heightAsPercentage(PRECISION);
     verticalVelocity = (height - previousHeight) * PRECISION / deltaTime;
     previousHeight = height;
 
+    // get yaw and angular velocity
     yaw = yawGetDegrees(PRECISION);
     angularVelocity = (yaw - previousYaw) * PRECISION / deltaTime;
     previousYaw = yaw;
 
     // call all channel update functions
     int i = 0;
+    bool areAllDisabled = true;
     for (; i < CONTROL_NUM_CHANNELS; i++) {
         if (enabled[i]) {
             chanelUpdateFuncs[i](state, deltaTime);
+            areAllDisabled = false;
         }
     }
 
+    // test if we have switched from controlling to not controlling the motors
+    // or visa versa
+    bool shouldToggleMotors = areAllDisabled != wereAllDisabled;
+    wereAllDisabled = areAllDisabled;  // save for next call
 
-    // main rotor equation
-    mainDuty = outputs[CONTROL_HEIGHT] + outputs[CONTROL_POWER_DOWN];  // ang vel must be radians;
-    mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+    if (shouldToggleMotors) {
+        // turn on/off motors only when enabling/disabling all channels
+        pwmSetOutputState(!areAllDisabled, MAIN_ROTOR);
+        pwmSetOutputState(!areAllDisabled, TAIL_ROTOR);
+    }
 
-    // tail rotor equation
-    // filter main to take into account time delay and smoothing so that we get less oscillation
-    tailDuty = outputs[CONTROL_YAW];
-    tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+    if (areAllDisabled) {
+        mainDuty = tailDuty = 0;
+    } else {
+        // run the motors
 
-    // Set motor speed
-    // Since tail and main duty are clamped, it is safe to cast to uint32_t types
-    pwmSetDuty((uint32_t)mainDuty, PRECISION, MAIN_ROTOR);
-    pwmSetDuty((uint32_t)tailDuty, PRECISION, TAIL_ROTOR);
+        // main rotor equation
+        mainDuty = outputs[CONTROL_HEIGHT] + outputs[CONTROL_POWER_DOWN];  // ang vel must be radians;
+        mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+
+        // tail rotor equation
+        // filter main to take into account time delay and smoothing so that we get less oscillation
+        tailDuty = outputs[CONTROL_YAW];
+        tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+
+        // Set motor speed
+        // Since tail and main duty are clamped, it is safe to cast to uint32_t types
+        pwmSetDuty((uint32_t)mainDuty, PRECISION, MAIN_ROTOR);
+        pwmSetDuty((uint32_t)tailDuty, PRECISION, TAIL_ROTOR);
+    }
 }
 
 
 ///
 /// Channel update functions
 ///
-
 
 
 static int32_t inte_h = 0;
@@ -194,7 +212,7 @@ void updateHeightChannel(state_t* state, uint32_t deltaTime)
     // cumulative component = Ki * sum(error) from t0 to t. Hence, we sum. However, a bound
     // is put on the cumulative component to stop overflow.
     inte_h += mainGains[KI] * (int32_t)deltaTime * error / MS_TO_SEC / PRECISION;
-    if (abs(inte_h) > 1e8) inte_h = 1e8;
+    if (abs(inte_h) > 1e8) inte_h = 1e8;  // PRECISION * 50
     outputs[CONTROL_HEIGHT] += inte_h;
 }
 
@@ -227,6 +245,7 @@ void updateYawChannel(state_t* state, uint32_t deltaTime)
 }
 
 
+// reset integral gains between runs
 void resetController(void)
 {
     inte_h = 0;
@@ -236,14 +255,19 @@ void resetController(void)
 
 void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 {
-    land(state, deltaTime, yaw);
     if (checkLandingStability(state, deltaTime, yaw, height)) {
         controlDisable(CONTROL_DESCENDING);
+    } else {
+        land(state, deltaTime, yaw);
     }
 }
 
 void updatePowerDownChannel(state_t* state, uint32_t deltaTime) {
-    if (outputs[CONTROL_POWER_DOWN] >= DUTY_DECREMENT_PER_CYCLE * deltaTime) {
+    if (outputs[CONTROL_POWER_DOWN] <= MIN_DUTY) {
+        controlDisable(CONTROL_DESCENDING);
+    } else if (outputs[CONTROL_POWER_DOWN] >= DUTY_DECREMENT_PER_CYCLE * deltaTime) { // prevent overflow
         outputs[CONTROL_POWER_DOWN] -= DUTY_DECREMENT_PER_CYCLE * deltaTime;
+    } else {
+        outputs[CONTROL_POWER_DOWN] = 0; // would have overflowed, so set to zero (this will be clamped)
     }
 }

@@ -108,8 +108,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
             } else {
                 state->heliMode = FLYING;
             }
-            controlMotorSet(true, MAIN_ROTOR);  // turn  on motors
-            controlMotorSet(true, TAIL_ROTOR);
 
             // start calibration
             controlEnable(CONTROL_HEIGHT);
@@ -139,12 +137,9 @@ void heliMode(state_t* state, uint32_t deltaTime)
         break;
 
     case POWER_DOWN:
-        if (controlGetPWMDuty(CONTROL_POWER_DOWN) <= MIN_DUTY) {
+        if (!controlIsEnabled(CONTROL_POWER_DOWN)) {
             buttonsIgnore(SW1);
-            controlMotorSet(false, MAIN_ROTOR);
-            controlMotorSet(false, TAIL_ROTOR);
             controlDisable(CONTROL_YAW);
-            controlDisable(CONTROL_POWER_DOWN);
             state->heliMode = LANDED;
             state->targetHeight = 0;
             if (yawClipTo360Degrees()) {
@@ -184,8 +179,8 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
     // Take measurements
     uint32_t percentageHeight = heightAsPercentage(1);  // precision = 1
     uint32_t degreesYaw = yawGetDegrees(1);  // precision = 1
-    uint32_t mainDuty = controlGetPWMDuty(CONTROL_POWER_DOWN); //CONTROL_HEIGHT
-    uint32_t tailDuty = controlGetPWMDuty(CONTROL_YAW);
+    uint32_t mainDuty = controlGetPWMDuty(CONTROL_DUTY_MAIN);
+    uint32_t tailDuty = controlGetPWMDuty(CONTROL_DUTY_TAIL);
 
     // Update OLED display
     displayPrintLineWithFormat("Height = %4d%%", 1, percentageHeight);  // line 1
