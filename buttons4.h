@@ -7,9 +7,10 @@
 // Last Edited: 20/4/18
 // Edited from code by P.J. Bones UCECE
 //
-// Support for a set of FOUR specific buttons on the Tiva/Orbit.
+// Support for a set of FOUR specific buttons on the Tiva/Orbit plus
+// two switches.
 // The buttons are:  UP and DOWN (on the Orbit daughterboard) plus
-// LEFT and RIGHT on the Tiva.
+// LEFT and RIGHT on the Tiva with Sw1 and Sw2.
 //
 // Note that pin PF0 (the pin for the RIGHT pushbutton - SW2 on
 //  the Tiva board) needs special treatment - See PhilsNotesOnTiva.rtf.

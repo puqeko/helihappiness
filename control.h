@@ -33,6 +33,7 @@ typedef enum {
     CONTROL_YAW,
     CONTROL_DESCENDING,
     CONTROL_POWER_DOWN,
+    CONTROL_CALIBRATE_YAW,
 
     // Always equal to the number of channels above
     CONTROL_NUM_CHANNELS

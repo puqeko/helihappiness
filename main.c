@@ -117,7 +117,7 @@ void stateTransitionUpdate(state_t* state, uint32_t deltaTime)
             controlReset();
 
             if (shouldCalibrate) {
-                yawCalibrate();
+                controlEnable(state, CONTROL_CALIBRATE_YAW);
                 state->heliMode = STATE_CALIBRATE_YAW;
             } else {
                 state->heliMode = STATE_FLYING;
@@ -127,9 +127,8 @@ void stateTransitionUpdate(state_t* state, uint32_t deltaTime)
 
     case STATE_CALIBRATE_YAW:
         // seek the zero point for the yaw
-        state->targetYaw += 1;
 
-        if (yawIsCalibrated()) {
+        if (!controlIsEnabled(CONTROL_CALIBRATE_YAW)) {
             // when the zero point is found, move to the flying mode
             shouldCalibrate = false;
             state->targetYaw = 0;
@@ -217,7 +216,9 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
     displayPrintLineWithFormat("M = %2d, T = %2d", 2, state->outputMainDuty, state->outputTailDuty);  // line 2
 
     // Update UART display
-    // Use a collaborative technique to update the display across updates
+    // Use a collaborative technique to update the display across update cycles.
+    // Thus, the time spent on each call to displayUpdate is reduced allowing higher frequency tasks
+    // to be serviced at more consistent rates.
 
     switch (uartCount) {
     case UPDATE_DISPLAY_COUNT - 5:
@@ -242,17 +243,11 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
 }
 
 
-void controllerUpdate(state_t* state, uint32_t deltaTime)
+void mainUpdate(state_t* state, uint32_t deltaTime)
 {
-    heightUpdate();
+    heightUpdate();  // recalculate height average
     controlUpdate(state, deltaTime);
-}
-
-
-void stateUpdate(state_t* state , uint32_t deltaTime)
-{
     buttonsUpdate();
-    stateTransitionUpdate(state, deltaTime);
 }
 
 
@@ -266,9 +261,9 @@ int main(void)
     // the tasks which need to run at what frequency
     // the frequency cannot be larger than the TASK_BASE_FREQ
     task_t tasks[] = {
-        {controllerUpdate, 100},
-        {displayUpdate, 100},
-        {stateUpdate, 100},
+        {mainUpdate, 100},
+        {displayUpdate, 100},  // actually about 4 Hz due to co-operative behaviour
+        {stateTransitionUpdate, 5},
         {0}  // terminator (read until this value when processing the array)
     };
 

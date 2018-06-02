@@ -33,12 +33,14 @@ void updateHeightChannel(state_t* state, uint32_t deltaTime);
 void updateYawChannel(state_t* state, uint32_t deltaTime);
 void updateDescendingChannel(state_t* state, uint32_t deltaTime);
 void updatePowerDownChannel(state_t* state, uint32_t deltaTime);
+void updateYawCalibrate(state_t* state, uint32_t deltaTime);
 
 static const control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
     updateHeightChannel,
     updateYawChannel,
     updateDescendingChannel,
-    updatePowerDownChannel
+    updatePowerDownChannel,
+    updateYawCalibrate
     // add channel handlers here
 };
 
@@ -96,6 +98,10 @@ void controlEnable(state_t* state, control_channel_t channel)
     case CONTROL_POWER_DOWN:
         // start ramping down from this point
         outputs[CONTROL_POWER_DOWN] = state->outputMainDuty * PRECISION;
+        break;
+    case CONTROL_CALIBRATE_YAW:
+        // start calibration
+        yawCalibrate();
         break;
     default:
         outputs[channel] = 0;
@@ -295,4 +301,13 @@ void updatePowerDownChannel(state_t* state, uint32_t deltaTime) {
     } else {
         outputs[CONTROL_POWER_DOWN] = 0; // would have overflowed, so set to zero (this will be clamped)
     }
+}
+
+
+// Spin the helicopter until the reference is found. Auto-disable when passed the reference.
+void updateYawCalibrate(state_t* state, uint32_t deltaTime) {
+    state->targetYaw += 1;
+
+    if (yawIsCalibrated())
+        controlDisable(state, CONTROL_CALIBRATE_YAW);
 }
