@@ -50,9 +50,6 @@ static const int32_t mainTorqueConst = 800;  // ratio of main rotor speed to tai
 static const int32_t mainOffset = 33;  // temporary until calibration added
 static const int32_t gravOffset = 200;  // ratio of height to down force
 
-// final output parameters (so that we may display these in main)
-static int32_t mainDuty = 0, tailDuty = 0;
-
 // measured parameters (scaled by PRECISION)
 static int32_t height, previousHeight = 0, verticalVelocity;
 static int32_t yaw, previousYaw = 0, angularVelocity = 0;
@@ -89,7 +86,7 @@ void controlReset(void)
 
 // Sets the specified control channel to be enabled. If all channels were previously
 // disabled, then the pwm signal output will be enabled in the next call to controlUpdate(..).
-void controlEnable(control_channel_t channel)
+void controlEnable(state_t* state, control_channel_t channel)
 {
     // enable only one channel
     enabled[channel] = true;
@@ -98,7 +95,7 @@ void controlEnable(control_channel_t channel)
     switch(channel) {
     case CONTROL_POWER_DOWN:
         // start ramping down from this point
-        outputs[CONTROL_POWER_DOWN] = mainDuty;
+        outputs[CONTROL_POWER_DOWN] = state->outputMainDuty * PRECISION;
         break;
     default:
         outputs[channel] = 0;
@@ -108,7 +105,7 @@ void controlEnable(control_channel_t channel)
 
 // Sets the specified control channel to be disabled. If all channels become disabled
 // then the pwm output will be disabled in the next call to controlUpdate(..)
-void controlDisable(control_channel_t channel)
+void controlDisable(state_t* state, control_channel_t channel)
 {
     // enable only one channel
     enabled[channel] = false;
@@ -170,10 +167,11 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
         pwmSetOutputState(!areAllDisabled, TAIL_ROTOR);
     }
 
-    if (areAllDisabled) {
-        mainDuty = tailDuty = 0;
-    } else {
-        // run the motors
+    // calculate the duty cycle for each motor
+    int32_t mainDuty = 0, tailDuty = 0;
+
+    if (!areAllDisabled) {
+        // only set the duty cycle if we are running the motors
 
         // main rotor equation
         mainDuty = outputs[CONTROL_HEIGHT] + outputs[CONTROL_POWER_DOWN];  // ang vel must be radians;
@@ -193,24 +191,6 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
     // update state so that other tasks know what is going on
     state->outputMainDuty = mainDuty / PRECISION;
     state->outputTailDuty = tailDuty / PRECISION;
-}
-
-
-// Return the current duty cycle of the specified motor channel. The value is normalised
-// to between 0 and 100 %. During control, this will be limited to between the MIN_DUTY and
-// MAX_DUTY values. When controls are disabled, 0 % will be returned.
-int32_t controlGetPWMDuty(control_duty_t channel)
-{
-    switch (channel) {
-    case CONTROL_DUTY_MAIN:
-        return mainDuty / PRECISION;
-    case CONTROL_DUTY_TAIL:
-        return tailDuty / PRECISION;
-    default:
-        break;
-    }
-
-    return -1;
 }
 
 
@@ -257,9 +237,11 @@ void updateHeightChannel(state_t* state, uint32_t deltaTime)
 // Accounts for torque due to the main rotor by coupling with the main duty cycle
 void updateYawChannel(state_t* state, uint32_t deltaTime)
 {
-    // couple to main rotor speed since changes in speed effect the tail rotor
-    // the value of mainDuty will be one update cycle behind
-    outputs[CONTROL_YAW] = mainTorqueConst * mainDuty / PRECISION;
+    // couple to main rotor speed since changes in speed effect the tail rotor.
+    // the value of mainDuty will be one update cycle behind.
+    // although state->outputMainDuty is not multiplied by PRECISION, it doesn't
+    // matter since mainTorqueConst has a factor of PRECSION in it.
+    outputs[CONTROL_YAW] = mainTorqueConst * state->outputMainDuty;
 
     // difference between the target and actual yaw value
     int32_t error = state->targetYaw * PRECISION - yaw;
@@ -293,7 +275,7 @@ void updateYawChannel(state_t* state, uint32_t deltaTime)
 void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 {
     if (checkLandingStability(state, deltaTime, yaw, height)) {
-        controlDisable(CONTROL_DESCENDING);
+        controlDisable(state, CONTROL_DESCENDING);
     } else {
         land(state, deltaTime, yaw);
     }
@@ -307,7 +289,7 @@ void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 // main duty reaches its minimum value.
 void updatePowerDownChannel(state_t* state, uint32_t deltaTime) {
     if (outputs[CONTROL_POWER_DOWN] <= MIN_DUTY * PRECISION) {
-        controlDisable(CONTROL_POWER_DOWN);
+        controlDisable(state, CONTROL_POWER_DOWN);
     } else if (outputs[CONTROL_POWER_DOWN] >= DUTY_DECREMENT_PER_CYCLE * deltaTime) { // prevent overflow
         outputs[CONTROL_POWER_DOWN] -= DUTY_DECREMENT_PER_CYCLE * deltaTime;
     } else {

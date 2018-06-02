@@ -55,12 +55,12 @@ void controlReset(void);
 
 // Sets the specified control channel to be enabled. If all channels were previously
 // disabled, then the pwm signal output will be enabled in the next call to controlUpdate(..).
-void controlEnable(control_channel_t channel);
+void controlEnable(state_t* state, control_channel_t channel);
 
 
 // Sets the specified control channel to be disabled. If all channels become disabled
 // then the pwm output will be disabled in the next call to controlUpdate(..)
-void controlDisable(control_channel_t channel);
+void controlDisable(state_t* state, control_channel_t channel);
 
 
 // Return true if the specified control channel is currently enabled.
@@ -73,12 +73,6 @@ bool controlIsEnabled(control_channel_t channel);
 // then the pwm output is also disabled. Takes a state object contiaining the target
 // yaw and height and the time between updates in milliseconds as arguments.
 void controlUpdate(state_t* state, uint32_t deltaTime);
-
-
-// Return the current duty cycle of the specified motor channel. The value is normalised
-// to between 0 and 100 %. During control, this will be limited to between the MIN_DUTY and
-// MAX_DUTY values. When controls are disabled, 0 % will be returned.
-int32_t controlGetPWMDuty(control_duty_t channel);
 
 
 #endif /* CONTROL_H_ */

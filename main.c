@@ -111,8 +111,8 @@ void heliMode(state_t* state, uint32_t deltaTime)
             }
 
             // start calibration
-            controlEnable(CONTROL_HEIGHT);
-            controlEnable(CONTROL_YAW);
+            controlEnable(state, CONTROL_HEIGHT);
+            controlEnable(state, CONTROL_YAW);
             state->targetHeight = 0;
             controlReset();
         }
@@ -131,8 +131,8 @@ void heliMode(state_t* state, uint32_t deltaTime)
     case DESCENDING:
         if (!controlIsEnabled(CONTROL_DESCENDING)) {
             buttonsIgnore(SW1);
-            controlDisable(CONTROL_HEIGHT);
-            controlEnable(CONTROL_POWER_DOWN);
+            controlDisable(state, CONTROL_HEIGHT);
+            controlEnable(state, CONTROL_POWER_DOWN);
             state->heliMode = POWER_DOWN;
         }
         break;
@@ -140,7 +140,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
     case POWER_DOWN:
         if (!controlIsEnabled(CONTROL_POWER_DOWN)) {
             buttonsIgnore(SW1);
-            controlDisable(CONTROL_YAW);
+            controlDisable(state, CONTROL_YAW);
             state->heliMode = LANDED;
             state->targetHeight = 0;
             if (yawClipTo360Degrees()) {
@@ -162,7 +162,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
 
         if (buttonsCheck(SW1) == RELEASED) {  // switch down
             state->heliMode = DESCENDING;
-            controlEnable(CONTROL_DESCENDING);
+            controlEnable(state, CONTROL_DESCENDING);
         }
         break;
     }
