@@ -9,8 +9,8 @@
 #include <stdbool.h>
 
 
-#ifndef KERNAL_H_
-#define KERNAL_H_
+#ifndef KERNEL_H_
+#define KERNEL_H_
 
 
 // Inform tasks about the global state of the helicopter.
@@ -53,4 +53,4 @@ typedef struct {
 void runTasks(task_t* tasks, state_t* sharedState, int32_t baseFreq);
 
 
-#endif /* KERNAL_H_ */
+#endif /* KERNEL_H_ */

@@ -33,9 +33,9 @@
 #include "display.h"
 #include "uartDisplay.h"
 #include "control.h"
+#include "kernel.h"
 #include "quadratureEncoder.h"
 #include "landingController.h"
-#include "kernalMustardWithThePipeInTheDiningRoom.h"
 
 
 #define UART_DISPLAY_FREQUENCY 4  // hz
@@ -237,14 +237,15 @@ int main(void)
 {
     initalise();
 
-    timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);  // make sure ADC buffer has a chance to fill up
+    // make sure ADC buffer has a chance to fill up for the height measurement
+    timererWait(1000 * CONV_SIZE / ADC_SAMPLE_RATE);
 
     // the tasks which need to run at what frequency
     // the frequency cannot be larger than the TASK_BASE_FREQ
     task_t tasks[] = {
         {controllerUpdate, 100},
         {displayUpdate, 100},
-        {stateUpdate, 100},
+        {stateUpdate, 100}, n
         {0}  // terminator (read until this value when processing the array)
     };
 

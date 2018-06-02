@@ -17,7 +17,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "kernalMustardWithThePipeInTheDiningRoom.h"
+
+#include "kernel.h"  // needs to know about state_t
 
 #define PRECISION 1000  // zeros represent how many dp of precision to get with integer math
 #define CONTROL_MIN_DUTY 5  // % duty cycle for motors
