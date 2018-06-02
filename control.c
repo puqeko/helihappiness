@@ -48,27 +48,27 @@ static int32_t gravOffset = 200;
 static int32_t mainTorqueConst = 800;
 
 // Eventually change this to work on generic heli
+enum gains_e {KP=0, KD, KI};
 static int32_t mainGains[] = {1500, 600, 400};
 static int32_t tailGains[] = {1200, 800, 500};
 static int32_t mainOffset = 33;  // temporary until calibration added
-
-enum gains_e {KP=0, KD, KI};
-#define NUM_GAINS 3
-
-int32_t clamp(int32_t pwmLevel, int32_t minLevel, int32_t maxLevel)
-{
-    if (pwmLevel < minLevel) {
-        pwmLevel = minLevel;
-    } else if (pwmLevel > maxLevel) {
-        pwmLevel = maxLevel;
-    }
-    return pwmLevel;
-}
 
 
 void controlInit(void)
 {
     pwmInit();
+}
+
+
+// limit the value n between two lower and upper values (inclusive)
+// return the limited value
+int32_t clamp(int32_t n, int32_t lower, int32_t upper)
+{
+    if (n < lower)
+        return lower;
+    else if (n > upper)
+        return upper;
+    return n;  // the number is in bounds
 }
 
 
@@ -115,8 +115,7 @@ bool controlIsEnabled(control_channel_t channel)
 // Returns -1 if the channel is not valid.
 int32_t controlGetPWMDuty(control_duty_t channel)
 {
-    switch (channel)
-    {
+    switch (channel) {
     case CONTROL_DUTY_MAIN:
         return mainDuty / PRECISION;
     case CONTROL_DUTY_TAIL:
@@ -259,7 +258,7 @@ void updateYawChannel(state_t* state, uint32_t deltaTime)
 
 
 // reset integral gains between runs
-void resetController(void)
+void controlReset(void)
 {
     inte_h = 0;
     inte_y = 0;

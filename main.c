@@ -113,7 +113,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
             controlEnable(CONTROL_HEIGHT);
             controlEnable(CONTROL_YAW);
             state->targetHeight = 0;
-            resetController();
+            controlReset();
         }
         break;
 

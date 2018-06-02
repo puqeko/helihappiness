@@ -54,25 +54,13 @@ void controlDisable(control_channel_t channel);
 bool controlIsEnabled(control_channel_t channel);
 
 
-void controlSetTarget(int32_t target, control_channel_t channel);
-
-
 void controlUpdate(state_t* state, uint32_t deltaTime);
 
 
-void enableMotorRampSequence(bool state);
-
-
-void setRampActive(bool state);
-
-
-void resetController(void);
+void controlReset(void);
 
 
 int32_t controlGetPWMDuty(control_duty_t channel);
-
-
-bool getRampActive(void);
 
 
 #endif /* CONTROL_H_ */
