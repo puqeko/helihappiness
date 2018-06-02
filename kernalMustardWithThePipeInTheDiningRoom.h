@@ -16,10 +16,10 @@
 // Inform tasks about the global state of the helicopter.
 typedef enum {
     LANDED = 0,
+    CALIBRATE_YAW,
+    FLYING,
     DESCENDING,
     POWER_DOWN,
-    FLYING,
-    CALIBRATE_YAW,
 
     // the value of this enum is the number of heli states defined above
     NUM_HELI_STATES

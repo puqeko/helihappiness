@@ -128,26 +128,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
         }
         break;
 
-    case DESCENDING:
-        if (!controlIsEnabled(CONTROL_DESCENDING)) {
-            buttonsIgnore(SW1);
-            controlDisable(state, CONTROL_HEIGHT);
-            controlEnable(state, CONTROL_POWER_DOWN);
-            state->heliMode = POWER_DOWN;
-        }
-        break;
-
-    case POWER_DOWN:
-        if (!controlIsEnabled(CONTROL_POWER_DOWN)) {
-            buttonsIgnore(SW1);
-            controlDisable(state, CONTROL_YAW);
-            state->heliMode = LANDED;
-            state->targetHeight = 0;
-            if (yawClipTo360Degrees()) {
-                state->targetYaw = 0;
-            }
-        }
-        break;
 
     case FLYING:
         // change height with buttons
@@ -168,6 +148,27 @@ void heliMode(state_t* state, uint32_t deltaTime)
         }
         break;
     }
+
+    case DESCENDING:
+        if (!controlIsEnabled(CONTROL_DESCENDING)) {
+            buttonsIgnore(SW1);
+            controlDisable(state, CONTROL_HEIGHT);
+            controlEnable(state, CONTROL_POWER_DOWN);
+            state->heliMode = POWER_DOWN;
+        }
+        break;
+
+    case POWER_DOWN:
+        if (!controlIsEnabled(CONTROL_POWER_DOWN)) {
+            buttonsIgnore(SW1);
+            controlDisable(state, CONTROL_YAW);
+            state->heliMode = LANDED;
+            state->targetHeight = 0;
+            if (yawClipTo360Degrees()) {
+                state->targetYaw = 0;
+            }
+        }
+        break;
 }
 
 
@@ -178,10 +179,10 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
     // These are the string values to be displayed when in each state
     static const char* heliModeDisplayStringMap[] = {
        "Landed",
-       "Descending",
-       "Power Down",
+       "Calibrate Yaw",
        "Flying",
-       "Calibrate Yaw"
+       "Descending",
+       "Power Down"
     };
 
     // Take measurements
