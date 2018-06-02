@@ -38,12 +38,13 @@
 #include "quadratureEncoder.h"
 #include "landingController.h"
 
-#define TASK_BASE_FREQ 100
-#define UART_DISPLAY_FREQUENCY 4  // hz
+#define TASK_BASE_FREQ 100  // Hz
+#define UART_DISPLAY_FREQUENCY 4  // Hz
 #define UPDATE_DISPLAY_COUNT (TASK_BASE_FREQ / UART_DISPLAY_FREQUENCY)
 
 #define MAIN_STEP 10  // %
 #define TAIL_STEP 15  // deg
+
 
 void softResetIntHandler(void)
 {
@@ -63,6 +64,7 @@ void initSoftReset(void)
     GPIOIntTypeSet(GPIO_PORTA_BASE, GPIO_PIN_6, GPIO_FALLING_EDGE);
     GPIOIntEnable(GPIO_PORTA_BASE, GPIO_PIN_6);
 }
+
 
 void initalise()
 {
