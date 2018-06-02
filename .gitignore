@@ -3,3 +3,4 @@ targetConfigs/
 *.cmd
 *_startup_ccs.c
 .*
+Release/
