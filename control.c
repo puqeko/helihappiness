@@ -306,8 +306,9 @@ void updatePowerDownChannel(state_t* state, uint32_t deltaTime) {
 
 // Spin the helicopter until the reference is found. Auto-disable when passed the reference.
 void updateYawCalibrate(state_t* state, uint32_t deltaTime) {
-    state->targetYaw += 1;
 
     if (yawIsCalibrated())
         controlDisable(state, CONTROL_CALIBRATE_YAW);
+    else
+        state->targetYaw += 1;
 }

@@ -38,7 +38,7 @@
 #include "quadratureEncoder.h"
 #include "landingController.h"
 
-#define TASK_BASE_FREQ 100  // Hz
+#define TASK_BASE_FREQ 100  // Hz, the maximum frequency of a task
 #define UART_DISPLAY_FREQUENCY 4  // Hz
 #define UPDATE_DISPLAY_COUNT (TASK_BASE_FREQ / UART_DISPLAY_FREQUENCY)
 

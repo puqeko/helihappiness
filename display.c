@@ -11,7 +11,7 @@
 
 #include "display.h"
 #include "utils/ustdlib.h"
-#include "OrbitOLED_2/OrbitOLEDInterface.h"
+#include "OrbitOLED/OrbitOLEDInterface.h"
 
 
 // Configure OLED display
