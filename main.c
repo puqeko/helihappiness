@@ -112,8 +112,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
             controlMotorSet(true, TAIL_ROTOR);
 
             // start calibration
-            controlEnable(CONTROL_CALIBRATE_MAIN);
-            controlEnable(CONTROL_CALIBRATE_TAIL);
             controlEnable(CONTROL_HEIGHT);
             controlEnable(CONTROL_YAW);
             state->targetHeight = 0;
@@ -135,7 +133,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
         if (!controlIsEnabled(CONTROL_DESCENDING)) {
             buttonsIgnore(SW1);
             controlDisable(CONTROL_HEIGHT);
-            controlDisable(CONTROL_CALIBRATE_MAIN);
             controlEnable(CONTROL_POWER_DOWN);
             state->heliMode = POWER_DOWN;
         }
