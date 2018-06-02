@@ -150,11 +150,13 @@ void heliMode(state_t* state, uint32_t deltaTime)
         break;
 
     case FLYING:
-        if (buttonsCheck(UP) == PUSHED && state->targetHeight < MAX_DUTY)
+        // change height with buttons
+        if (buttonsCheck(UP) == PUSHED && state->targetHeight < CONTROL_MAX_DUTY)
             state->targetHeight += MAIN_STEP;
-        if (buttonsCheck(DOWN) == PUSHED && state->targetHeight > MIN_DUTY)
+        if (buttonsCheck(DOWN) == PUSHED && state->targetHeight > CONTROL_MIN_DUTY)
             state->targetHeight -= MAIN_STEP;
 
+        // change yaw with buttons
         if (buttonsCheck(LEFT) == PUSHED)
             state->targetYaw -= TAIL_STEP;
         if (buttonsCheck(RIGHT) == PUSHED)

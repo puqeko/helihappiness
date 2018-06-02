@@ -20,9 +20,9 @@
 #include "kernalMustardWithThePipeInTheDiningRoom.h"
 
 #define PRECISION 1000  // zeros represent how many dp of precision to get with integer math
-#define MIN_DUTY 5  // % duty cycle for motors
-#define MAX_DUTY 95  // % duty cycle for motors
-#define DUTY_DECREMENT_PER_SECOND 7  // % per second, for controlling decent speed when landing
+#define CONTROL_MIN_DUTY 5  // % duty cycle for motors
+#define CONTROL_MAX_DUTY 95  // % duty cycle for motors
+#define CONTROL_DESCEND_SPEED 7  // % per second, for controlling decent speed when landing
 
 
 // Define channels for applying control on motors. Controls can be enabled and disabled.

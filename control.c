@@ -20,7 +20,7 @@
 
 #define MS_TO_SEC 1000  // number of ms in one s
 #define CONTROL_INTE_LIMIT (PRECISION * 200)  // set to 200% max compensation
-#define DUTY_DECREMENT_PER_CYCLE (DUTY_DECREMENT_PER_SECOND * PRECISION / MS_TO_SEC)
+#define CONTROL_DECREMENT_PER_CYCLE (CONTROL_DESCEND_SPEED * PRECISION / MS_TO_SEC)
 #define SIGN(n) ((n) < 0 ? -1 : 1)
 
 typedef void (*control_channel_update_func_t)(state_t*, uint32_t);  // pointer to handler function
@@ -175,12 +175,12 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
 
         // main rotor equation
         mainDuty = outputs[CONTROL_HEIGHT] + outputs[CONTROL_POWER_DOWN];  // ang vel must be radians;
-        mainDuty = clamp(mainDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+        mainDuty = clamp(mainDuty, CONTROL_MIN_DUTY * PRECISION, CONTROL_MAX_DUTY * PRECISION);
 
         // tail rotor equation
         // filter main to take into account time delay and smoothing so that we get less oscillation
         tailDuty = outputs[CONTROL_YAW];
-        tailDuty = clamp(tailDuty, MIN_DUTY * PRECISION, MAX_DUTY * PRECISION);
+        tailDuty = clamp(tailDuty, CONTROL_MIN_DUTY * PRECISION, CONTROL_MAX_DUTY * PRECISION);
 
         // Set motor speed
         // Since tail and main duty are clamped, it is safe to cast to uint32_t types
@@ -284,14 +284,14 @@ void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 
 // Update motor power down controller. Assume that PID is disabled on the main rotor and enabled
 // on the tail rotor. When enabled, this channel is initalised with the previous mainDuty output
-// and decrements the main duty until the MIN_DUTY value is reached. The main duty cycle decreases
+// and decrements the main duty until the CONTROL_MIN_DUTY value is reached. The main duty cycle decreases
 // as a rate according to DUTY_DECREMENT_PER_SECOND. This channel automatically disables once the
 // main duty reaches its minimum value.
 void updatePowerDownChannel(state_t* state, uint32_t deltaTime) {
-    if (outputs[CONTROL_POWER_DOWN] <= MIN_DUTY * PRECISION) {
+    if (outputs[CONTROL_POWER_DOWN] <= CONTROL_MIN_DUTY * PRECISION) {
         controlDisable(state, CONTROL_POWER_DOWN);
-    } else if (outputs[CONTROL_POWER_DOWN] >= DUTY_DECREMENT_PER_CYCLE * deltaTime) { // prevent overflow
-        outputs[CONTROL_POWER_DOWN] -= DUTY_DECREMENT_PER_CYCLE * deltaTime;
+    } else if (outputs[CONTROL_POWER_DOWN] >= CONTROL_DECREMENT_PER_CYCLE * deltaTime) { // prevent overflow
+        outputs[CONTROL_POWER_DOWN] -= CONTROL_DECREMENT_PER_CYCLE * deltaTime;
     } else {
         outputs[CONTROL_POWER_DOWN] = 0; // would have overflowed, so set to zero (this will be clamped)
     }
