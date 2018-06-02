@@ -15,15 +15,24 @@
 
 // Inform tasks about the global state of the helicopter.
 typedef enum {
-    LANDED = 0, DESCENDING, POWER_DOWN, FLYING, CALIBRATE_YAW, NUM_HELI_STATES
-} heli_state_e;
+    LANDED = 0,
+    DESCENDING,
+    POWER_DOWN,
+    FLYING,
+    CALIBRATE_YAW,
+
+    // the value of this enum is the number of heli states defined above
+    NUM_HELI_STATES
+} heli_state_t;
 
 
 // Entries which more than one task needs to know about.
 typedef struct {
-    heli_state_e heliMode;
+    heli_state_t heliMode;
     int32_t targetHeight;
     int32_t targetYaw;
+    int32_t outputMainDuty;
+    int32_t outputTailDuty;
 } state_t;
 
 

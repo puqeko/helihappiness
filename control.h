@@ -27,7 +27,7 @@
 
 // Define channels for applying control on motors. Controls can be enabled and disabled.
 // If all channels are disabled, the motors are also disabled.
-typedef enum control_channel {
+typedef enum {
     CONTROL_HEIGHT=0,
     CONTROL_YAW,
     CONTROL_DESCENDING,
@@ -39,7 +39,7 @@ typedef enum control_channel {
 
 
 // Give access to the pwm duty cycles for displaying.
-typedef enum control_duty {
+typedef enum {
     CONTROL_DUTY_MAIN,
     CONTROL_DUTY_TAIL
 } control_duty_t;

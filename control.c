@@ -189,6 +189,10 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
         pwmSetDuty((uint32_t)mainDuty, PRECISION, MAIN_ROTOR);
         pwmSetDuty((uint32_t)tailDuty, PRECISION, TAIL_ROTOR);
     }
+
+    // update state so that other tasks know what is going on
+    state->outputMainDuty = mainDuty / PRECISION;
+    state->outputTailDuty = tailDuty / PRECISION;
 }
 
 

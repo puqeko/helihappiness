@@ -40,6 +40,7 @@
 
 #define UART_DISPLAY_FREQUENCY 4  // hz
 #define LANDING_UPDATE_FREQUENCY 10 // hz
+#define UPDATE_DISPLAY_COUNT (TASK_BASE_FREQ / UART_DISPLAY_FREQUENCY)
 
 #define HEIGHT_LANDING_COUNT (LOOP_FREQUENCY / LANDING_UPDATE_FREQUENCY)
 
@@ -167,45 +168,48 @@ void heliMode(state_t* state, uint32_t deltaTime)
     }
 }
 
-// TODO: remove
-#define UPDATE_COUNT (TASK_BASE_FREQ / UART_DISPLAY_FREQUENCY)
+
 void displayUpdate(state_t* state, uint32_t deltaTime)
 {
     static int uartCount = 0;
-    static const char* heliStateWordMap[] = {
-       "Landed", "Descending", "Power Down", "Flying", "Calibrate Yaw"
+    // Remember to update these strings when changing the states above
+    // These are the string values to be displayed when in each state
+    static const char* heliModeDisplayStringMap[] = {
+       "Landed",
+       "Descending",
+       "Power Down",
+       "Flying",
+       "Calibrate Yaw"
     };
 
     // Take measurements
     uint32_t percentageHeight = heightAsPercentage(1);  // precision = 1
     uint32_t degreesYaw = yawGetDegrees(1);  // precision = 1
-    uint32_t mainDuty = controlGetPWMDuty(CONTROL_DUTY_MAIN);
-    uint32_t tailDuty = controlGetPWMDuty(CONTROL_DUTY_TAIL);
 
     // Update OLED display
     displayPrintLineWithFormat("Height = %4d%%", 1, percentageHeight);  // line 1
-    displayPrintLineWithFormat("M = %2d, T = %2d", 2, mainDuty, tailDuty);  // line 2
+    displayPrintLineWithFormat("M = %2d, T = %2d", 2, state->outputMainDuty, state->outputTailDuty);  // line 2
 
     // Update UART display
     // Use a collaborative technique to update the display across updates
 
     switch (uartCount) {
-    case UPDATE_COUNT - 5:
+    case UPDATE_DISPLAY_COUNT - 5:
         uartPrintLineWithFormat("\nALT %d [%d] %%\n", state->targetHeight, percentageHeight);
         break;
-    case UPDATE_COUNT - 4:
+    case UPDATE_DISPLAY_COUNT - 4:
         uartPrintLineWithFormat("YAW %d [%d] deg\n", state->targetYaw, degreesYaw);
         break;
-    case UPDATE_COUNT - 3:
-        uartPrintLineWithFormat("MAIN %d %%, TAIL %d %%\n", mainDuty, tailDuty);
+    case UPDATE_DISPLAY_COUNT - 3:
+        uartPrintLineWithFormat("MAIN %d %%, TAIL %d %%\n", state->outputMainDuty, state->outputTailDuty);
         break;
-    case UPDATE_COUNT - 2:
-        uartPrintLineWithFormat("MODE %s\n", heliStateWordMap[state->heliMode]);
+    case UPDATE_DISPLAY_COUNT - 2:
+        uartPrintLineWithFormat("MODE %s\n", heliModeDisplayStringMap[state->heliMode]);
         break;
-    case UPDATE_COUNT - 1:
+    case UPDATE_DISPLAY_COUNT - 1:
         uartPrintLineWithFormat("%s", "----------------\n");
         break;
-    case UPDATE_COUNT:
+    case UPDATE_DISPLAY_COUNT:
         uartCount = 0;
     }
     uartCount++;
@@ -238,14 +242,16 @@ int main(void)
         {controllerUpdate, 100},
         {displayUpdate, 100},
         {stateUpdate, 100},
-        {0}  // terminator
+        {0}  // terminator (read until this value when processing the array)
     };
 
     // any data which many tasks might need to know about
     state_t sharedState = {
         .heliMode = LANDED,
         .targetHeight = 0,
-        .targetYaw = 0
+        .targetYaw = 0,
+        .outputMainDuty = 0,
+        .outputTailDuty = 0
     };
 
     runTasks(tasks, &sharedState, TASK_BASE_FREQ);
