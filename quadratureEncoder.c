@@ -52,25 +52,21 @@ void quadEncoderIntHandler(void)
         bool channelA = initialPinState & CHANNEL_A_PIN;
         bool channelB = initialPinState & CHANNEL_B_PIN;
 
-        if(intChannelA && channelA) // A rising edge
-        {
+        if(intChannelA && channelA) { // A rising edge
             !channelB ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
         }
-        else if(intChannelA && !channelA) // A falling edge
-        {
+        else if(intChannelA && !channelA) { // A falling edge
             channelB ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
         }
-        else if(intChannelB && channelB) // B rising edge
-        {
+        else if(intChannelB && channelB) { // B rising edge
             channelA ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
         }
-        else if(intChannelB && !channelB) // B falling edge
-        {
+        else if(intChannelB && !channelB) { // B falling edge
             !channelA ? (direction = CW_DIRECTION) : (direction = CCW_DIRECTION);
         }
     }
-    else if (lastIntStatus == intStatus) // If the same pin triggers an interrupt twice
-    {                                    //  in succession then direction must have changed
+    else if (lastIntStatus == intStatus) { // If the same pin triggers an interrupt twice
+                                           //  in succession then direction must have changed
         // Reverse the direction
         direction *= -1;
     }

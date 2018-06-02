@@ -2,12 +2,10 @@
 // height.c
 // Helicopter project
 // Group: A03 Group 10
-// Created by P.J. Bones UCECE
 // Last edited: 18.04.2017
 //
 // Generates and uses averaging function to smooth data stream from ADCs
 // Warning: Systick timer is used, so don't use it for other stuff
-// P.J. Bones UCECE, modified by Ryan Hall
 // ************************************************************
 
 #include "height.h"
@@ -93,7 +91,7 @@ void heightUpdate(void)
     int32_t sum = 0;
     int i;
     for (i = 0; i < CONV_SIZE; i++) {
-        sum = sum + (readCircBuf (&buf) * convolutionArray[i]);
+        sum = sum + (readCircBuf(&buf) * convolutionArray[i]);
     }
     meanHeight = sum / CONV_BASE;
 }

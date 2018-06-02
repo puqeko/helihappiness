@@ -2,12 +2,10 @@
 // height.h
 // Helicopter project
 // Group: A03 Group 10
-// Created by P.J. Bones UCECE
 // Last edited: 18.04.2017
 //
 // Generates and uses averaging function to smooth data stream from ADCs
 // Warning: Systick timer is used, so don't use it for other stuff
-// P.J. Bones UCECE, modified by Ryan Hall
 // ************************************************************
 
 #ifndef HEIGHT_H_
