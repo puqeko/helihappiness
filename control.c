@@ -302,8 +302,8 @@ void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 // as a rate according to DUTY_DECREMENT_PER_SECOND. This channel automatically disables once the
 // main duty reaches its minimum value.
 void updatePowerDownChannel(state_t* state, uint32_t deltaTime) {
-    if (outputs[CONTROL_POWER_DOWN] <= MIN_DUTY) {
-        controlDisable(CONTROL_DESCENDING);
+    if (outputs[CONTROL_POWER_DOWN] <= MIN_DUTY * PRECISION) {
+        controlDisable(CONTROL_POWER_DOWN);
     } else if (outputs[CONTROL_POWER_DOWN] >= DUTY_DECREMENT_PER_CYCLE * deltaTime) { // prevent overflow
         outputs[CONTROL_POWER_DOWN] -= DUTY_DECREMENT_PER_CYCLE * deltaTime;
     } else {
