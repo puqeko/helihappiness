@@ -24,8 +24,8 @@
 #define REF_PORT_BASE           GPIO_PORTC_BASE
 #define REF_PIN                 GPIO_PIN_4
 
-#define COUNTS_PER_ROTATION (112*4) // 112 slots and x4 because quadrature encoding used
-
+#define COUNTS_PER_ROTATION (112*4)  // 112 slots and x4 because quadrature encoding used
+#define SIGN(n) ((n) < 0 ? -1 : 1)  // give the sign of a number
 
 static volatile bool isCalibrated;
 
@@ -92,15 +92,16 @@ int32_t yawGetDegrees(int32_t precision)
 // Remove excess factors of 360 degrees from yaw and normalises difference about 0
 void yawClipTo360Degrees(void)
 {
+    // start critical section
     static bool prevIntState;
     prevIntState = IntMasterDisable();
+
     int32_t quadEncoderCount = quadEncoderGetCount();
-    int32_t sign = (quadEncoderCount < 0) ? -1 : 1;
     quadEncoderCount = quadEncoderCount % COUNTS_PER_ROTATION;
-    if (abs(quadEncoderCount) > (COUNTS_PER_ROTATION / 2)) {
-        quadEncoderSetCount(quadEncoderCount - sign * COUNTS_PER_ROTATION);
-    }
-    if (prevIntState) {
+    if (abs(quadEncoderCount) > COUNTS_PER_ROTATION / 2)
+        quadEncoderSetCount(quadEncoderCount - SIGN(quadEncoderCount) * COUNTS_PER_ROTATION);
+
+    // re-enable interrupts if they were enabled before
+    if (prevIntState)
         IntMasterEnable();
-    }
 }
