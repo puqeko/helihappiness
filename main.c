@@ -68,13 +68,20 @@ void initSoftReset(void)
 
 void initalise()
 {
-    // TODO: reset peripherals
-    // SysCtlPeripheralReset(SYSCTL_PERIPH_PWM);
+    // Reset ports for good measure
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOA);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOB);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOC);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOD);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOE);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_GPIOF);
+
+    // Other peripherals are reset inside each module
 
     // Set system clock rate to 20 MHz.
     SysCtlClockSet(SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ | SYSCTL_SYSDIV_10);
     timererInit();
-    timererWait(1);  // Allow time for the oscillator to settle down (for 1.
+    timererWait(1);  // Allow time for the oscillator to settle down (for 1 millisecond).
 
     buttonsInit();
     initSoftReset();
@@ -82,13 +89,14 @@ void initalise()
     yawInit();
     heightInit(CONV_UNIFORM);
     uartInit();
-    IntMasterEnable ();  // Enable interrupts to the processor.
-    timererWait(1);
 
+    // Enable interrupts to the processor.
+    IntMasterEnable ();
+    timererWait(1);
     heightCalibrate();
     controlInit();
-
 }
+
 
 void stateTransitionUpdate(state_t* state, uint32_t deltaTime)
 {

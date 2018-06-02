@@ -39,6 +39,9 @@
 // Configure the UART with 8 bits, 1 stop bit, no parity
 void uartInit (void)
 {
+    // reset for good measure
+    SysCtlPeripheralReset(UART_USB_PERIPH_UART);
+
     // Enable GPIO port A which is used for UART0 pins.
     SysCtlPeripheralEnable(UART_USB_PERIPH_UART);
     SysCtlPeripheralEnable(UART_USB_PERIPH_GPIO);
