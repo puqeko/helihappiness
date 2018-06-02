@@ -16,12 +16,10 @@
 #include "kernalMustardWithThePipeInTheDiningRoom.h"
 
 #define PRECISION 1000  // zeros represent how many dp of precision to get with integer math
+#define MS_TO_SEC 1000  // number of ms in one s
 #define MIN_DUTY 5  // %
 #define MAX_DUTY 95  // %
-#define MS_TO_SEC 1000
-#define LANDING_DUTY (25 * PRECISION)
-#define DUTY_DECREMENT_PER_SECOND 7
-#define DUTY_DECREMENT_PER_CYCLE (DUTY_DECREMENT_PER_SECOND * PRECISION / MS_TO_SEC)
+#define DUTY_DECREMENT_PER_SECOND 7  // % per second, for controlling decent speed when landing
 
 
 typedef enum control_channel {

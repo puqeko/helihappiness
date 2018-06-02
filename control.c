@@ -15,25 +15,36 @@
 #include "yaw.h"
 #include "landingController.h"
 
-static int32_t outputs[CONTROL_NUM_CHANNELS] = {0};  // values to send to motor
-static bool enabled[CONTROL_NUM_CHANNELS] = {0};
+#define CONTROL_INTE_LIMIT (PRECISION * 200)  // set to 200% max compensation
+#define DUTY_DECREMENT_PER_CYCLE (DUTY_DECREMENT_PER_SECOND * PRECISION / MS_TO_SEC)
+#define SIGN(n) ((n) < 0 ? -1 : 1)
 
-typedef void (*control_channel_update_func_t)(state_t*, uint32_t);
+typedef void (*control_channel_update_func_t)(state_t*, uint32_t);  // pointer to handler function
 
-// defined later on
+static int32_t outputs[CONTROL_NUM_CHANNELS] = {0};  // values to send to motors
+static bool enabled[CONTROL_NUM_CHANNELS] = {0};  // specify which channels have control
+
+// functions which get called to update each channel
 void updateHeightChannel(state_t* state, uint32_t deltaTime);
 void updateYawChannel(state_t* state, uint32_t deltaTime);
-void updateCalibrationChannelTail(state_t* state, uint32_t deltaTime);
 void updateDescendingChannel(state_t* state, uint32_t deltaTime);
 void updatePowerDownChannel(state_t* state, uint32_t deltaTime);
 
-// functions which get called to update each channel
-static control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
+static const control_channel_update_func_t chanelUpdateFuncs[CONTROL_NUM_CHANNELS] = {
     updateHeightChannel,  // updated first so yaw can use mainDuty
     updateYawChannel,
     updateDescendingChannel,
     updatePowerDownChannel
+    // add channel handlers here
 };
+
+// configurable constants (scaled by PRECISION)
+enum gains_e {KP=0, KD, KI};
+static const int32_t mainGains[] = {1500, 600, 400};  // in PID order
+static const int32_t tailGains[] = {1200, 800, 500};
+static const int32_t mainTorqueConst = 800;  // ratio of main rotor speed to tail rotor speed
+static const int32_t mainOffset = 33;  // temporary until calibration added
+static const int32_t gravOffset = 200;  // ratio of height to down force
 
 // final output parameters (so that we may display these in main)
 static int32_t mainDuty = 0, tailDuty = 0;
@@ -42,22 +53,7 @@ static int32_t mainDuty = 0, tailDuty = 0;
 static int32_t height, previousHeight = 0, verticalVelocity;
 static int32_t yaw, previousYaw = 0, angularVelocity = 0;
 
-// configurable constants (scaled by PRECISION)
-static int32_t gravOffset = 200;
-// ratio of main rotor speed to tail rotor speed
-static int32_t mainTorqueConst = 800;
-
-// Eventually change this to work on generic heli
-enum gains_e {KP=0, KD, KI};
-static int32_t mainGains[] = {1500, 600, 400};
-static int32_t tailGains[] = {1200, 800, 500};
-static int32_t mainOffset = 33;  // temporary until calibration added
-
-
-void controlInit(void)
-{
-    pwmInit();
-}
+static int32_t inte_y = 0, inte_h = 0;  // for integral calculations
 
 
 // limit the value n between two lower and upper values (inclusive)
@@ -69,6 +65,21 @@ int32_t clamp(int32_t n, int32_t lower, int32_t upper)
     else if (n > upper)
         return upper;
     return n;  // the number is in bounds
+}
+
+
+// configure motors
+void controlInit(void)
+{
+    pwmInit();
+}
+
+
+// reset integral gains between runs
+void controlReset(void)
+{
+    inte_h = 0;
+    inte_y = 0;
 }
 
 
@@ -191,10 +202,6 @@ void controlUpdate(state_t* state, uint32_t deltaTime)
 ///
 
 
-#define CONTROL_INTE_LIMIT (PRECISION * 200)  // set to 200% compensation
-#define SIGN(n) ((n) < 0 ? -1 : 1)
-
-static int32_t inte_h = 0;
 void updateHeightChannel(state_t* state, uint32_t deltaTime)
 {
     // calculate inital offset + a factor which varies with height.
@@ -226,7 +233,6 @@ void updateHeightChannel(state_t* state, uint32_t deltaTime)
 }
 
 
-static int32_t inte_y = 0;
 void updateYawChannel(state_t* state, uint32_t deltaTime)
 {
     // cuple to main rotor speed since changes in speed effect the tail rotor
@@ -257,14 +263,6 @@ void updateYawChannel(state_t* state, uint32_t deltaTime)
 }
 
 
-// reset integral gains between runs
-void controlReset(void)
-{
-    inte_h = 0;
-    inte_y = 0;
-}
-
-
 void updateDescendingChannel(state_t* state, uint32_t deltaTime)
 {
     if (checkLandingStability(state, deltaTime, yaw, height)) {
@@ -273,6 +271,7 @@ void updateDescendingChannel(state_t* state, uint32_t deltaTime)
         land(state, deltaTime, yaw);
     }
 }
+
 
 void updatePowerDownChannel(state_t* state, uint32_t deltaTime) {
     if (outputs[CONTROL_POWER_DOWN] <= MIN_DUTY) {
