@@ -1,12 +1,12 @@
-//********************************************************
+// ************************************************************
+// uartDisplay.c
+// Helicopter project
+// Group: A03 Group 10
+// Based on code from P.J. Bones 21.04.2018
+// Last edited: 30-05-2018
 //
-// uartDemo.c - Example code for ENCE361
-//
-// Link with modules:  buttons2, OrbitOLEDInterface
-//
-// Author:  P.J. Bones  UCECE edited by Ryan H and Thomas M
-// Last modified:   21.04.2018
-//
+// Purpose: Write string output to USB using UART.
+// ************************************************************
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -24,11 +24,8 @@
 #include "utils/ustdlib.h"
 #include "uartDisplay.h"
 
-//********************************************************
-// Constants
-//********************************************************
 
-//---USB Serial comms: UART0, Rx:PA0 , Tx:PA1
+// USB Serial comms: UART0, Rx:PA0 , Tx:PA1
 #define BAUD_RATE 9600
 #define UART_USB_BASE           UART0_BASE
 #define UART_USB_PERIPH_UART    SYSCTL_PERIPH_UART0
@@ -39,33 +36,28 @@
 #define UART_USB_GPIO_PINS      UART_USB_GPIO_PIN_RX | UART_USB_GPIO_PIN_TX
 
 
-//********************************************************
-// initialiseUSB_UART - 8 bits, 1 stop bit, no parity
-//********************************************************
-void initialiseUSB_UART (void)
+// Configure the UART with 8 bits, 1 stop bit, no parity
+void uartInit (void)
 {
     // Enable GPIO port A which is used for UART0 pins.
-    //
     SysCtlPeripheralEnable(UART_USB_PERIPH_UART);
     SysCtlPeripheralEnable(UART_USB_PERIPH_GPIO);
-    //
+
     // Select the alternate (UART) function for these pins.
-    //
     GPIOPinTypeUART(UART_USB_GPIO_BASE, UART_USB_GPIO_PINS);
     UARTConfigSetExpClk(UART_USB_BASE, SysCtlClockGet(), BAUD_RATE,
                         UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                         UART_CONFIG_PAR_NONE);
-    UARTFIFOEnable(UART_USB_BASE);
+    UARTFIFOEnable(UART_USB_BASE);  // use a queue to buffer the sending data
     UARTEnable(UART_USB_BASE);
 
-    UARTSend("\n");  // required to start printing to remote interface
+    uartSend("\n");  // required to start printing to remote interface
 }
 
 
-//**********************************************************************
 // Transmit a string via UART0
-//**********************************************************************
-void UARTSend (char *pucBuffer)
+// The FIFO is 16 bytes so only send a 16 byte string for optimal performance
+void uartSend (char *pucBuffer)
 {
     // Loop while there are more characters to send.
     while(*pucBuffer)
@@ -77,24 +69,24 @@ void UARTSend (char *pucBuffer)
 }
 
 
-//**********************************************************************
 // Print a single formated line to the terminal and truncate if too long.
 // Takes format with arguments (like fprintf) but adds a newline to the end
 // and truncates to UART_LINE_LENGTH. An ellipsis is added to the end if the
 // line is too long. A format string is always required.
-//**********************************************************************
-void UARTPrintLineWithFormat(const char* format, ...)
+void uartPrintLineWithFormat(const char* format, ...)
 {
     va_list args;
     int storedChars;
-    char uartString[UART_LINE_LENGTH + 2];  // for \n and \0
+    char uartString[UART_LINE_LENGTH + 2];  // +2 for \r and \0
 
+    // replace using arguments
     va_start(args, format);
     storedChars = uvsnprintf(uartString, UART_LINE_LENGTH, format, args);
     va_end(arg);
 
     // add ellipsis if string too long
     if (storedChars >= UART_LINE_LENGTH) {
+        // truncate
         int i = UART_LINE_LENGTH;
         while (i-- > UART_LINE_LENGTH - 3) {
             uartString[i] = '.';
@@ -102,8 +94,10 @@ void UARTPrintLineWithFormat(const char* format, ...)
         uartString[UART_LINE_LENGTH] = '\r';
         uartString[UART_LINE_LENGTH + 1] = '\0';
     } else {
+        // add new line only
         uartString[storedChars] = '\r';
         uartString[storedChars + 1] = '\0';
     }
-    UARTSend(uartString);
+
+    uartSend(uartString);
 }

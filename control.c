@@ -14,9 +14,9 @@
 #include "yaw.h"
 #include "landingController.h"
 
-static int32_t outputs[CONTROL_NUM_CHANNELS] = {};  // values to send to motor
-static int32_t targets[CONTROL_NUM_CHANNELS] = {};  // target values to compare aganst
-static bool enabled[CONTROL_NUM_CHANNELS] = {};
+static int32_t outputs[CONTROL_NUM_CHANNELS] = {0};  // values to send to motor
+static int32_t targets[CONTROL_NUM_CHANNELS] = {0};  // target values to compare aganst
+static bool enabled[CONTROL_NUM_CHANNELS] = {0};
 
 typedef void (*control_channel_update_func_t)(state_t*, uint32_t);
 

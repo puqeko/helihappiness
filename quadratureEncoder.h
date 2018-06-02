@@ -1,63 +1,33 @@
-#ifndef QUADRATURE_ENCODER_H_
-#define QUADRATURE_ENCODER_H_
-
 //************************************************************************
 // quadratureEncoder.h
-//
 // Helicopter project
-//
-// Group:       A03 Group 10
-// Created:     16/4/18
-// Last Edited: 10/5/18
+// Group: A03 Group 10
+// Last Edited: 31-5-18
 //
 // Purpose: Handles input from the quadrature encoder
 //************************************************************************
+
+#ifndef QUADRATURE_ENCODER_H_
+#define QUADRATURE_ENCODER_H_
 
 #include <stdint.h>
 #include <stdbool.h>
 
 
-//************************************************************************
-//
-//************************************************************************
-void quadEncoderIntHandler(void);
-
-
-//************************************************************************
-//
-//************************************************************************
-//void quadEncoderRefIntHandler(void);
-
-
-//************************************************************************
-//
-//************************************************************************
-//void quadEncoderCalibrate(void);
-
-
-//************************************************************************
-//
-//************************************************************************
-//bool quadEncoderIsCalibrated(void);
-
-
-//************************************************************************
-//
-//************************************************************************
+// Resets the running encoder count to zero
 void quadEncoderResetCount(void);
 
 
-//************************************************************************
-//
-//************************************************************************
+// Set the running encoder count to the parameter newCount
+void quadEncoderSetCount(uint32_t newCount);
+
+
+// Returns the current encoder count
 int32_t quadEncoderGetCount(void);
 
 
-//************************************************************************
-//
-//************************************************************************
+// Configure GPIO pins and initialize interrupts
+// Get initial state of channel pins for determining direction on first interrupt
 void quadEncoderInit(void);
-
-void quadEncoderSetCount(uint32_t newCount);
 
 #endif /*QUADRATURE_ENCODER_H_*/
