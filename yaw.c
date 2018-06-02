@@ -15,6 +15,7 @@
 #include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
 #include "quadratureEncoder.h"
+#include "driverlib/interrupt.h"
 
 // Define constants for yaw reference GPIO pin PC4
 #define GPIO_REF_PERIPH         SYSCTL_PERIPH_GPIOC
