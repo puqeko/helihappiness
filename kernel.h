@@ -1,9 +1,12 @@
-/*
- * kernalMustardWithThePipeInTheDiningRoom.h
- *
- *  Created on: 28/05/2018
- *      Author: Thomas
- */
+// ************************************************************
+// kernel.h
+// Helicopter project
+// Group: A03 Group 10
+// Last edited: 02-06-18
+//
+// Purpose: A paced round robin scheduler for running tasks as specified frequencies.
+// Different frequencies are achieved by dividing the base frequency (using counters).
+// ************************************************************
 
 #ifndef KERNEL_H_
 #define KERNEL_H_
