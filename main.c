@@ -147,7 +147,6 @@ void heliMode(state_t* state, uint32_t deltaTime)
             controlEnable(state, CONTROL_DESCENDING);
         }
         break;
-    }
 
     case DESCENDING:
         if (!controlIsEnabled(CONTROL_DESCENDING)) {
@@ -169,6 +168,7 @@ void heliMode(state_t* state, uint32_t deltaTime)
             }
         }
         break;
+    }
 }
 
 

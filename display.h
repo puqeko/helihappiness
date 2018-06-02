@@ -1,36 +1,33 @@
-#ifndef DISPLAY_H_
-#define DISPLAY_H_
-
 // ************************************************************
 // display.h
 // Helicopter project
 // Group: A03 Group 10
 // Last edited: 20-04-2018
 //
-// Purpose: Interface with OLED display
+// Purpose: Format strings for printing to the tiva OLED display
+// using the OLED module.
 // ************************************************************
+
+#ifndef DISPLAY_H_
+#define DISPLAY_H_
 
 #include <stdint.h>
 #include <string.h>
 
+// The number of chars which fit on a line of the display
 #define DISPLAY_CHAR_WIDTH 16
 
+
+// Configure OLED display
 void displayInit(void);
 
-//// ************************************************************
-//// Display a single value on a line of the OLED display according to a format
-//// string provided.
-//void displayValueWithFormat(char* format, uint32_t value, uint32_t line);
-//
-//
-//// ************************************************************
-//// Display a two values on a line of the OLED display according to a format
-//// string provided.
-//void displayTwoValuesWithFormat(char* format, uint32_t value1, uint32_t value2, uint32_t line);
 
-void displayPrintLineWithFormat(const char* format, int lineNum, ...);
+// Format a line for printing to the lineNum'th line of the display.
+// If the line is too long, the string is truncated and an elipsis is
+// added to the end. All other behaviour is as per printf.
+void displayPrintLineWithFormat(const char* format, uint32_t lineNum, ...);
 
-// ************************************************************
+
 // Place blank spaces on the display at the given line.
 void displayClear(uint32_t line);
 
