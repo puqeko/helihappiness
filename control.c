@@ -309,6 +309,7 @@ void updateYawCalibrate(state_t* state, uint32_t deltaTime) {
 
     if (yawIsCalibrated()) {
         controlDisable(state, CONTROL_CALIBRATE_YAW);
+        state->targetYaw = 0;
     } else {
         state->targetYaw += 1;
     }

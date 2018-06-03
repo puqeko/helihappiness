@@ -211,16 +211,21 @@ void displayUpdate(state_t* state, uint32_t deltaTime)
     uint32_t percentageHeight = heightAsPercentage(1);  // precision = 1
     uint32_t degreesYaw = yawGetDegrees(1);  // precision = 1
 
-    // Update OLED display
-    displayPrintLineWithFormat("Height = %4d%%", 1, percentageHeight);  // line 1
-    displayPrintLineWithFormat("M = %2d, T = %2d", 2, state->outputMainDuty, state->outputTailDuty);  // line 2
-
-    // Update UART display
-    // Use a collaborative technique to update the display across update cycles.
+    // Use a collaborative technique to update the displays across update cycles.
     // Thus, the time spent on each call to displayUpdate is reduced allowing higher frequency tasks
     // to be serviced at more consistent rates.
 
     switch (uartCount) {
+
+    // Update OLED display
+    case UPDATE_DISPLAY_COUNT - 7:
+        displayPrintLineWithFormat("Height = %4d%%", 1, percentageHeight);  // line 1
+        break;
+    case UPDATE_DISPLAY_COUNT - 6:
+        displayPrintLineWithFormat("M = %2d, T = %2d", 2, state->outputMainDuty, state->outputTailDuty);  // line 2
+        break;
+
+    // Update UART display
     case UPDATE_DISPLAY_COUNT - 5:
         uartPrintLineWithFormat("\nALT %d [%d] %%\n", state->targetHeight, percentageHeight);
         break;
