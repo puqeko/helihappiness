@@ -263,7 +263,7 @@ int main(void)
     task_t tasks[] = {
         {mainUpdate, 100},
         {displayUpdate, 100},  // actually about 4 Hz due to co-operative behaviour
-        {stateTransitionUpdate, 5},
+        {stateTransitionUpdate, 10},  // assuming responce of 200 ms, then 2 * 5 Hz = 10 from Nyquist
         {0}  // terminator (read until this value when processing the array)
     };
 
