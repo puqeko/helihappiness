@@ -20,9 +20,9 @@
 #include "driverlib/systick.h"
 #include "driverlib/interrupt.h"
 
-// *******************************************************
-#define ADC_SAMPLE_RATE 160  // Hz
 #define CONV_SIZE 20  // length of convolution array
+#define HEIGHT_UPDATE_RATE 4  // Hz - assuming signal frequency of 4 Hz
+#define ADC_SAMPLE_RATE (CONV_SIZE * 2 * HEIGHT_UPDATE_RATE)  // Hz - by Nyquist theorm
 
 
 // convolution type used for avera
