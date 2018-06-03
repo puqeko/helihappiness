@@ -43,7 +43,7 @@ void handleNewADCValue(uint32_t val)
 // setup the system tick timer to run adc
 void heightInit(height_conv convType)
 {
-    SysTickPeriodSet(SysCtlClockGet() / ADC_SAMPLE_RATE);  // frequency of 120 Hz
+    SysTickPeriodSet(SysCtlClockGet() / ADC_SAMPLE_RATE);
     SysTickIntRegister(SysTickIntHandler);
     // Enable interrupt and device
     SysTickIntEnable();
